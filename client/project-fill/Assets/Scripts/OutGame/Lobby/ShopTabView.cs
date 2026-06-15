@@ -132,16 +132,16 @@ namespace Game.OutGame.Lobby
             foreach (var cat in sortedCategories)
             {
                 var catProducts = products
-                    .Where(p => p.is_enabled && p.category_id == cat.category_id)
+                    .Where(p => p.is_enabled && p.category_id == cat.id)
                     .Where(p => !(p.product_type == IapProductType.NonConsumable && IAPService.Instance.IsNoAdsPurchased))
                     .Where(p => !(p.purchase_limit > 0 && p.reset_period == PurchaseResetPeriod.None &&
-                                 (IAPService.Instance?.GetRemainingPurchases(p.info_id) ?? 1) <= 0))
+                                 (IAPService.Instance?.GetRemainingPurchases(p.id) ?? 1) <= 0))
                     .OrderBy(p => p.sort_order)
                     .ToList();
 
                 if (catProducts.Count == 0) continue;
 
-                if (!firstCategory) CreateSpacer(cat.category_id);
+                if (!firstCategory) CreateSpacer(cat.id);
                 firstCategory = false;
 
                 CreateCategoryHeader(cat);
@@ -201,8 +201,8 @@ namespace Game.OutGame.Lobby
                 return;
             }
             var go = Instantiate(prefab, _contentContainer);
-            go.name = cat.category_id + "_Header";
-            _categoryHeaders[cat.category_id] = go;
+            go.name = cat.id + "_Header";
+            _categoryHeaders[cat.id] = go;
 
             var labelTrans = go.transform.Find("Label");
             if (labelTrans != null)
@@ -239,7 +239,7 @@ namespace Game.OutGame.Lobby
                 return;
             }
 
-            var remaining = IAPService.Instance.GetRemainingPurchases(prod.info_id);
+            var remaining = IAPService.Instance.GetRemainingPurchases(prod.id);
             if (remaining.HasValue && remaining.Value <= 0)
             {
                 ShowToast("toast.iap_limit_reached", ToastType.Warning);
@@ -341,7 +341,7 @@ namespace Game.OutGame.Lobby
 
                 if (prod.purchase_limit > 0 && prod.reset_period == PurchaseResetPeriod.None)
                 {
-                    var remaining = IAPService.Instance?.GetRemainingPurchases(prod.info_id) ?? prod.purchase_limit;
+                    var remaining = IAPService.Instance?.GetRemainingPurchases(prod.id) ?? prod.purchase_limit;
                     if (remaining <= 0) isLimitNoneAndReached = true;
                 }
 
@@ -353,7 +353,7 @@ namespace Game.OutGame.Lobby
                 {
                     if (prod.purchase_limit > 0)
                     {
-                        var remaining = IAPService.Instance?.GetRemainingPurchases(prod.info_id) ?? prod.purchase_limit;
+                        var remaining = IAPService.Instance?.GetRemainingPurchases(prod.id) ?? prod.purchase_limit;
                         string limitFormatKey = prod.reset_period switch
                         {
                             PurchaseResetPeriod.Daily => "shop.iap.limit.daily",
@@ -382,7 +382,7 @@ namespace Game.OutGame.Lobby
 
                 var txt = button.GetComponentInChildren<TMP_Text>();
                 bool isNonConsumable = prod.product_type == IapProductType.NonConsumable;
-                var remaining = IAPService.Instance?.GetRemainingPurchases(prod.info_id);
+                var remaining = IAPService.Instance?.GetRemainingPurchases(prod.id);
                 bool limitReached = remaining.HasValue && remaining.Value <= 0;
                 bool canBuy = !limitReached && !(isNonConsumable && isNoAds);
 
@@ -410,7 +410,7 @@ namespace Game.OutGame.Lobby
                 if (kvp.Value != null) kvp.Value.SetActive(visibleCatIds.Contains(kvp.Key));
 
             var sortedVisible = visibleCatIds
-                .OrderBy(id => _categories.FirstOrDefault(c => c.category_id == id)?.sort_order ?? 0)
+                .OrderBy(id => _categories.FirstOrDefault(c => c.id == id)?.sort_order ?? 0)
                 .ToList();
 
             foreach (var kvp in _categorySpacers)

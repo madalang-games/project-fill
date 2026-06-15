@@ -231,17 +231,17 @@ namespace Game.OutGame.Settings
                 // Set sprite
                 if (iconImg != null)
                 {
-                    iconImg.sprite = GetAvatarSprite(avatar.avatar_id);
+                    iconImg.sprite = GetAvatarSprite(avatar.id);
                     iconImg.color = Color.white;
                     iconImg.preserveAspect = true;
                 }
 
                 // Equip highlight
-                bool isEquipped = avatar.avatar_id == currentEquippedAvatarId;
+                bool isEquipped = avatar.id == currentEquippedAvatarId;
                 if (selectHighlight != null) selectHighlight.SetActive(isEquipped);
 
                 // Lock state
-                bool isUnlocked = PlayerProgressService.Instance != null && PlayerProgressService.Instance.IsAvatarUnlocked(avatar.avatar_id);
+                bool isUnlocked = PlayerProgressService.Instance != null && PlayerProgressService.Instance.IsAvatarUnlocked(avatar.id);
                 if (lockOverlay != null) lockOverlay.SetActive(!isUnlocked);
 
                 if (!isUnlocked && costText != null)
@@ -403,7 +403,7 @@ namespace Game.OutGame.Settings
         {
             if (isUnlocked)
             {
-                EquipAvatar(avatar.avatar_id);
+                EquipAvatar(avatar.id);
             }
             else
             {
@@ -417,7 +417,7 @@ namespace Game.OutGame.Settings
                     title:        LocalizationService.Instance.Get("popup.account.confirm_unlock_avatar_title"),
                     body:         string.Format(LocalizationService.Instance.Get("popup.account.confirm_unlock_avatar_body_fmt"), avatar.unlock_cost),
                     confirmLabel: LocalizationService.Instance.Get("common.btn_unlock"),
-                    onConfirm:    () => BuyAndEquipAvatar(avatar.avatar_id, avatar.unlock_cost),
+                    onConfirm:    () => BuyAndEquipAvatar(avatar.id, avatar.unlock_cost),
                     danger:       false));
             }
         }

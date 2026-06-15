@@ -44,6 +44,7 @@ namespace Game.Editor
         public const string PopupResultTitle = "popup.result.title";
         public const string PopupStuckTitle = "popup.stuck.title";
         public const string PopupStuckBody = "popup.stuck.body";
+        public const string PopupFailTitle = "popup.fail.title";
         public const string PopupFailBtnForfeit = "popup.fail.btn_forfeit";
         public const string PopupPauseTitle = "popup.pause.title";
         public const string PopupPauseBtnResume = "popup.pause.btn_resume";
