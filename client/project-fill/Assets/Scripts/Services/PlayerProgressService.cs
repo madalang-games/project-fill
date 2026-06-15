@@ -18,6 +18,8 @@ namespace Game.Services
         private readonly Dictionary<int, bool> _unlocked     = new Dictionary<int, bool>();
         private readonly Dictionary<int, int> _inventory    = new Dictionary<int, int>();
         private readonly HashSet<int>          _unlockedAvatarIds = new HashSet<int>();
+        private readonly HashSet<int>          _unlockedBoardThemeIds = new HashSet<int>();
+        private int  _equippedBoardThemeId = 1;
         private bool _isNoAds;
 
         private void Awake()
@@ -72,7 +74,7 @@ namespace Game.Services
             {
                 foreach (var av in list)
                 {
-                    if (av.avatar_id == avatarId)
+                    if (av.id == avatarId)
                     {
                         if (av.unlock_type == "free" || av.unlock_type == "common") return true;
                         break;
@@ -86,6 +88,13 @@ namespace Game.Services
         {
             _unlockedAvatarIds.Add(avatarId);
         }
+
+        // --- Board Themes ---
+        public int  EquippedBoardThemeId => _equippedBoardThemeId;
+        public bool IsThemeUnlocked(int themeId) => themeId == 1 || _unlockedBoardThemeIds.Contains(themeId);
+
+        public void UnlockThemeLocally(int themeId)      => _unlockedBoardThemeIds.Add(themeId);
+        public void SetEquippedBoardTheme(int themeId)   => _equippedBoardThemeId = themeId;
 
         // --- Stage stars / unlock (local cache, game-mechanics TBD) ---
         public int GetBestStars(int stageId)
@@ -149,10 +158,16 @@ namespace Game.Services
             SetNoAds(response.IsNoAds || _isNoAds);
             _unlockedAvatarIds.Clear();
             if (response.UnlockedAvatarIds != null)
-            {
                 foreach (var id in response.UnlockedAvatarIds)
                     _unlockedAvatarIds.Add(id);
-            }
+
+            _unlockedBoardThemeIds.Clear();
+            if (response.UnlockedBoardThemeIds != null)
+                foreach (var id in response.UnlockedBoardThemeIds)
+                    _unlockedBoardThemeIds.Add(id);
+
+            if (response.EquippedBoardThemeId > 0)
+                _equippedBoardThemeId = response.EquippedBoardThemeId;
 
             PlayerPrefs.Save();
             Debug.Log($"[PlayerProgressService] Loaded from server: unlockedAvatars={response.UnlockedAvatarIds?.Count ?? 0}");
