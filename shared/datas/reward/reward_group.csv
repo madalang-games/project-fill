@@ -1,0 +1,14 @@
+id,reward_group_id,version,display_key,is_enabled
+CS,CS,CS,CS,CS
+int32,int32,int32,string(128),bool
+PK,UQ,NN,NN,NN
+1,2001,1,reward.stage_clear_easy,true
+2,2002,1,reward.stage_clear_normal,true
+3,2003,1,reward.stage_clear_hard,true
+4,3001,1,reward.chapter_1_chest,true
+5,3002,1,reward.chapter_2_chest,true
+6,3003,1,reward.chapter_3_chest,true
+7,3004,1,reward.chapter_4_chest,true
+8,5001,1,reward.iap.no_ads,true
+9,5002,1,reward.iap.starter_pack,true
+10,5003,1,reward.iap.master_bundle,true

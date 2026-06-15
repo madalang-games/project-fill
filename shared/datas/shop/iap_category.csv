@@ -1,0 +1,6 @@
+﻿id,name_key,sort_order
+C,C,C
+int32,string(64),int32
+PK,NN,NN
+1,shop.category.special_offer,1
+2,shop.category.bundle,2

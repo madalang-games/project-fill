@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ProjectFill.Application\ProjectFill.Application.csproj" />
+    <ProjectReference Include="..\ProjectFill.Infrastructure\ProjectFill.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\shared\contracts\ProjectFill.Contracts.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.*" />
+    <PackageReference Include="Scalar.AspNetCore" Version="1.*" />
+    <PackageReference Include="Serilog.AspNetCore" Version="8.*" />
+    <PackageReference Include="Serilog.Settings.Configuration" Version="8.*" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="5.*" />
+    <PackageReference Include="Serilog.Sinks.File" Version="5.*" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="..\..\generated\data\**\*.*" Link="generated\data\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

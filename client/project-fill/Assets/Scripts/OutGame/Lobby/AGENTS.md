@@ -1,0 +1,71 @@
+# OutGame/Lobby - Lobby Scene
+
+Namespace: `Game.OutGame.Lobby`
+
+## Files
+| file | class | role |
+|------|-------|------|
+| `LobbyView.cs` | `LobbyView` | Root lobby controller; shows/hides tabs; refreshes gold |
+| `HeaderView.cs` | `HeaderView` | Avatar tap → AccountPopup; Gold display |
+| `BottomNavBarView.cs` | `BottomNavBarView` | 3-tab nav; fires OnTabChanged |
+| `RankingTabView.cs` | `RankingTabView` | Ranking tab UI; stars/max-stage tabs, my rank, virtualized list via VirtualizedScrollRect |
+| `RankingItemView.cs` | `RankingItemView` | Component on RankingItemPrefab; Bind(entry,avatar,score) + SetHighlight(bool) for MyRankPin highlight |
+| `HomeTabView.cs` | `HomeTabView` | Chapter/stage scroll with object pool; milestone chest rendering + claim API; out-of-life ad prompt uses AdMobService token |
+| `ChapterChestView.cs` | `ChapterChestView` | Milestone chest node displaying Locked (INACTIVE), Claim! (ACTIVE), or Cleared (CLAIMED) states |
+| `StageNodeView.cs` | `StageNodeView` | Pooled node: stage label, 3 star fills, lock overlay, pulse ring; Bind(id,stars,unlocked,current) |
+| `StageInfoPopupView.cs` | `StageInfoPopupView` | Stage info popup: title, best stars, best moves, PLAY button |
+| `ScrollStateCache.cs` | `ScrollStateCache` | Static session memory: HomeScrollPosition, LastPlayedStageId |
+| `ChapterBgTheme.cs` | `ChapterBgTheme` | Static theme config per `bg_theme_id`; colors + particle params |
+| `ChapterBackgroundView.cs` | `ChapterBackgroundView` | Chapter scroll background: gradient + fade seams + animated particles + label |
+| `ShopTabView.cs` | `ShopTabView` | Shop tab UI; groups IAP cards by `iap_category`, renders divider+label headers, handles purchase limits and dynamic status |
+
+## Symbols
+| symbol | kind | note |
+|--------|------|------|
+| `LobbyView._header` | SerializeField | HeaderView ref |
+| `LobbyView._rankingTabRoot` | SerializeField | Ranking tab root toggled by nav |
+| `LobbyView._rankingTabView` | SerializeField | Ranking tab refresh target |
+| `BottomNavBarView.OnTabChanged` | event | `Action<LobbyTab>` |
+| `BottomNavBarView.SelectTab(LobbyTab)` | method | Public; sets highlight |
+| `RankingTabView.Refresh` | method | Fetches page + my rank via `RankingApiService` |
+| `RankingTabView._myRankPin` | SerializeField | `RankingItemView` ref; SetHighlight(true) distinguishes from list items |
+| `RankingItemView.Bind(entry,avatarSprite,scoreSprite)` | method | Populates all text/icon fields from RankingEntryDto |
+| `RankingItemView.SetHighlight(bool)` | method | Switches background color: normal purple vs gold CTA highlight |
+| `HomeTabView` | component | OnEnable refreshes pool; OnDisable saves scroll position |
+| `StageNodeView.Bind(id,stars,unlocked,isCurrent,chapterId,difficulty)` | method | Updates visual states; toggles `_lockOverlay` on `!unlocked`; difficulty 0=Easy(no outline), 1=Normal(neon blue), 2=Hard(neon red+skull) |
+| `StageNodeView.OnTapped` | event | `Action<int>` stageId |
+| `StageInfoPopupView.Init(stageId,bestStars,bestMoves,onPlay,difficulty,isLocked)` | method | Required before showing; isLocked=true disables PlayButton; difficulty tints ribbon: 0=amber(default), 1=neon blue, 2=coral red |
+| `ScrollStateCache.HomeScrollPosition` | prop | Float 0..1; save on leave, restore on enter |
+| `ScrollStateCache.LastPlayedStageId` | prop | Set before entering InGame scene |
+| `LobbyTab` | enum | Home / Shop / Ranking |
+| `ShopTabView` | component | Shop screen; loads `iap_category` + `iap_product` CSVs; renders per-category section headers (divider+label) and product cards; hides exhausted/owned items |
+| `ShopTabView.InitializeCards()` | method | Rebuilds card tree grouped by category; creates headers, spacers, and cards in sort_order sequence |
+| `ShopTabView.CreateCategoryHeader(cat)` | method | Programmatic HLG: left-divider + TMP label + right-divider; uses LocalizedText for language reload |
+| `ShopTabView.CreateSpacer(height)` | method | Empty GO with LayoutElement.preferredHeight; separates category sections |
+| `ParticleDir` | enum | Upward / Downward / Horizontal — particle movement direction per theme |
+| `ChapterBgTheme.Get(themeId)` | method | Returns theme config; 1=Grassland 2=Ocean(coastal blue→deep) 3=Forest(dark canopy, firefly particles) 4=Desert(bleached sky, sphinx, sand sparkle) |
+| `ChapterBackgroundView._jellyfishList` | field | JellyfishState list; 3 jellyfish in ch2; bob animation in UpdateOcean |
+| `ChapterBackgroundView._sparkles` | field | (Image,phase,speed) list; 30 sparkle points in ch4; sharp flash in UpdateDesert |
+| `ChapterBackgroundView.CreateJellyfish(count)` | method | Dome bell + tentacles per jellyfish; root RectTransform for bob |
+| `ChapterBackgroundView.CreateSphinx()` | method | Rect-based sphinx silhouette in ch4; body/paws/neck/head/nemes headdress |
+| `ChapterBackgroundView.CreateForestFog()` | method | Layered dark mist strips at top of ch3; called first so behind trees |
+| `ChapterBackgroundView.CreateDesertSparkle(count)` | method | Tiny stationary bright dots across sand zone; Pow(sin,3) flash pattern |
+| `ChapterBackgroundView.YTop` | prop | Chapter top Y in content-root space; used by HomeTabView for viewport culling |
+| `ChapterBackgroundView.YBot` | prop | Chapter bottom Y in content-root space |
+| `ChapterBackgroundView.Bind(chapterId,bgThemeId,yAnchoredTop,height)` | method | Positions bg, creates decorations, starts animation coroutine |
+| `HomeTabView.BuildChapterBackgrounds(positions,count)` | method | Groups stages by chapter_id, instantiates ChapterBackgroundView per chapter at sibling index 0 |
+| `HomeTabView.CreateChestNode` | method | Instantiates a ChapterChestView prefab near the chapter-end stage node |
+| `HomeTabView.OnChestTapped` | method | Invokes reward claim API; builds RewardItems via CurrencyDataService+ItemDataService+DynamicResourceService; shows RewardPopupView |
+| `ChapterChestView.SetState(ChestState)` | method | Configures sprites, button interactability, and glow overlays; Claimed blocks raycasts but keeps alpha=1 (no dim) |
+| `ChapterChestView.SetStarInfo(int,int)` | method | Updates `_starCountLabel` text to `"{current}/{max}"` |
+| `ChapterChestView._starCountLabel` | SerializeField | TMP_Text in StarCountContainer child; shows chapter star progress |
+| `HomeTabView.GetChapterStarInfo(int)` | method | Returns (current, max) stars for chapterNum; used by RefreshChestNodes |
+
+## Rules
+- Scroll position must be saved in HomeTabView.OnDisable and restored in HomeTabView.OnEnable.
+- StageNodeView pool size = GameConfig.StageNodePoolSize (24). Virtual scroll: OnScrolled binds visible nodes; position math uses full _stages.Length.
+- Ranking tab is active; if `RankingApiService` is absent, show unavailable state without breaking lobby flow.
+
+## Cross-refs
+- Depends on: `Game.Core.UIManager`, `Game.Services.StageDataService`, `Game.Services.PlayerProgressService`, `Game.Services.RankingApiService`, `Game.Services.AdMobService`
+- Consumed by: InGame scene (reads ScrollStateCache.LastPlayedStageId)

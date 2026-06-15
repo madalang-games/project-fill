@@ -1,0 +1,5 @@
+id,source_key,source_type,reward_group_id,version,claim_policy,max_claims,reset_timezone,reset_hour,ui_surface,is_enabled
+1,chapter1_chest,CHAPTER_CHEST,3001,1,ONCE,1,always,0,HOME_TAB,true
+2,chapter2_chest,CHAPTER_CHEST,3002,1,ONCE,1,always,0,HOME_TAB,true
+3,chapter3_chest,CHAPTER_CHEST,3003,1,ONCE,1,always,0,HOME_TAB,true
+4,chapter4_chest,CHAPTER_CHEST,3004,1,ONCE,1,always,0,HOME_TAB,true

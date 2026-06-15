@@ -1,0 +1,214 @@
+{
+  "database": "ProjectFill_db",
+  "output": {
+    "namespace": "ProjectFill.Infrastructure.Generated",
+    "context": "AppDbContext"
+  },
+  "tables": [
+    {
+      "name": "players",
+      "comment": "Game-local player record. platform_pid is the 24-char public cross-reference from platform-auth JWT sub.",
+      "conflict": "ignore",
+      "columns": [
+        { "name": "user_id",              "type": "int64",      "pk": true, "null": false },
+        { "name": "platform_pid",         "type": "string(24)", "null": true,  "unique": true },
+        { "name": "display_name",         "type": "string(64)", "null": false },
+        { "name": "avatar_id",            "type": "int32",      "null": false, "default": 1 },
+        { "name": "equipped_board_theme_id", "type": "int32",   "null": false, "default": 1 },
+        { "name": "account_created_at",   "type": "datetime",   "null": false },
+        { "name": "last_login_at",        "type": "datetime",   "null": false },
+        { "name": "is_active",            "type": "bool",       "null": false, "default": true },
+        { "name": "conflict_cloud_pid",   "type": "string(24)", "null": true },
+        { "name": "is_no_ads",            "type": "bool",       "null": false, "default": false }
+      ]
+    },
+    {
+      "name": "sessions",
+      "conflict": "ignore",
+      "columns": [
+        { "name": "id",         "type": "int64",      "pk": true,  "auto": true, "null": false },
+        { "name": "user_id",    "type": "int64",      "null": false, "fk": "players.user_id" },
+        { "name": "session_id", "type": "string(24)", "null": false, "unique": true },
+        { "name": "created_at", "type": "datetime",   "null": false },
+        { "name": "expires_at", "type": "datetime",   "null": false }
+      ]
+    },
+    {
+      "name": "event_logs",
+      "comment": "Audit log for all user-modifying API calls.",
+      "columns": [
+        { "name": "id",             "type": "int64",      "pk": true, "auto": true, "null": false },
+        { "name": "user_id",        "type": "int64",      "null": false, "fk": "players.user_id" },
+        { "name": "tr_id",          "type": "int32",      "null": false },
+        { "name": "correlation_id", "type": "string(36)", "null": false },
+        { "name": "params",         "type": "json",       "null": true },
+        { "name": "created_at",     "type": "datetime",   "null": false }
+      ],
+      "indexes": [
+        { "name": "idx_event_logs_user_id", "columns": ["user_id"], "unique": false },
+        { "name": "idx_event_logs_tr_id", "columns": ["tr_id"], "unique": false },
+        { "name": "idx_event_logs_correlation_id", "columns": ["correlation_id"], "unique": false }
+      ]
+    },
+    {
+      "name": "user_reward_claim_state",
+      "comment": "Per-player reward source claim state. Event history is stored in event_logs.",
+      "columns": [
+        { "name": "user_id",         "type": "int64",      "pk": true, "null": false, "fk": "players.user_id" },
+        { "name": "source_id",       "type": "string(64)", "pk": true, "null": false },
+        { "name": "period_key",      "type": "string(32)", "pk": true, "null": false },
+        { "name": "claim_count",     "type": "int32",      "null": false, "default": 0 },
+        { "name": "last_claimed_at", "type": "datetime",   "null": false },
+        { "name": "updated_at",      "type": "datetime",   "null": false }
+      ],
+      "indexes": [
+        { "name": "idx_reward_claim_state_user_id", "columns": ["user_id"], "unique": false }
+      ]
+    },
+    {
+      "name": "ad_reward_transactions",
+      "comment": "Common rewarded-ad transaction table for idempotent verification and grant history.",
+      "conflict": "ignore",
+      "columns": [
+        { "name": "id",             "type": "string(36)",  "pk": true, "null": false },
+        { "name": "user_id",        "type": "int64",       "null": false, "fk": "players.user_id" },
+        { "name": "placement_id",   "type": "string(64)",  "null": false },
+        { "name": "reward_type",    "type": "string(32)",  "null": false },
+        { "name": "reward_value",   "type": "int32",       "null": false },
+        { "name": "context_type",   "type": "string(32)",  "null": true },
+        { "name": "context_id",     "type": "string(128)", "null": true },
+        { "name": "provider",       "type": "string(32)",  "null": false },
+        { "name": "provider_tx_id", "type": "string(128)", "null": false },
+        { "name": "status",         "type": "string(32)",  "null": false },
+        { "name": "correlation_id", "type": "string(36)",  "null": false },
+        { "name": "created_at",     "type": "datetime",    "null": false },
+        { "name": "verified_at",    "type": "datetime",    "null": true },
+        { "name": "granted_at",     "type": "datetime",    "null": true }
+      ],
+      "indexes": [
+        { "name": "uq_ad_reward_provider_tx", "columns": ["provider", "provider_tx_id"], "unique": true },
+        { "name": "idx_ad_reward_user_id", "columns": ["user_id"], "unique": false },
+        { "name": "idx_ad_reward_context", "columns": ["context_type", "context_id"], "unique": false },
+        { "name": "idx_ad_reward_correlation_id", "columns": ["correlation_id"], "unique": false }
+      ]
+    },
+    {
+      "name": "user_interstitial_state",
+      "comment": "Tracks last interstitial shown time per player for cooldown enforcement.",
+      "columns": [
+        { "name": "user_id",       "type": "int64",    "pk": true, "null": false, "fk": "players.user_id" },
+        { "name": "last_shown_at", "type": "datetime", "null": false },
+        { "name": "updated_at",    "type": "datetime", "null": false }
+      ]
+    },
+    {
+      "name": "user_currency",
+      "comment": "Soft currency balance per player.",
+      "columns": [
+        { "name": "user_id",      "type": "int64",    "pk": true, "null": false, "fk": "players.user_id" },
+        { "name": "soft_amount",  "type": "int64",    "null": false, "default": 0 },
+        { "name": "updated_at",   "type": "datetime", "null": false }
+      ]
+    },
+    {
+      "name": "user_ranking_totals",
+      "comment": "Per-player global ranking aggregates rebuilt from user_stage_progress if Redis is lost.",
+      "columns": [
+        { "name": "user_id",                 "type": "int64",    "pk": true, "null": false, "fk": "players.user_id" },
+        { "name": "total_earned_stars",      "type": "int32",    "null": false, "default": 0 },
+        { "name": "total_stars_achieved_at", "type": "datetime", "null": true },
+        { "name": "max_cleared_stage_id",    "type": "int32",    "null": false, "default": 0 },
+        { "name": "max_stage_achieved_at",   "type": "datetime", "null": true },
+        { "name": "win_streak",              "type": "int32",    "null": false, "default": 0 },
+        { "name": "max_win_streak",          "type": "int32",    "null": false, "default": 0 },
+        { "name": "updated_at",              "type": "datetime", "null": false }
+      ],
+      "indexes": [
+        { "name": "idx_user_ranking_totals_stars", "columns": ["total_earned_stars", "total_stars_achieved_at"], "unique": false },
+        { "name": "idx_user_ranking_totals_max_stage", "columns": ["max_cleared_stage_id", "max_stage_achieved_at"], "unique": false }
+      ]
+    },
+    {
+      "name": "user_inventory",
+      "comment": "Inventory counts for each booster item type per player.",
+      "columns": [
+        { "name": "user_id", "type": "int64", "pk": true, "null": false, "fk": "players.user_id" },
+        { "name": "item_id", "type": "int32", "pk": true, "null": false },
+        { "name": "count",   "type": "int32", "null": false, "default": 0 },
+        { "name": "updated_at", "type": "datetime", "null": false }
+      ],
+      "indexes": [
+        { "name": "idx_user_inventory_user_id", "columns": ["user_id"], "unique": false }
+      ]
+    },
+    {
+      "name": "user_tutorial_progress",
+      "comment": "Tracks completed tutorial steps per user.",
+      "columns": [
+        { "name": "user_id", "type": "int64", "pk": true, "null": false, "fk": "players.user_id" },
+        { "name": "tutorial_id", "type": "int32", "pk": true, "null": false },
+        { "name": "viewed_at", "type": "datetime", "null": false }
+      ],
+      "indexes": [
+        { "name": "idx_user_tutorial_progress_user_id", "columns": ["user_id"], "unique": false }
+      ]
+    },
+    {
+      "name": "currency_logs",
+      "comment": "Append-only audit log for all soft currency mutations. Never UPDATE or DELETE.",
+      "columns": [
+        { "name": "id",             "type": "int64",      "pk": true, "auto": true, "null": false },
+        { "name": "user_id",        "type": "int64",      "null": false, "fk": "players.user_id" },
+        { "name": "currency_type",  "type": "string(32)", "null": false },
+        { "name": "delta",          "type": "int64",      "null": false },
+        { "name": "balance_before", "type": "int64",      "null": false },
+        { "name": "balance_after",  "type": "int64",      "null": false },
+        { "name": "reason",         "type": "string(256)","null": false },
+        { "name": "correlation_id", "type": "string(36)", "null": false },
+        { "name": "created_at",     "type": "datetime",   "null": false }
+      ],
+      "indexes": [
+        { "name": "idx_currency_logs_user_id",        "columns": ["user_id"],        "unique": false },
+        { "name": "idx_currency_logs_correlation_id", "columns": ["correlation_id"], "unique": false }
+      ]
+    },
+    {
+      "name": "iap_purchases",
+      "comment": "In-app purchase verification and CS logs.",
+      "columns": [
+        { "name": "purchase_id",     "type": "string(36)",  "pk": true, "null": false },
+        { "name": "user_id",         "type": "int64",       "null": false, "fk": "players.user_id" },
+        { "name": "info_id",         "type": "int32",       "null": false, "default": 0 },
+        { "name": "product_id",      "type": "string(64)",  "null": false },
+        { "name": "order_id",        "type": "string(128)", "null": false },
+        { "name": "purchase_token",  "type": "string(512)", "null": false },
+        { "name": "price",           "type": "double",      "null": false },
+        { "name": "currency",        "type": "string(8)",   "null": false },
+        { "name": "status",          "type": "string(32)",  "null": false },
+        { "name": "platform",        "type": "string(32)",  "null": false },
+        { "name": "raw_receipt",     "type": "string(2048)","null": true },
+        { "name": "created_at",      "type": "datetime",    "null": false },
+        { "name": "updated_at",      "type": "datetime",    "null": false }
+      ],
+      "indexes": [
+        { "name": "uq_iap_purchases_order", "columns": ["platform", "order_id"], "unique": true },
+        { "name": "idx_iap_purchases_user", "columns": ["user_id"], "unique": false }
+      ]
+    },
+    {
+      "name": "user_iap_purchase_counts",
+      "comment": "Per-user per-product purchase count for limit enforcement and lazy period reset.",
+      "columns": [
+        { "name": "user_id",        "type": "int64",    "pk": true, "null": false, "fk": "players.user_id" },
+        { "name": "info_id",        "type": "int32",    "pk": true, "null": false },
+        { "name": "purchase_count", "type": "int32",    "null": false, "default": 0 },
+        { "name": "period_start",   "type": "datetime", "null": true },
+        { "name": "updated_at",     "type": "datetime", "null": false }
+      ],
+      "indexes": [
+        { "name": "idx_user_iap_purchase_counts_user_id", "columns": ["user_id"], "unique": false }
+      ]
+    }
+  ]
+}
+

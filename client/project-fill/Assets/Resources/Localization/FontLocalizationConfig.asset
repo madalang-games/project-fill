@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eb08a6559442ffc4f9225606e1f0e7e0, type: 3}
+  m_Name: FontLocalizationConfig
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Localization.FontLocalizationConfig
+  _entries:
+  - language: 0
+    font: {fileID: 11400000, guid: ea305f60c38832d48a4cb9a30779389f, type: 2}
+  - language: 1
+    font: {fileID: 11400000, guid: cb87aa61aad518946a749ba97ed87220, type: 2}
+  - language: 2
+    font: {fileID: 11400000, guid: 9503c53be05765c4fa7150bb2f978eb6, type: 2}
+  - language: 3
+    font: {fileID: 11400000, guid: 9503c53be05765c4fa7150bb2f978eb6, type: 2}
+  - language: 4
+    font: {fileID: 11400000, guid: 9503c53be05765c4fa7150bb2f978eb6, type: 2}
+  - language: 5
+    font: {fileID: 11400000, guid: ea305f60c38832d48a4cb9a30779389f, type: 2}
+  - language: 6
+    font: {fileID: 11400000, guid: ea305f60c38832d48a4cb9a30779389f, type: 2}
+  - language: 7
+    font: {fileID: 11400000, guid: ea305f60c38832d48a4cb9a30779389f, type: 2}
+  - language: 8
+    font: {fileID: 11400000, guid: ea305f60c38832d48a4cb9a30779389f, type: 2}
+  - language: 9
+    font: {fileID: 11400000, guid: ea305f60c38832d48a4cb9a30779389f, type: 2}
+  - language: 10
+    font: {fileID: 11400000, guid: ea305f60c38832d48a4cb9a30779389f, type: 2}
+  - language: 11
+    font: {fileID: 11400000, guid: 9503c53be05765c4fa7150bb2f978eb6, type: 2}
+  - language: 12
+    font: {fileID: 11400000, guid: ea305f60c38832d48a4cb9a30779389f, type: 2}
+  - language: 13
+    font: {fileID: 11400000, guid: ea305f60c38832d48a4cb9a30779389f, type: 2}
+  - language: 14
+    font: {fileID: 11400000, guid: ea305f60c38832d48a4cb9a30779389f, type: 2}

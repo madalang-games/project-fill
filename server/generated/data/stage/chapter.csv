@@ -1,0 +1,5 @@
+chapter_id,display_order,unlock_chapter_id,bg_theme_id
+1,1,,1
+2,2,1,2
+3,3,2,1
+4,4,3,1

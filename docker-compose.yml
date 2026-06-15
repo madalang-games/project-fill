@@ -1,0 +1,75 @@
+﻿name: ${COMPOSE_PROJECT_NAME:?COMPOSE_PROJECT_NAME is required}
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: server/src/ProjectFill.API/Dockerfile
+    container_name: ${COMPOSE_PROJECT_NAME:?COMPOSE_PROJECT_NAME is required}-api
+    environment:
+      GAME_ENV: ${GAME_ENV:?GAME_ENV is required}
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:?ASPNETCORE_ENVIRONMENT is required}
+      ASPNETCORE_HTTP_PORTS: ${API_CONTAINER_PORT:?API_CONTAINER_PORT is required}
+      DB_HOST: mysql
+      DB_PORT: ${DB_CONTAINER_PORT:?DB_CONTAINER_PORT is required}
+      DB_NAME: ${DB_NAME:?DB_NAME is required}
+      DB_USER: ${DB_USER:?DB_USER is required}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      REDIS_HOST: redis
+      REDIS_PORT: ${REDIS_CONTAINER_PORT:?REDIS_CONTAINER_PORT is required}
+      JWT_AUTHORITY: ${JWT_AUTHORITY:?JWT_AUTHORITY is required}
+      JWT_ISSUER: ${JWT_ISSUER}
+      JWT_AUDIENCE: ${JWT_AUDIENCE:?JWT_AUDIENCE is required}
+      AUTH_USE_MOCK: ${AUTH_USE_MOCK:?AUTH_USE_MOCK is required}
+      AD_REWARD_VERIFY_MODE: ${AD_REWARD_VERIFY_MODE:?AD_REWARD_VERIFY_MODE is required}
+      APP_CLIENT_ID: ${APP_CLIENT_ID:?APP_CLIENT_ID is required}
+      APP_ALLOWED_CLIENT_VERSION: ${APP_ALLOWED_CLIENT_VERSION:?APP_ALLOWED_CLIENT_VERSION is required}
+      APP_REQUIRED_CLIENT_VERSION: ${APP_REQUIRED_CLIENT_VERSION:?APP_REQUIRED_CLIENT_VERSION is required}
+      APP_ALLOWED_PROTOCOL_VERSION: ${APP_ALLOWED_PROTOCOL_VERSION:?APP_ALLOWED_PROTOCOL_VERSION is required}
+      LOG_LEVEL: ${LOG_LEVEL:-Information}
+      RateLimit__TransactionalPerMinute: ${RATE_LIMIT_TRANSACTIONAL_PER_MINUTE:-30}
+    networks:
+      - default
+      - madalang-net
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  mysql:
+    image: mysql:8.0
+    command: --default-authentication-plugin=mysql_native_password
+    container_name: ${COMPOSE_PROJECT_NAME:?COMPOSE_PROJECT_NAME is required}-mysql
+    environment:
+      MYSQL_DATABASE: ${DB_NAME:?DB_NAME is required}
+      MYSQL_USER: ${DB_USER:?DB_USER is required}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?DB_ROOT_PASSWORD is required}
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u $${MYSQL_USER} -p$${MYSQL_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: ${COMPOSE_PROJECT_NAME:?COMPOSE_PROJECT_NAME is required}-redis
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  mysql-data:
+  redis-data:
+
+networks:
+  madalang-net:
+    external: true

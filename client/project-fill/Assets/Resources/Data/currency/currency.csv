@@ -1,0 +1,2 @@
+id,reward_type_key,name_key,icon_name,desc_key
+1,SOFT_CURRENCY,common.gold,ui_gold_icon,currency.desc.gold

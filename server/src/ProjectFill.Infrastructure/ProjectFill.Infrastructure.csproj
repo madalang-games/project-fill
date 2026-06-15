@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ProjectFill.Domain\ProjectFill.Domain.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\..\generated\scripts\**\*.cs" Link="Generated\Data\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="8.*" />
+    <PackageReference Include="StackExchange.Redis" Version="2.*" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.*" />
+    <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" Version="7.*" />
+  </ItemGroup>
+</Project>

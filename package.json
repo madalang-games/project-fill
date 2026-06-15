@@ -1,0 +1,28 @@
+﻿{
+  "name": "project-fill",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Project Fill — Unity + ASP.NET Core game server template",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "gen:info":         "node tools/info_generator/info_generator.js",
+    "gen:info:check":   "node tools/info_generator/info_generator.js --check",
+    "gen:db":           "node tools/db_generator/db_generator.js",
+    "gen:db:check":     "node tools/db_generator/db_generator.js --check",
+    "gen:pkt":          "node tools/pkt_generator/pkt_generator.js",
+    "gen:pkt:check":    "node tools/pkt_generator/pkt_generator.js --check",
+    "gen:orm":          "node tools/db_generator/db_generator.js",
+    "test:orm-schema":  "node --test tools/db_generator/schema-validation.test.js",
+    "font:subset":      "node tools/subset_tool/subset_fonts.js",
+    "font:subset:check": "node tools/subset_tool/subset_fonts.js --check",
+    "gen:all":          "npm run gen:info && npm run gen:db && npm run gen:pkt",
+    "gen:check":        "npm run gen:info:check && npm run gen:db:check && npm run gen:pkt:check"
+  },
+  "optionalDependencies": {
+    "pg":              "^8.0.0",
+    "mysql2":          "^3.0.0",
+    "better-sqlite3":  "^9.0.0"
+  }
+}

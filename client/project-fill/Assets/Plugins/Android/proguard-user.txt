@@ -1,0 +1,66 @@
+# Keep AndroidX WorkManager/Room startup metadata used by Google Mobile Ads.
+-keepattributes RuntimeVisibleAnnotations,RuntimeInvisibleAnnotations,Signature,InnerClasses,EnclosingMethod
+
+-keep class androidx.startup.** { *; }
+-keep class androidx.work.** { *; }
+-keep class androidx.room.** { *; }
+-keep class * extends androidx.room.RoomDatabase { *; }
+-keep class **_Impl { *; }
+
+-dontwarn androidx.startup.**
+-dontwarn androidx.work.**
+-dontwarn androidx.room.**
+
+# Keep Google Sign-In Java bridge (called via JNI reflection from C#)
+-keep class com.madalang.pixelpop.** { *; }
+
+# Suppress R8 warnings for Google Mobile Ads next-gen SDK classes
+-dontwarn com.google.android.libraries.ads.mobile.sdk.MobileAds
+-dontwarn com.google.android.libraries.ads.mobile.sdk.appopen.AppOpenAd
+-dontwarn com.google.android.libraries.ads.mobile.sdk.appopen.AppOpenAdEventCallback
+-dontwarn com.google.android.libraries.ads.mobile.sdk.appopen.AppOpenAdPreloader
+-dontwarn com.google.android.libraries.ads.mobile.sdk.banner.AdSize
+-dontwarn com.google.android.libraries.ads.mobile.sdk.banner.BannerAd
+-dontwarn com.google.android.libraries.ads.mobile.sdk.banner.BannerAdEventCallback
+-dontwarn com.google.android.libraries.ads.mobile.sdk.banner.BannerAdRequest
+-dontwarn com.google.android.libraries.ads.mobile.sdk.common.AdInspectorError
+-dontwarn com.google.android.libraries.ads.mobile.sdk.common.AdLoadCallback
+-dontwarn com.google.android.libraries.ads.mobile.sdk.common.AdRequest
+-dontwarn com.google.android.libraries.ads.mobile.sdk.common.AdValue
+-dontwarn com.google.android.libraries.ads.mobile.sdk.common.FullScreenContentError
+-dontwarn com.google.android.libraries.ads.mobile.sdk.common.LoadAdError
+-dontwarn com.google.android.libraries.ads.mobile.sdk.common.OnAdInspectorClosedListener
+-dontwarn com.google.android.libraries.ads.mobile.sdk.common.PrecisionType
+-dontwarn com.google.android.libraries.ads.mobile.sdk.common.PreloadCallback
+-dontwarn com.google.android.libraries.ads.mobile.sdk.common.PreloadConfiguration
+-dontwarn com.google.android.libraries.ads.mobile.sdk.common.RequestConfiguration$Builder
+-dontwarn com.google.android.libraries.ads.mobile.sdk.common.RequestConfiguration
+-dontwarn com.google.android.libraries.ads.mobile.sdk.common.ResponseInfo
+-dontwarn com.google.android.libraries.ads.mobile.sdk.common.VersionInfo
+-dontwarn com.google.android.libraries.ads.mobile.sdk.initialization.InitializationConfig$Builder
+-dontwarn com.google.android.libraries.ads.mobile.sdk.initialization.InitializationConfig
+-dontwarn com.google.android.libraries.ads.mobile.sdk.initialization.InitializationStatus
+-dontwarn com.google.android.libraries.ads.mobile.sdk.initialization.OnAdapterInitializationCompleteListener
+-dontwarn com.google.android.libraries.ads.mobile.sdk.interstitial.InterstitialAd
+-dontwarn com.google.android.libraries.ads.mobile.sdk.interstitial.InterstitialAdEventCallback
+-dontwarn com.google.android.libraries.ads.mobile.sdk.interstitial.InterstitialAdPreloader
+-dontwarn com.google.android.libraries.ads.mobile.sdk.rewarded.OnUserEarnedRewardListener
+-dontwarn com.google.android.libraries.ads.mobile.sdk.rewarded.RewardItem
+-dontwarn com.google.android.libraries.ads.mobile.sdk.rewarded.RewardedAd
+-dontwarn com.google.android.libraries.ads.mobile.sdk.rewarded.RewardedAdEventCallback
+-dontwarn com.google.android.libraries.ads.mobile.sdk.rewarded.RewardedAdPreloader
+-dontwarn com.google.android.libraries.ads.mobile.sdk.rewardedinterstitial.RewardedInterstitialAd
+-dontwarn com.google.android.libraries.ads.mobile.sdk.rewardedinterstitial.RewardedInterstitialAdEventCallback
+-dontwarn com.google.android.libraries.ads.mobile.sdk.common.AdChoicesPlacement
+-dontwarn com.google.android.libraries.ads.mobile.sdk.common.Image
+-dontwarn com.google.android.libraries.ads.mobile.sdk.common.VideoOptions
+-dontwarn com.google.android.libraries.ads.mobile.sdk.nativead.MediaView
+-dontwarn com.google.android.libraries.ads.mobile.sdk.nativead.NativeAd$NativeAdType
+-dontwarn com.google.android.libraries.ads.mobile.sdk.nativead.NativeAd$NativeMediaAspectRatio
+-dontwarn com.google.android.libraries.ads.mobile.sdk.nativead.NativeAd
+-dontwarn com.google.android.libraries.ads.mobile.sdk.nativead.NativeAdEventCallback
+-dontwarn com.google.android.libraries.ads.mobile.sdk.nativead.NativeAdLoader
+-dontwarn com.google.android.libraries.ads.mobile.sdk.nativead.NativeAdLoaderCallback
+-dontwarn com.google.android.libraries.ads.mobile.sdk.nativead.NativeAdRequest$Builder
+-dontwarn com.google.android.libraries.ads.mobile.sdk.nativead.NativeAdRequest
+-dontwarn com.google.android.libraries.ads.mobile.sdk.nativead.NativeAdView

@@ -1,0 +1,17 @@
+id,r,g,b,name
+0,74,144,217,Signal Blue
+1,61,190,110,Signal Green
+2,232,160,32,Signal Amber
+3,232,64,64,Signal Red
+4,160,96,220,Signal Violet
+5,40,200,210,Signal Cyan
+6,230,80,160,Signal Pink
+7,210,170,80,Signal Gold
+8,140,140,140,Signal Gray
+9,240,240,240,Signal White
+10,48,64,80,Signal Slate
+11,60,180,160,Signal Teal
+12,100,60,200,Signal Indigo
+13,200,40,80,Signal Crimson
+14,120,210,90,Signal Lime
+15,230,120,40,Signal Orange

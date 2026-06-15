@@ -1,0 +1,3 @@
+id,placement_key,reward_group_id,context_type,is_enabled,ad_type
+1,STUCK_ADD_LANE,0,stuck,true,REWARDED
+3,INTERSTITIAL_POST_STAGE,0,post_stage,true,INTERSTITIAL

@@ -1,0 +1,8 @@
+services:
+  api:
+    ports:
+      - "${API_BIND_ADDRESS:?API_BIND_ADDRESS is required}:${API_PUBLISHED_PORT:?API_PUBLISHED_PORT is required}:${API_CONTAINER_PORT:?API_CONTAINER_PORT is required}"
+
+  mysql:
+    ports:
+      - "${DB_BIND_ADDRESS:?DB_BIND_ADDRESS is required}:${DB_PUBLISHED_PORT:?DB_PUBLISHED_PORT is required}:${DB_CONTAINER_PORT:?DB_CONTAINER_PORT is required}"

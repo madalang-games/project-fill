@@ -1,0 +1,55 @@
+id,resource_key,sprite_path,category,comment
+CS,CS,CS,CS,CS
+int32,string(64),string(128),string(64),string(128)
+PK,PK,NN,NN,
+1,item_add_lane,Assets/Resources/Sprites/Items/Item_add_lane.png,Item,AddLane item icon
+2,item_shuffle,Assets/Resources/Sprites/Items/Item_shuffle.png,Item,Shuffle item icon
+3,item_hint,Assets/Resources/Sprites/Items/Item_hint.png,Item,Hint item icon
+4,item_undo,Assets/Resources/Sprites/Items/Item_undo.png,Item,Undo item icon
+42,chest_inactive,Assets/Sprites/UI/Chest/chest_inactive.png,Chest,Inactive chest icon
+43,chest_active,Assets/Sprites/UI/Chest/chest_active.png,Chest,Active chest icon
+44,chest_claimed,Assets/Sprites/UI/Chest/chest_claimed.png,Chest,Claimed chest icon
+45,toast_warning,Assets/Sprites/UI/Toast/toast_warning.png,Toast,Toast warning icon
+46,toast_success,Assets/Sprites/UI/Toast/toast_success.png,Toast,Toast success icon
+47,toast_error,Assets/Sprites/UI/Toast/toast_error.png,Toast,Toast error icon
+49,avatar_1,Assets/Sprites/UI/Avatar/avatar_1.png,Avatar,Common Avatar Portait 1
+50,avatar_2,Assets/Sprites/UI/Avatar/avatar_2.png,Avatar,Common Avatar Portait 2
+51,avatar_3,Assets/Sprites/UI/Avatar/avatar_3.png,Avatar,Common Avatar Portait 3
+52,avatar_4,Assets/Sprites/UI/Avatar/avatar_4.png,Avatar,Common Avatar Portait 4
+53,avatar_5,Assets/Sprites/UI/Avatar/avatar_5.png,Avatar,Common Avatar Portait 5
+54,avatar_6,Assets/Sprites/UI/Avatar/avatar_6.png,Avatar,Uncommon Avatar Portait 1
+55,avatar_7,Assets/Sprites/UI/Avatar/avatar_7.png,Avatar,Uncommon Avatar Portait 2
+56,avatar_8,Assets/Sprites/UI/Avatar/avatar_8.png,Avatar,Uncommon Avatar Portait 3
+57,avatar_9,Assets/Sprites/UI/Avatar/avatar_9.png,Avatar,Uncommon Avatar Portait 4
+58,avatar_10,Assets/Sprites/UI/Avatar/avatar_10.png,Avatar,Uncommon Avatar Portait 5
+59,avatar_11,Assets/Sprites/UI/Avatar/avatar_11.png,Avatar,Rare Avatar Portait 1
+60,avatar_12,Assets/Sprites/UI/Avatar/avatar_12.png,Avatar,Rare Avatar Portait 2
+61,avatar_13,Assets/Sprites/UI/Avatar/avatar_13.png,Avatar,Rare Avatar Portait 3
+62,avatar_14,Assets/Sprites/UI/Avatar/avatar_14.png,Avatar,Rare Avatar Portait 4
+63,avatar_15,Assets/Sprites/UI/Avatar/avatar_15.png,Avatar,Rare Avatar Portait 5
+64,avatar_16,Assets/Sprites/UI/Avatar/avatar_16.png,Avatar,Epic Avatar Portait 1
+65,avatar_17,Assets/Sprites/UI/Avatar/avatar_17.png,Avatar,Epic Avatar Portait 2
+66,avatar_18,Assets/Sprites/UI/Avatar/avatar_18.png,Avatar,Epic Avatar Portait 3
+67,avatar_19,Assets/Sprites/UI/Avatar/avatar_19.png,Avatar,Epic Avatar Portait 4
+68,avatar_20,Assets/Sprites/UI/Avatar/avatar_20.png,Avatar,Epic Avatar Portait 5
+69,avatar_21,Assets/Sprites/UI/Avatar/avatar_21.png,Avatar,Legendary Avatar Portait 1
+70,avatar_22,Assets/Sprites/UI/Avatar/avatar_22.png,Avatar,Legendary Avatar Portait 2
+71,avatar_23,Assets/Sprites/UI/Avatar/avatar_23.png,Avatar,Legendary Avatar Portait 3
+72,avatar_24,Assets/Sprites/UI/Avatar/avatar_24.png,Avatar,Legendary Avatar Portait 4
+73,avatar_25,Assets/Sprites/UI/Avatar/avatar_25.png,Avatar,Legendary Avatar Portait 5
+74,ui_drag_pointer,Assets/Sprites/UI/Tutorial/ui_drag_pointer.png,UI,Drag line and pointer sprite
+76,star_filled,Assets/Sprites/UI/Stars/star_filled.png,Star,Star filled sprite
+77,star_empty,Assets/Sprites/UI/Stars/star_empty.png,Star,Star empty (outline) sprite
+79,nav_home,Assets/Sprites/UI/Nav/nav_home.png,Nav,Home tab icon
+80,nav_shop,Assets/Sprites/UI/Nav/nav_shop.png,Nav,Shop tab icon
+81,nav_ranking,Assets/Sprites/UI/Nav/nav_ranking.png,Nav,Ranking tab icon
+82,ui_pause_icon,Assets/Sprites/UI/Icons/ui_pause_icon.png,UI,Pause button icon
+84,ui_gold_icon,Assets/Resources/Sprites/Icons/ui_gold_icon.png,UI,Gold coin icon
+85,ui_lock_icon,Assets/Sprites/UI/Icons/ui_lock_icon.png,UI,Lock icon for locked stage nodes
+86,ui_flag_icon,Assets/Sprites/UI/Icons/ui_flag_icon.png,UI,Flag icon
+87,ui_avatar_default,Assets/Sprites/UI/Avatar/avatar_free_01.png,UI,Default avatar placeholder
+88,ui_settings_icon,Assets/Sprites/UI/Icons/ui_settings_icon.png,UI,Settings icon
+91,ui_toggle_on,Assets/Sprites/UI/Icons/ui_toggle_on.png,UI,Toggle switch on sprite
+104,ui_iap_no_ads,Assets/Resources/Sprites/UI/ui_iap_no_ads.png,UI,No Ads product icon
+105,ui_iap_starter,Assets/Resources/Sprites/UI/ui_iap_starter.png,UI,Starter pack product icon
+106,ui_iap_master,Assets/Resources/Sprites/UI/ui_iap_master.png,UI,Master bundle product icon

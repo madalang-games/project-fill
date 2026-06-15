@@ -1,0 +1,5 @@
+﻿id,reward_type_key,name_key,icon_name,desc_key
+CS,CS,CS,C,C
+int32,string(32),string(64),string(64),string(64)
+PK,NN,FK:string/client_string,,FK:string/client_string
+1,SOFT_CURRENCY,common.gold,ui_gold_icon,currency.desc.gold

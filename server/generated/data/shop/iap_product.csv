@@ -1,0 +1,4 @@
+id,store_product_id,product_type,name_key,desc_key,price_usd,icon_res,reward_group_id,purchase_limit,reset_period,sort_order,is_enabled
+1001,no_ads,NonConsumable,shop.iap.no_ads.title,shop.iap.no_ads.desc,1.99,ui_iap_no_ads,5001,1,None,1,true
+1002,starter_pack,Consumable,shop.iap.starter.title,shop.iap.starter.desc,4.99,ui_iap_starter,5002,1,None,2,true
+1003,master_bundle,Consumable,shop.iap.master.title,shop.iap.master.desc,9.99,ui_iap_master,5003,0,None,1,true

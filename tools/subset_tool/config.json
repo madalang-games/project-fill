@@ -1,0 +1,37 @@
+{
+  "languages": [
+    "EN",
+    "KO",
+    "ZH_CN",
+    "ZH_TW",
+    "JA",
+    "RU",
+    "ES",
+    "PT",
+    "FR",
+    "DE",
+    "TH",
+    "AR",
+    "IT",
+    "TR",
+    "ID"
+  ],
+  "commonCharacters": "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz .,!?;:'\"()[]{}<>+-=*/%#@&_~|\\^$`\n\r\t…",
+  "fonts": [
+    {
+      "source": "Silver.ttf",
+      "target": "Silver.ttf",
+      "languages": ["EN", "ES", "FR", "DE", "PT", "RU", "TH", "IT", "TR", "ID"]
+    },
+    {
+      "source": "Galmuri11.ttf",
+      "target": "Galmuri11.ttf",
+      "languages": ["KO"]
+    },
+    {
+      "source": "unifont-17.0.04.otf",
+      "target": "unifont-17.0.04.otf",
+      "languages": ["EN", "KO", "ZH_CN", "ZH_TW", "JA", "RU", "ES", "PT", "FR", "DE", "TH", "AR", "IT", "TR", "ID"]
+    }
+  ]
+}
