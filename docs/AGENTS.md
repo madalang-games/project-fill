@@ -3,12 +3,10 @@
 ## Nav
 | path | content |
 |------|---------|
-| `design/` | UI/UX specs, wireframes, game design documents |
-| `technical/` | Infra guides, build guides, platform refs, deployment docs |
-| `decisions/` | Architecture Decision Records (ADRs) — one file per decision |
-| `release_notes/` | Version history and store listing notes |
-| `tests/` | QA plans, release checklists, test strategy docs |
-| `refs/` | Platform dependency docs (platform-auth contracts, infra guide) |
+| `design/` | UI/UX specs, wireframes, game design documents | → `design/AGENTS.md` |
+| `decisions/` | Architecture Decision Records (ADRs) — one file per decision | → `decisions/AGENTS.md` |
+| `release_notes/` | Version history and store listing notes | → `release_notes/AGENTS.md` |
+| `refs/` | Platform dependency docs (platform-auth contracts, infra guide) | → `refs/AGENTS.md` |
 
 ## Rules
 - `decisions/` — NEVER delete ADR files; mark superseded ones as `Status: superseded-by ADR-XXX`
