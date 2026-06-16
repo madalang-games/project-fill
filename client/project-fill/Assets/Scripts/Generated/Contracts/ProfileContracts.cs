@@ -13,7 +13,6 @@ namespace ProjectFill.Contracts.Player
     {
         public string DisplayName { get; set; } = string.Empty;
         public int AvatarId { get; set; }
-        public int BoardThemeId { get; set; }
         public CurrencySnapshot Currency { get; set; } = new CurrencySnapshot();
     }
 }

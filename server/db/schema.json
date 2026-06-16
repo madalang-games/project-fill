@@ -1,5 +1,5 @@
 {
-  "database": "ProjectFill_db",
+  "database": "projectfill_db",
   "output": {
     "namespace": "ProjectFill.Infrastructure.Generated",
     "context": "AppDbContext"

@@ -9,8 +9,10 @@
 | `Ranking/` | Global ranking Redis indexes and rebuilds | `Ranking/AGENTS.md` |
 | `Rewards/` | Generic reward source, ad reward claim services, SSV infrastructure | `Rewards/AGENTS.md` |
 | `Currency/` | Soft currency balance service | `Currency/AGENTS.md` |
+| `Iap/` | IAP purchase verification and product status | `Iap/AGENTS.md` |
+| `Inventory/` | Booster item inventory (sync, spend, grant, buy) | `Inventory/AGENTS.md` |
 | `Tutorial/` | Tutorial progress saving and retrieving service | `Tutorial/AGENTS.md` |
-| `Player/` | Player progress summary (stage unlock state + best stars) | `Player/AGENTS.md` |
+| `Player/` | Player profile and progress (stage unlock, avatars, no-ads state) | `Player/AGENTS.md` |
 
 ## Rules
 - Use-case layer: persistence via direct `AppDbContext` injection.

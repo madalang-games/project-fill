@@ -27,6 +27,7 @@
 - Namespace: `ProjectFill.Contracts.GameTypes`
 - No game-mechanic specific enums here — keep generic (IAP, tutorial, UI)
 - When adding a new enum: update `## Symbols` above
+- **Use this file when**: enum value must be agreed upon by BOTH server and client (e.g., appears in a request/response DTO field, or both sides branch on the same value). If only one side uses it → use that layer's internal Enum Policy instead.
 
 ## Cross-refs
 - Consumed by: `client/Assets/Scripts/` (via pkt_generator sync)

@@ -53,13 +53,13 @@ public sealed class InventoryService
         CancellationToken ct)
     {
         if (amount <= 0)
-            throw new GameApiException("INVALID_AMOUNT", "Amount to spend must be positive.");
+            throw new GameApiException(ErrorCodes.InvalidAmount, "Amount to spend must be positive.");
 
         var now = DateTimeOffset.UtcNow;
         var row = await _db.UserInventory.FindAsync(userId, itemId, ct);
 
         if (row is null || row.Count < amount)
-            throw new GameApiException("INSUFFICIENT_ITEMS", $"Insufficient inventory for item {itemId}.");
+            throw new GameApiException(ErrorCodes.InsufficientItems, $"Insufficient inventory for item {itemId}.");
 
         row.Count -= amount;
         row.UpdatedAt = now;
@@ -79,7 +79,7 @@ public sealed class InventoryService
         CancellationToken ct)
     {
         if (amount <= 0)
-            throw new GameApiException("INVALID_AMOUNT", "Amount to grant must be positive.");
+            throw new GameApiException(ErrorCodes.InvalidAmount, "Amount to grant must be positive.");
 
         var now = DateTimeOffset.UtcNow;
         var row = await _db.UserInventory.FindAsync(userId, itemId, ct);
@@ -113,7 +113,7 @@ public sealed class InventoryService
     {
         var now = DateTimeOffset.UtcNow;
         var itemData = _staticData.GetItem(itemId)
-            ?? throw new GameApiException("ITEM_NOT_FOUND", $"Item {itemId} not found.");
+            ?? throw new GameApiException(ErrorCodes.ItemNotFound, $"Item {itemId} not found.");
         var cost = itemData.Price;
 
         await using var tx = await _db.Database.BeginTransactionAsync(ct);

@@ -19,4 +19,4 @@
 
 ## Cross-refs
 - Consumed by: `ProjectFill.API.Controllers.InventoryController`
-- Consumed by: `Game.Services.PlayerApiService`
+- Consumed by: `Game.Services.InventoryApiService`

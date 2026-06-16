@@ -1,10 +1,11 @@
 using Microsoft.EntityFrameworkCore;
-using ProjectFill.Contracts.Currency;
-using ProjectFill.Contracts.Player;
-using ProjectFill.Infrastructure.Generated;
-using ProjectFill.Domain.Interfaces;
 using ProjectFill.Application.Common;
 using ProjectFill.Application.Currency;
+using ProjectFill.Contracts.Currency;
+using ProjectFill.Contracts.Player;
+using ProjectFill.Domain.Enums;
+using ProjectFill.Domain.Interfaces;
+using ProjectFill.Infrastructure.Generated;
 
 namespace ProjectFill.Application.Player;
 
@@ -34,9 +35,9 @@ public sealed class PlayerService
 
         foreach (var sourceId in claims)
         {
-            if (sourceId.StartsWith("avatar_unlock:"))
+            if (sourceId.StartsWith(AvatarClaimKeys.UnlockPrefix))
             {
-                if (int.TryParse(sourceId.Substring("avatar_unlock:".Length), out var avatarId))
+                if (int.TryParse(sourceId.Substring(AvatarClaimKeys.UnlockPrefix.Length), out var avatarId))
                 {
                     unlockedAvatarIds.Add(avatarId);
                 }
@@ -58,7 +59,7 @@ public sealed class PlayerService
     {
         var player = await _db.Players.FindAsync(userId, ct);
         if (player == null)
-            throw new GameApiException("PLAYER_NOT_FOUND", "Player not found.");
+            throw new GameApiException(ErrorCodes.PlayerNotFound, "Player not found.");
 
         await using var tx = await _db.Database.BeginTransactionAsync(ct);
         long totalSpent = 0;
@@ -67,7 +68,7 @@ public sealed class PlayerService
         {
             var cleanName = request.DisplayName.Trim();
             if (cleanName.Length is < 2 or > 24)
-                throw new GameApiException("INVALID_DISPLAY_NAME", "Display name must be between 2 and 24 characters.");
+                throw new GameApiException(ErrorCodes.InvalidDisplayNameLength, "Display name must be between 2 and 24 characters.");
 
             foreach (char c in cleanName)
             {
@@ -76,7 +77,7 @@ public sealed class PlayerService
                       (c >= '0' && c <= '9') ||
                       c == ' ' || c == '_' || c == '-'))
                 {
-                    throw new GameApiException("INVALID_DISPLAY_NAME", "Display name contains invalid characters. Only letters, numbers, spaces, underscores, and hyphens are allowed.");
+                    throw new GameApiException(ErrorCodes.InvalidDisplayNameChar, "Display name contains invalid characters.");
                 }
             }
 
@@ -90,11 +91,11 @@ public sealed class PlayerService
             {
                 var avatarData = _staticData.GetAvatar(avatarId);
                 if (avatarData == null)
-                    throw new GameApiException("AVATAR_NOT_FOUND", "Avatar not found.");
+                    throw new GameApiException(ErrorCodes.AvatarNotFound, "Avatar not found.");
 
                 if (avatarData.UnlockCost > 0)
                 {
-                    var claimKey = $"avatar_unlock:{avatarId}";
+                    var claimKey = $"{AvatarClaimKeys.UnlockPrefix}{avatarId}";
                     var isUnlocked = await _db.UserRewardClaimState.Query()
                         .AnyAsync(x => x.UserId == userId && x.SourceId == claimKey, ct);
 
@@ -114,14 +115,14 @@ public sealed class PlayerService
                         });
                     }
                 }
-                else if (avatarData.UnlockType == "achievement")
+                else if (avatarData.UnlockType == AvatarUnlockTypes.Achievement)
                 {
-                    var claimKey = $"avatar_unlock:{avatarId}";
+                    var claimKey = $"{AvatarClaimKeys.UnlockPrefix}{avatarId}";
                     var isUnlocked = await _db.UserRewardClaimState.Query()
                         .AnyAsync(x => x.UserId == userId && x.SourceId == claimKey, ct);
 
                     if (!isUnlocked)
-                        throw new GameApiException("AVATAR_LOCKED", "This avatar must be unlocked via achievements.");
+                        throw new GameApiException(ErrorCodes.AvatarLocked, "This avatar must be unlocked via achievements.");
                 }
 
                 player.AvatarId = avatarId;

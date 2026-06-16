@@ -5,6 +5,7 @@ using ProjectFill.Application.Rewards;
 using ProjectFill.Application.Stage;
 using ProjectFill.Contracts.Rewards;
 using ProjectFill.Contracts.Ad;
+using ProjectFill.Domain.Enums;
 using StackExchange.Redis;
 
 namespace ProjectFill.API.Controllers
@@ -61,7 +62,7 @@ namespace ProjectFill.API.Controllers
 
             try
             {
-                if (pending.PlacementId == "ADD_LANE")
+                if (pending.PlacementId == AdPlacementKeys.AddLane)
                 {
                     var res = await _ads.ClaimAsync(pending.UserId, new AdRewardClaimRequest
                     {

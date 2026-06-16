@@ -41,6 +41,28 @@ API -> Infrastructure
 - CancellationToken passed through all async methods
 - Column names mapped to snake_case in `OnModelCreating`
 
+## Enum Policy
+NEVER define `private enum` or inline enum inside a class or service file.
+
+| Scope | File location | Namespace |
+|-------|--------------|-----------|
+| Server + Client shared | `shared/contracts/GameTypes/GameEnums.cs` | `ProjectFill.Contracts.GameTypes` |
+| Server-internal (cross-domain) | `src/ProjectFill.Domain/Enums/ServerEnums.cs` | `ProjectFill.Domain.Enums` |
+| Server-internal (domain-specific) | `src/ProjectFill.Domain/Enums/[Domain]Enums.cs` | `ProjectFill.Domain.Enums` |
+
+Decision: if both server request/response DTO and client need the value → shared. If only server logic uses it → Domain/Enums/.
+
+## Completion Gate
+Evaluate before declaring server work complete. Output each result (`✓ applied` / `N/A`):
+
+| # | Check | Trigger | Required Action |
+|---|-------|---------|-----------------|
+| 1 | new endpoint | New controller action added | Add corresponding test in `tests/` |
+| 2 | DB schema change | `server/db/schema.json` modified | FLAG `tools/db_generator.bat` |
+| 3 | new contract used | New contract type in request/response | Verify exists in `shared/contracts/`; if missing → expand task scope |
+| 4 | auth compliance | Any controller or handler modified | No uid from request body; `CancellationToken` passed through; `async/await` throughout; no `.Result`/`.Wait()` |
+| 5 | AGENTS.md | New file/class/symbol added | Update `## Files` + `## Symbols` in affected leaf `AGENTS.md` |
+
 ## Cross-refs
 | type | refs |
 |------|------|

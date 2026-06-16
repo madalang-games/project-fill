@@ -51,7 +51,7 @@ public sealed class RewardService
     {
         var now = DateTimeOffset.UtcNow;
         var source = _data.Value.Sources.FirstOrDefault(x => x.source_key == sourceId && x.is_enabled)
-            ?? throw new GameApiException("REWARD_SOURCE_NOT_FOUND", "Reward source not found.");
+            ?? throw new GameApiException(ErrorCodes.RewardSourceNotFound, "Reward source not found.");
 
         var periodKey = GetPeriodKey(source, now);
         var state = await _db.UserRewardClaimState.FindAsync(userId, source.source_key, periodKey, ct);

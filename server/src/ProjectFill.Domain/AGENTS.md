@@ -3,6 +3,7 @@
 ## Nav
 | path | role |
 |------|------|
+| `Enums/` | Server-internal enum types and string-constant discriminators | -> `Enums/AGENTS.md` |
 | `Interfaces/` | Domain-owned interfaces consumed by API/Infrastructure | -> `Interfaces/AGENTS.md` |
 | `Logging/` | EventLogIds constants | -> `Logging/AGENTS.md` |
 | `StaticData/` | Generated static-data POCOs (DO NOT EDIT) | -> `StaticData/AGENTS.md` |

@@ -14,5 +14,6 @@
 | `SpendSoftRequest.Reason` | property | Audit log reason (e.g. `booster_purchase`) |
 
 ## Cross-refs
-- Consumed by: `ProjectFill.API.Controllers.AdController`
+- Consumed by: `ProjectFill.API.Controllers.CurrencyController`
 - Consumed by: `ProjectFill.Application.Currency.CurrencyService`
+- Consumed by: `Game.Services.CurrencyApiService`

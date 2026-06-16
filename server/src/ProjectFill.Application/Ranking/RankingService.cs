@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using ProjectFill.Application.Common;
 using ProjectFill.Contracts.Ranking;
+using ProjectFill.Domain.Enums;
 using ProjectFill.Infrastructure.Generated;
 using StackExchange.Redis;
 
@@ -164,12 +165,6 @@ public sealed class RankingService
 
     private static string ToContractType(GlobalRankingType type)
         => type == GlobalRankingType.Stars ? "stars" : "max-stage";
-
-    private enum GlobalRankingType
-    {
-        Stars,
-        MaxStage,
-    }
 
     private sealed record GlobalRankingRow(long UserId, string DisplayName, int AvatarId, int Score);
 }

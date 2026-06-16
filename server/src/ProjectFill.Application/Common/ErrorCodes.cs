@@ -41,6 +41,20 @@ public static class ErrorCodes
     public const string InvalidStageClear    = "INVALID_STAGE_CLEAR";
     public const string ReviveLimitExceeded  = "REVIVE_LIMIT_EXCEEDED";
 
+    // --- Inventory ---
+    public const string InvalidAmount     = "INVALID_AMOUNT";
+    public const string InsufficientItems = "INSUFFICIENT_ITEMS";
+    public const string ItemNotFound      = "ITEM_NOT_FOUND";
+
+    // --- Player ---
+    public const string InvalidDisplayNameLength = "INVALID_DISPLAY_NAME_LENGTH";
+    public const string InvalidDisplayNameChar   = "INVALID_DISPLAY_NAME_CHAR";
+    public const string AvatarNotFound           = "AVATAR_NOT_FOUND";
+    public const string AvatarLocked             = "AVATAR_LOCKED";
+
+    // --- Rewards ---
+    public const string RewardSourceNotFound = "REWARD_SOURCE_NOT_FOUND";
+
     // --- Currency ---
     public const string InsufficientCurrency = "INSUFFICIENT_CURRENCY";
     public const string InsufficientFunds    = "INSUFFICIENT_FUNDS";
@@ -49,11 +63,12 @@ public static class ErrorCodes
     public const string RewardAlreadyClaimed = "REWARD_ALREADY_CLAIMED";
 
     // --- Ads ---
-    public const string AdRewardDuplicate      = "AD_REWARD_DUPLICATE";
-    public const string AdRewardVerifyFailed   = "AD_REWARD_VERIFY_FAILED";
-    public const string AdSsvPending           = "AD_SSV_PENDING";
+    public const string AdRewardDuplicate       = "AD_REWARD_DUPLICATE";
+    public const string AdRewardVerifyFailed    = "AD_REWARD_VERIFY_FAILED";
+    public const string AdSsvPending            = "AD_SSV_PENDING";
     public const string DoubleRewardNotEligible = "DOUBLE_REWARD_NOT_ELIGIBLE";
-    public const string AdTimeout              = "AD_TIMEOUT";
+    public const string AdTimeout               = "AD_TIMEOUT";
+    public const string AdPlacementNotSupported = "AD_PLACEMENT_NOT_SUPPORTED";
 
     // --- Ranking ---
     public const string InvalidRankingType = "INVALID_RANKING_TYPE";

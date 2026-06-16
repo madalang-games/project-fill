@@ -18,6 +18,7 @@
 ## Rules
 - DTOs only; no ranking logic.
 - Global ranking types: `stars`, `max_stage`.
+- `StageRankResponse` / `StageRank*` are retained stubs; per-stage ranking was removed from `RankingService` — do not wire until a new stage-ranking mechanic is designed.
 
 ## Cross-refs
 - Consumed by: `ProjectFill.API.Controllers.RankingController`

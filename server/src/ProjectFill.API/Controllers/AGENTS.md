@@ -16,6 +16,7 @@
 | `PlayerController.cs` | `PlayerController` | `GET /api/player/progress` — stage unlock state and best stars for the current player |
 | `AdRewardsStatusController.cs` | `AdRewardsStatusController` | `/api/ad-rewards/status/{adToken}` polling check for verified SSV rewards |
 | `InventoryController.cs` | `InventoryController` | `/api/inventory` endpoints for syncing, spending, and buying booster items |
+| `IapController.cs` | `IapController` | `/api/iap` purchase verification and product status listing |
 
 ## Symbols
 | symbol | kind | note |
@@ -38,6 +39,8 @@
 | `InventoryController.Sync` | method | GET current player inventory |
 | `InventoryController.Spend` | method | POST spend items |
 | `InventoryController.Buy` | method | POST buy items with Gold |
+| `IapController.Verify` | method | `POST /api/iap/verify` — validates purchase, grants reward group |
+| `IapController.GetProducts` | method | `GET /api/iap/products` — enabled products with remaining purchase counts |
 
 ## Rules
 - Do not accept `user_id` from request bodies; use `ControllerBaseEx.PlayerId`.

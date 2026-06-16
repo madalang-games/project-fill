@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using ProjectFill.Application.Common;
 using ProjectFill.Application.Inventory;
 using ProjectFill.Contracts.Rewards;
+using ProjectFill.Domain.Enums;
 using ProjectFill.Infrastructure.Generated;
 using StackExchange.Redis;
 
@@ -24,7 +25,7 @@ public sealed class AdRewardService
 
     public async Task<AdRewardClaimResponse> ClaimAsync(long userId, AdRewardClaimRequest request, string correlationId, CancellationToken ct)
     {
-        if (request.PlacementId == "ADD_LANE")
+        if (request.PlacementId == AdPlacementKeys.AddLane)
         {
             var verifyResult = await _adVerifier.VerifyAsync(request.Provider, request.AdToken, ct);
             if (!verifyResult.Verified)
@@ -32,7 +33,7 @@ public sealed class AdRewardService
                 var pending = new PendingAdClaim
                 {
                     UserId = userId,
-                    PlacementId = "ADD_LANE",
+                    PlacementId = AdPlacementKeys.AddLane,
                     Provider = request.Provider,
                     AdToken = request.AdToken,
                     ContextType = "item_grant",
@@ -62,7 +63,7 @@ public sealed class AdRewardService
             {
                 Id = Guid.NewGuid().ToString("N"),
                 UserId = userId,
-                PlacementId = "ADD_LANE",
+                PlacementId = AdPlacementKeys.AddLane,
                 RewardType = "ITEM",
                 RewardValue = 1,
                 ContextType = "item_grant",
@@ -77,7 +78,6 @@ public sealed class AdRewardService
             };
             _db.AdRewardTransactions.Insert(tx);
 
-            // Grant 1 Add Lane item (item ID 1)
             await _inventory.GrantItemAsync(userId, 1, 1, $"ad_claim:{request.PlacementId}", correlationId, ct);
             await _db.SaveAsync(ct);
 
@@ -100,6 +100,6 @@ public sealed class AdRewardService
             };
         }
 
-        throw new GameApiException("AD_PLACEMENT_NOT_SUPPORTED", "Ad placement is not supported by the generic ad reward API.");
+        throw new GameApiException(ErrorCodes.AdPlacementNotSupported, "Ad placement is not supported by the generic ad reward API.");
     }
 }

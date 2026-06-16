@@ -1,6 +1,8 @@
 using ProjectFill.Application.Logging;
 using ProjectFill.Contracts.Ad;
-using ProjectFill.Generated.Data;
+using ProjectFill.Domain.Enums;
+using ProjectFill.Domain.Interfaces;
+using ProjectFill.Domain.StaticData;
 using ProjectFill.Infrastructure.Generated;
 
 namespace ProjectFill.Application.Stage;
@@ -8,25 +10,21 @@ namespace ProjectFill.Application.Stage;
 public sealed class AdInterstitialService
 {
     private readonly AppDbContext _db;
-    private readonly Lazy<AdPlacement?> _interstitialPlacement;
+    private readonly AdPlacementData? _interstitialPlacement;
 
-    public AdInterstitialService(AppDbContext db)
+    public AdInterstitialService(AppDbContext db, IStaticDataService staticData)
     {
         _db = db;
-        _interstitialPlacement = new Lazy<AdPlacement?>(() =>
-        {
-            var path = System.IO.Path.Combine(AppContext.BaseDirectory, "generated", "data", "ad", "ad_placement.csv");
-            return AdPlacementLoader.LoadAll(path).FirstOrDefault(x => x.placement_key == "INTERSTITIAL_POST_STAGE");
-        });
+        _interstitialPlacement = staticData.GetAllAdPlacements()
+            .FirstOrDefault(x => x.PlacementKey == AdPlacementKeys.InterstitialPostStage);
     }
 
     public async Task<AdEligibilityResponse> GetEligibilityAsync(long userId, CancellationToken ct)
     {
         var now = DateTimeOffset.UtcNow;
-        var placement = _interstitialPlacement.Value;
         var state = await _db.UserInterstitialState.FindAsync(userId, ct);
 
-        int cooldown = placement?.cooldown_seconds ?? 180;
+        int cooldown = _interstitialPlacement?.CooldownSeconds ?? 180;
         bool isEligible = state is null
             || (now - state.LastShownAt).TotalSeconds >= cooldown;
         int remaining = (isEligible || state is null) ? 0 : (int)(cooldown - (now - state.LastShownAt).TotalSeconds);
@@ -37,7 +35,7 @@ public sealed class AdInterstitialService
             {
                 new()
                 {
-                    PlacementId = "INTERSTITIAL_POST_STAGE",
+                    PlacementId = AdPlacementKeys.InterstitialPostStage,
                     IsEligible = isEligible,
                     CooldownRemainingSeconds = Math.Max(0, remaining),
                 },
