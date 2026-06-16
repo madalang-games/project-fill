@@ -7,7 +7,7 @@
 ## 1. 개요 및 설계 원칙
 
 - **한 줄 콘셉트**: 흩어진 컬러 신호 칩을 슬롯 레인에 정렬하여 상단의 Signal Panel을 복구하는 미니멀 코드 퍼즐.
-- **비주얼 톤앤매너**: 튜브나 물병 같은 전통적인 오브젝트를 배제하고, 세련된 반도체 칩, 카드 슬롯, 회로 기판 등의 전자공학/기판 느낌의 UI 및 1x1 텍스처, 라운드 사각형, 픽셀 텍스트를 위주로 한 코드 기반 미니멀 아트 스타일을 따릅니다.
+- **비주얼 톤앤매너**: 튜브나 물병 같은 전통적인 오브젝트를 배제하고, **둥근 컬러 토큰 칩**(굵은 외곽선·파스텔 팔레트)을 중심으로 한 **픽셀 + 캐주얼** 아트 스타일을 따릅니다. 회로/기판 모티프는 전면 테마가 아니라 **Blind 레인 뒷면 등 액센트**로만 사용하고, 상단 Signal Panel은 노드가 전구/별처럼 점등되는 따뜻한 게이지로 표현합니다.
 - **핵심 판타지**: 고장 나거나 꼬인 시스템의 컬러 신호를 정돈해 나가며 상단 패널의 노드와 라인이 하나씩 점등되는 릴랙싱한 기계 복구 감각.
 
 ---
@@ -34,6 +34,8 @@
 - **A-R05 (완성 연출)**: Complete Set이 된 레인의 칩들은 상단 Signal Panel로 흡수되는 연출이 재생되며, **완성된 레인은 빈 상태로 전환되어 다시 칩을 수용할 수 있게 됩니다.** 레인 자체는 제거되지 않습니다.
 - **A-R06 (클리어 조건)**: 스테이지에 존재하는 모든 Signal Type 칩을 Complete Set으로 정렬하여 상단 Panel에 모두 등록하면 스테이지를 클리어합니다.
 - **A-R07 (예외 처리)**: 룰에 어긋나는 이동을 시도할 시 이동이 수행되지 않고, 칩의 미세한 흔들림(Shake) 및 경고색 테두리 연출을 통해 실패 피드백을 즉각 제공합니다.
+- **A-R08 (동일 색상 일괄 이동)**: `Top Chip`을 기준으로 **위에서부터 연속으로 쌓인 동일 Signal Type 칩들은 한 번의 조작으로 함께 이동**합니다. 이동량은 목적지 레인의 잔여 `Capacity`만큼으로 제한되며(부족하면 들어갈 수 있는 만큼만 이동), 이동 가능 여부는 `Top Chip` 기준 A-R02를 따릅니다. 배치 순서는 **스택 pour**를 따릅니다 — 맨 위 칩이 먼저 떨어져 목적지의 가장 아래에 깔리고 그 위로 차례로 쌓입니다. 연출은 각 칩이 **목적지 슬롯 바로 위에서 생성(materialize)되어 중력 가속으로 낙하**하며(소스→목적지 횡단 없이 "워프 아웃" 후 낙하), 여러 칩은 아래부터 살짝 시차를 두고 캐스케이드합니다. **일괄 이동은 이동 횟수(Moves) 1회로 집계**되고, `Undo` 1회로 일괄 이동 전체를 되돌립니다.
+- **A-R09 (초기 배치 규칙)**: 스테이지 생성 시 **어떤 레인도 이미 `Complete Set`(동일 타입 4개) 상태로 시작하지 않습니다.** 무료 완성(freebie)을 방지하기 위해 생성기는 완성 세트가 없는 배치만 채택합니다.
 
 ---
 
@@ -111,6 +113,7 @@
 ## 6. 이동 횟수 (Moves) 기록
 
 - 스테이지 내 총 이동 횟수는 실시간으로 HUD에 표시됩니다.
+- 동일 색상 일괄 이동(A-R08)은 칩 개수와 무관하게 **1회**로 집계됩니다.
 - 클리어 시 `latest_moves` 및 `best_moves`가 서버에 기록됩니다.
 - 이동 횟수는 **스테이지별 랭킹 산정(오름차순)**에 활용됩니다.
 - 이동 횟수는 클리어 보상에 영향을 주지 않습니다.
@@ -147,7 +150,7 @@ graph TD
 
 - **인게임 배치**:
   - **상단 (HUD)**: 현재 스테이지 번호, 현재 누적 이동 횟수(Moves), 개인 최고 이동 횟수(Best Moves).
-  - **중앙 상단**: `Signal Panel` — 각 Signal Type 세트 완성 시 해당 라인이 점등되는 쉐이더 연출.
+  - **중앙 상단**: `Signal Panel` — 각 Signal Type 세트 완성 시 해당 노드가 전구/별처럼 하나씩 점등되는 게이지 연출(회로 배선 대신 토큰 점등).
   - **중앙**: 퍼즐 조작부인 `Slot Lanes`.
   - **하단 (부스터 바)**: `Undo`, `Shuffle`, `Add Lane` 아이콘 버튼 및 보유 수량(미보유 시 골드 가격 표시).
 - **상태별 피드백**:
@@ -156,3 +159,55 @@ graph TD
   - **이동 불가 레인 진입**: 칩이 원래 위치로 돌아가며, 레인 테두리가 빨간색으로 0.2초간 깜빡이고 짧은 좌우 흔들림(Shake)을 줍니다.
   - **Complete Set 완성**: 칩들이 부드럽게 트윈되어 상단 패널 해당 노드로 모인 뒤 픽셀 파티클 연출과 함께 밝게 점등됩니다.
   - **Soft Stuck 감지**: Shuffle 버튼 Pulse 애니메이션, 보드 패널 알파 0.85 Dim.
+
+---
+
+## 9. 아트 에셋 — 스프라이트 시트 생성 가이드
+
+아트 방향: **컬러 토큰 중심 (픽셀 + 캐주얼)**. 칩은 둥근 파스텔 컬러 토큰, 상단 패널은 전구/별 점등 게이지, 회로 패턴은 Blind 레인 뒷면 한정 액센트.
+
+아래 **단일 프롬프트로 하나의 스프라이트 시트**(투명 배경, 셀 사이 선 없음, 모든 셀 동일 크기)를 생성한 뒤, 각 셀을 잘라 `BoardSkin`(SpriteSet) 슬롯에 매핑한다.
+
+### 단일 시트 프롬프트 (이미지 생성기용)
+
+```
+True 2D PIXEL ART sprite sheet, 3x3 grid of equally sized cells, transparent background.
+NO grid lines / NO separators / NO borders between cells; each icon centered with uniform padding.
+Style: retro pixel art, low-resolution chunky pixels, hard pixel edges, visible square pixels,
+limited flat palette (max ~3 shades per color), simple 2-tone shading (one base + one shadow),
+bold 1px dark outline, cute casual mobile-puzzle look. Front-facing flat 2D icons.
+HARD CONSTRAINTS: NO 3D render, NO photorealism, NO smooth gradients, NO soft blur, NO drop shadows,
+NO bevel/glossy plastic, NO anti-aliased smooth curves — keep it crisp pixel art.
+
+Cells (left to right, top to bottom):
+1. a rounded-square color token, flat fill + one darker pixel shade, bold dark pixel outline,
+   one small pixel highlight — neutral/white so it can be color-tinted at runtime
+2. the same rounded-square token as an OUTLINE ONLY, hollow transparent center, thick pixel stroke
+   — neutral/white for tinting
+3. a tall vertical slot holder that stacks 4 tokens, simple pixel frame with inner rail dots,
+   semi-transparent fill
+4. a soft round glow blob made of concentric pixel rings fading out (still pixelated, not blurry)
+5. a small solid pixel dot (burst particle)
+6. a thin hollow pixel ring / halo, transparent center
+7. a "blind back" card: rounded pixel card with a tiny circuit-dot pattern, muted teal on dark
+8. a lit panel node: a glowing pixel light-bulb / star, warm, with a dark socket base
+9. a small pixel padlock icon, chunky, amber tint
+
+Output: 512x512, transparent PNG, no text, no labels. Pixel-art only.
+```
+
+### 셀 → SpriteSet 슬롯 매핑
+
+| 셀 | 슬롯 / 용도 |
+|----|------------|
+| 1 | `Chip` (토큰 본체, 런타임 컬러 틴트) |
+| 2 | `ChipOutline` (틴트용 외곽선) |
+| 3 | `LaneSlot` (레인 랙 프레임) |
+| 4 | `Glow` (선택/광 효과) |
+| 5 | `Disc` (파티클 도트) |
+| 6 | `Ring` (노드 헤일로) |
+| 7 | `Circuit` (Blind 뒷면) |
+| 8 | Panel node — `SignalNodeView` 스킨(전구/별) |
+| 9 | Lock 아이콘 — `LaneView` 잠금 |
+
+생성 후 Unity Sprite Editor에서 9-slice 대상 셀(1·2·3)은 모서리 Border 지정, Chip/Outline/Node는 흰색 톤으로 받아 런타임 틴트. 슬롯 적용은 `BoardSkin`(SpriteSet) 인스펙터 드래그.

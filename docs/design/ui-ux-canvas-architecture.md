@@ -45,7 +45,7 @@
 |-------|----------------------|
 | Boot | 로고 이미지, 로딩 스피너 |
 | Lobby | 헤더 (아바타, 골드), 하단 네비게이션 바, 탭 콘텐츠 (홈/상점/랭킹) |
-| InGame | HUD (일시정지 버튼, Moves/Best Moves), Signal Panel, Slot Lane 보드 컨테이너 앵커, 부스터 바 |
+| InGame | [하이브리드 구조] UI Chrome (HUD, 부스터 바, 일시정지/완성/실패 팝업)은 Canvas_Scene(Sort 0)에 렌더링. 핵심 게임 보드 영역 (Lanes, Chips, Signal Panel)은 World Space Scene Object로 씬에 직접 배치되어 Orthographic 카메라를 통해 렌더링되고 BoardWorldResizer에 의해 반응형으로 핏팅됨 |
 
 씬 UI는 항상 정렬 순서 0으로 렌더링되어 UIManager 캔버스(10~100)보다 항상 뒤에 위치합니다.
 

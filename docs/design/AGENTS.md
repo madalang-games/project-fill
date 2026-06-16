@@ -29,6 +29,6 @@ UI/UX specs, wireframes, game design documents.
 - One file per major design area.
 - Wireframe images: store in `design/assets/`.
 - Do not duplicate content from ADRs; link to relevant `decisions/` entries instead.
-- Signal Sort is the current game baseline. Do not reintroduce turn-limit failure, stamina, tube/bottle sort visuals, or generic non-circuit bundle art unless the `*_kr.md` Signal Sort specs change first.
+- Signal Sort is the current game baseline. Do not reintroduce turn-limit failure, stamina, or tube/bottle sort visuals unless the `*_kr.md` Signal Sort specs change first. Art direction is **color-token + pixel/casual** (circuit motif is a Blind-back accent only; Signal Panel lights as bulb/star nodes) per `signal_sort_system_design_kr.md` §1 and §9.
 - Cosmetics are purely visual — never introduce pay-to-win or gameplay-affecting purchases.
 - Daily systems (login, challenge) must preserve the relaxing identity: no punitive streak loss that blocks progress.

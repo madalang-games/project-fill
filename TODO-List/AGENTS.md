@@ -3,7 +3,7 @@
 ## Nav
 | file | role |
 |------|------|
-| _(none yet)_ | Per-area task files are added here as feature areas get tracked |
+| `outgame-systems.md` | Cosmetic / daily-login / achievement / daily-challenge backend status + FLAG items |
 
 ## Rules
 - One file per major feature area
