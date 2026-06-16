@@ -14,7 +14,7 @@
 | `UI_BG_MID` | `#1A2F45` | 카드 표면, 팝업 내부 배경 |
 | `UI_BORDER` | `#2A4A6B` | 패널 테두리, 구분선 |
 | `UI_PRIMARY` | `#4A90D9` | 주요 액션 버튼 (Play, 확인) |
-| `UI_CTA` | `#E8A020` | 골드 소비 / 구매 버튼, 별, 코인 아이콘 |
+| `UI_CTA` | `#E8A020` | 골드 소비 / 구매 버튼, 코인 아이콘 |
 | `UI_SUCCESS` | `#3DBE6E` | 클리어 피드백, 긍정 상태, Signal Panel 점등 |
 | `UI_DANGER` | `#E84040` | Stuck 상태, 불가 이동 경고, 골드 부족 |
 | `UI_TEXT` | `#F0EAD6` | 기본 텍스트 |
@@ -66,7 +66,6 @@
 | 팝업 / 오버레이 등장 | 200ms | ease-out |
 | 팝업 / 오버레이 퇴장 | 150ms | ease-in |
 | 버튼 피드백 | 80ms | ease-in-out |
-| 별 팝업 애니메이션 | 별당 300ms | ease-out-back (약간의 오버슛) |
 | 골드 카운트업 | 600ms | ease-out |
 
 ---
