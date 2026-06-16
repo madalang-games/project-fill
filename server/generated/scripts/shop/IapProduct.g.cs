@@ -10,7 +10,7 @@ namespace ProjectFill.Generated.Data
 {
     public sealed class IapProduct
     {
-        public int id { get; set; }
+        public int info_id { get; set; }
         public string store_product_id { get; set; } = "";
         public IapProductType product_type { get; set; }
         public string name_key { get; set; } = "";
@@ -43,7 +43,7 @@ namespace ProjectFill.Generated.Data
                 var cols = SplitCsvLine(line);
                 result.Add(new IapProduct
                 {
-                    id = idx.TryGetValue("id", out var i0) && i0 < cols.Length && !string.IsNullOrEmpty(cols[i0]) ? int.Parse(cols[i0]) : default,
+                    info_id = idx.TryGetValue("info_id", out var i0) && i0 < cols.Length && !string.IsNullOrEmpty(cols[i0]) ? int.Parse(cols[i0]) : default,
                     store_product_id = idx.TryGetValue("store_product_id", out var i1) && i1 < cols.Length ? (cols[i1] ?? "") : "",
                     product_type = idx.TryGetValue("product_type", out var i2) && i2 < cols.Length && !string.IsNullOrEmpty(cols[i2]) ? Enum.Parse<IapProductType>(cols[i2]) : default,
                     name_key = idx.TryGetValue("name_key", out var i3) && i3 < cols.Length ? (cols[i3] ?? "") : "",
@@ -61,7 +61,7 @@ namespace ProjectFill.Generated.Data
         }
 
         public static IReadOnlyDictionary<int, IapProduct> LoadAsDict(string csvPath)
-            => LoadAll(csvPath).ToDictionary(r => r.id);
+            => LoadAll(csvPath).ToDictionary(r => r.info_id);
 
         private static string[] SplitCsvLine(string line)
         {

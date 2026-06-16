@@ -1,4 +1,4 @@
-id,trigger_type,trigger_value,step_index,content_type,target_ui_id,target_space,text_key,auto_advance_sec,is_blocking
+info_id,trigger_type,trigger_value,step_index,content_type,target_ui_id,target_space,text_key,auto_advance_sec,is_blocking
 CS,CS,CS,CS,CS,CS,CS,CS,CS,CS
 int32,TutorialTriggerType,string(64),int32,TutorialContentType,string(64),TargetSpaceType,string(64),float,bool
 PK,NN,,NN,NN,,NN,NN,NN,NN

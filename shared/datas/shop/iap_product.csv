@@ -1,4 +1,4 @@
-﻿id,store_product_id,product_type,name_key,desc_key,price_usd,icon_res,reward_group_id,purchase_limit,reset_period,sort_order,category_id,is_enabled
+﻿info_id,store_product_id,product_type,name_key,desc_key,price_usd,icon_res,reward_group_id,purchase_limit,reset_period,sort_order,category_id,is_enabled
 CS,CS,CS,CS,CS,CS,CS,CS,CS,CS,CS,C,CS
 int32,string(64),IapProductType,string(64),string(128),double,string(64),int32,int32,PurchaseResetPeriod,int32,int32,bool
 PK,UQ,NN,NN,NN,NN,NN,FK:reward/reward_group,NN,NN,NN,FK:shop/iap_category,NN

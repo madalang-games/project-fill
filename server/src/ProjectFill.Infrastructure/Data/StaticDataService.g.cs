@@ -71,9 +71,8 @@ public partial class StaticDataService
                 Price = r.price,
             });
         _rewardGroups = RewardGroupLoader.LoadAll(System.IO.Path.Combine(rewardPath, "reward_group.csv"))
-            .ToDictionary(r => r.id, r => new RewardGroupData
+            .ToDictionary(r => r.reward_group_id, r => new RewardGroupData
             {
-                Id = r.id,
                 RewardGroupId = r.reward_group_id,
                 Version = r.version,
                 DisplayKey = r.display_key,
@@ -108,9 +107,9 @@ public partial class StaticDataService
                 IsEnabled = r.is_enabled,
             });
         _iapProducts = IapProductLoader.LoadAll(System.IO.Path.Combine(shopPath, "iap_product.csv"))
-            .ToDictionary(r => r.id, r => new IapProductData
+            .ToDictionary(r => r.info_id, r => new IapProductData
             {
-                Id = r.id,
+                InfoId = r.info_id,
                 StoreProductId = r.store_product_id,
                 ProductType = r.product_type,
                 NameKey = r.name_key,
@@ -152,13 +151,13 @@ public partial class StaticDataService
     public IReadOnlyList<CurrencyData> GetAllCurrencys() => _currencys.Values.ToList();
     public ItemData? GetItem(int id) => _items.GetValueOrDefault(id);
     public IReadOnlyList<ItemData> GetAllItems() => _items.Values.ToList();
-    public RewardGroupData? GetRewardGroup(int id) => _rewardGroups.GetValueOrDefault(id);
+    public RewardGroupData? GetRewardGroup(int reward_group_id) => _rewardGroups.GetValueOrDefault(reward_group_id);
     public IReadOnlyList<RewardGroupData> GetAllRewardGroups() => _rewardGroups.Values.ToList();
     public RewardItemData? GetRewardItem(int id) => _rewardItems.GetValueOrDefault(id);
     public IReadOnlyList<RewardItemData> GetAllRewardItems() => _rewardItems.Values.ToList();
     public RewardSourceData? GetRewardSource(int id) => _rewardSources.GetValueOrDefault(id);
     public IReadOnlyList<RewardSourceData> GetAllRewardSources() => _rewardSources.Values.ToList();
-    public IapProductData? GetIapProduct(int id) => _iapProducts.GetValueOrDefault(id);
+    public IapProductData? GetIapProduct(int info_id) => _iapProducts.GetValueOrDefault(info_id);
     public IReadOnlyList<IapProductData> GetAllIapProducts() => _iapProducts.Values.ToList();
     public ChapterData? GetChapter(int chapter_id) => _chapters.GetValueOrDefault(chapter_id);
     public IReadOnlyList<ChapterData> GetAllChapters() => _chapters.Values.ToList();

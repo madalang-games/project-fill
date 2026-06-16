@@ -8,14 +8,16 @@
 ## Symbols
 | symbol | kind | note |
 |--------|------|------|
-| `AdPlacement.placement_id` | column | Stable ad placement id |
+| `AdPlacement.placement_key` | column | Stable ad placement key (UQ); e.g. `STUCK_ADD_LANE` |
+| `AdPlacement.reward_group_id` | column | FK to `reward/reward_group`; reward granted on rewarded-ad completion |
+| `AdPlacement.is_enabled` | column | Placement on/off toggle |
 | `AdPlacement.ad_type` | column | `REWARDED` or `INTERSTITIAL` — CS scope |
 | `AdPlacement.context_type` | column | Expected reward context |
 | `AdPlacement.cooldown_seconds` | column | Server cooldown for INTERSTITIAL placements — S scope |
 | `AdPlacement.min_stage` | column | Min stage to show INTERSTITIAL — S scope |
 
 ## Placements
-| placement_id | ad_type | notes |
+| placement_key | ad_type | notes |
 |---|---|---|
 | `STUCK_ADD_LANE` | REWARDED | Stuck context, grants one Add Lane rescue |
 | `INTERSTITIAL_POST_STAGE` | INTERSTITIAL | 180s cooldown, stage 20+ |
@@ -25,5 +27,5 @@
 - `cooldown_seconds` and `min_stage` are sparse (0 for REWARDED placements).
 
 ## Cross-refs
-- Consumed by: `Server.AdInterstitialService`
-- Consumed by: `Client.AdService`
+- Consumed by: `ProjectFill.Application.Stage.AdInterstitialService`
+- Consumed by: `Game.Services.AdEligibilityCache`

@@ -10,7 +10,7 @@ namespace ProjectFill.Generated.Data
 {
     public sealed class TutorialStep
     {
-        public int id { get; set; }
+        public int info_id { get; set; }
         public TutorialTriggerType trigger_type { get; set; }
         public string trigger_value { get; set; } = "";
         public int step_index { get; set; }
@@ -41,7 +41,7 @@ namespace ProjectFill.Generated.Data
                 var cols = SplitCsvLine(line);
                 result.Add(new TutorialStep
                 {
-                    id = idx.TryGetValue("id", out var i0) && i0 < cols.Length && !string.IsNullOrEmpty(cols[i0]) ? int.Parse(cols[i0]) : default,
+                    info_id = idx.TryGetValue("info_id", out var i0) && i0 < cols.Length && !string.IsNullOrEmpty(cols[i0]) ? int.Parse(cols[i0]) : default,
                     trigger_type = idx.TryGetValue("trigger_type", out var i1) && i1 < cols.Length && !string.IsNullOrEmpty(cols[i1]) ? Enum.Parse<TutorialTriggerType>(cols[i1]) : default,
                     trigger_value = idx.TryGetValue("trigger_value", out var i2) && i2 < cols.Length ? (cols[i2] ?? "") : "",
                     step_index = idx.TryGetValue("step_index", out var i3) && i3 < cols.Length && !string.IsNullOrEmpty(cols[i3]) ? int.Parse(cols[i3]) : default,
@@ -57,7 +57,7 @@ namespace ProjectFill.Generated.Data
         }
 
         public static IReadOnlyDictionary<int, TutorialStep> LoadAsDict(string csvPath)
-            => LoadAll(csvPath).ToDictionary(r => r.id);
+            => LoadAll(csvPath).ToDictionary(r => r.info_id);
 
         private static string[] SplitCsvLine(string line)
         {

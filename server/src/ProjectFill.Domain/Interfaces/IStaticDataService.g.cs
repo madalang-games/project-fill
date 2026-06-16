@@ -16,13 +16,13 @@ public partial interface IStaticDataService
     IReadOnlyList<CurrencyData> GetAllCurrencys();
     ItemData? GetItem(int id);
     IReadOnlyList<ItemData> GetAllItems();
-    RewardGroupData? GetRewardGroup(int id);
+    RewardGroupData? GetRewardGroup(int reward_group_id);
     IReadOnlyList<RewardGroupData> GetAllRewardGroups();
     RewardItemData? GetRewardItem(int id);
     IReadOnlyList<RewardItemData> GetAllRewardItems();
     RewardSourceData? GetRewardSource(int id);
     IReadOnlyList<RewardSourceData> GetAllRewardSources();
-    IapProductData? GetIapProduct(int id);
+    IapProductData? GetIapProduct(int info_id);
     IReadOnlyList<IapProductData> GetAllIapProducts();
     ChapterData? GetChapter(int chapter_id);
     IReadOnlyList<ChapterData> GetAllChapters();

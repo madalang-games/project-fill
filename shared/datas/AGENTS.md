@@ -31,6 +31,35 @@ Row 5+: data
 - `IStaticDataService.g.cs`
 - `StaticDataService.g.cs`
 
+## ID Convention
+
+### `info_id` vs `id`
+| Condition | PK column | Value | Decision rule |
+|-----------|-----------|-------|---------------|
+| CSV-managed static design data | `info_id` | Range-based offset (e.g. 1001, 2001) | Range encodes category; designer-assigned |
+| Runtime DB records (not in CSV) | `id` | `AUTO` (auto_increment) | DB-managed; no semantic meaning needed |
+| Fixed-index lookup (fixed max count, order is semantic) | `id` | Sequential (0, 1, 2…) | Only when total count is fixed and index IS the meaning (e.g. `color_palette` 0–15) |
+| Detail/junction table in CSV | `id` | Sequential surrogate | Natural key is composite (parent_id + sort_order); surrogate OK |
+
+### Range Design — active tables
+| Range | Domain | Table |
+|-------|--------|-------|
+| `1001–1999` | IAP products | `shop/iap_product` |
+| `101–199` | Tutorial group 1 (FirstLaunch stage 1) | `tutorial/tutorial_step` |
+| `201–299` | Tutorial group 2 (FirstLaunch stage 2) | `tutorial/tutorial_step` |
+| `2001–2999` | Stage-clear reward groups | `reward/reward_group` |
+| `3001–3999` | Chapter-chest reward groups | `reward/reward_group` |
+| `5001–5999` | IAP reward groups | `reward/reward_group` |
+
+### Tables pending range design (currently sequential `id`)
+`avatar`, `item`, `currency`, `iap_category`, `ad_placement`, `reward_source` — assign ranges before adding new rows.
+
+### Enum mapping rules
+- NEVER map all `info_id` values to an Enum (CSV changes → Enum drift)
+- Range boundary Enum: validator/tool use only, NOT runtime branching
+- `WellKnownItemId`-style Enum: only when code MUST hard-reference a specific record; keep minimal
+- Runtime category branching: use a dedicated type/category column with enum values, not ID range
+
 ## Normalization Rules
 - 1 CSV = 1 entity type; no multi-entity tables.
 - Rewards by reference: use `reward_group_id`; never inline reward columns.

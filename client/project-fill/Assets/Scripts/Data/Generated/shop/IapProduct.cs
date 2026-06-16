@@ -10,7 +10,7 @@ namespace ProjectFill.Data.Generated
     {
         public const string ResourcePath = "data/shop/iap_product";
 
-        public int id;
+        public int info_id;
         public string store_product_id;
         public IapProductType product_type;
         public string name_key;

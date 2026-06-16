@@ -10,7 +10,7 @@ namespace ProjectFill.Data.Generated
     {
         public const string ResourcePath = "data/tutorial/tutorial_step";
 
-        public int id;
+        public int info_id;
         public TutorialTriggerType trigger_type;
         public string trigger_value;
         public int step_index;

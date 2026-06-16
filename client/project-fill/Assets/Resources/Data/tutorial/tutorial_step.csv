@@ -1,4 +1,4 @@
-id,trigger_type,trigger_value,step_index,content_type,target_ui_id,target_space,text_key,auto_advance_sec,is_blocking
+info_id,trigger_type,trigger_value,step_index,content_type,target_ui_id,target_space,text_key,auto_advance_sec,is_blocking
 101,FirstLaunch,1,0,FingerOverlay,slot_lane_1,World,tut.select_chip,0,true
 102,FirstLaunch,1,1,FingerOverlay,slot_lane_2,World,tut.move_chip,0,true
 103,FirstLaunch,1,2,HighlightOnly,hud_moves_count,UI,tut.moves_explain,2,false

@@ -19,4 +19,4 @@
 
 ## Cross-refs
 - Depends on: `shared/datas/common/dynamic_resource.csv`
-- Consumed by: `Game.OutGame.Account`
+- Consumed by: `Game.OutGame.Settings.AccountPopupView`

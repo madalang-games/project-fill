@@ -10,6 +10,7 @@
 ## Symbols
 | symbol | kind | note |
 |--------|------|------|
+| `RewardGroup.reward_group_id` | column | PK; range-based info_id (2xxx stage-clear, 3xxx chapter-chest, 5xxx IAP) |
 | `RewardItem.reward_type` | column | Signal Sort reward type such as `SOFT_CURRENCY`, `ITEM`, or `NO_ADS` |
 | `RewardItem.stack_policy` | column | Reward stack policy, usually `NONE` for currency/items |
 | `RewardSource.source_id` | column | Client/server stable claim identifier |
@@ -19,5 +20,5 @@
 - Rewards by reference only: features point to `reward_group_id`; do not inline reward columns into feature tables.
 
 ## Cross-refs
-- Consumed by: `Server.RewardService`
-- Consumed by: `Client.HomeTab`
+- Consumed by: `ProjectFill.Application.Rewards.RewardService`
+- Consumed by: `Game.OutGame.Lobby.HomeTabView`

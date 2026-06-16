@@ -5,7 +5,6 @@ namespace ProjectFill.Domain.StaticData;
 
 public class RewardGroupData
 {
-    public int Id { get; set; }
     public int RewardGroupId { get; set; }
     public int Version { get; set; }
     public string DisplayKey { get; set; } = "";

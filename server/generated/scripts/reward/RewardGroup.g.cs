@@ -9,7 +9,6 @@ namespace ProjectFill.Generated.Data
 {
     public sealed class RewardGroup
     {
-        public int id { get; set; }
         public int reward_group_id { get; set; }
         public int version { get; set; }
         public string display_key { get; set; } = "";
@@ -35,18 +34,17 @@ namespace ProjectFill.Generated.Data
                 var cols = SplitCsvLine(line);
                 result.Add(new RewardGroup
                 {
-                    id = idx.TryGetValue("id", out var i0) && i0 < cols.Length && !string.IsNullOrEmpty(cols[i0]) ? int.Parse(cols[i0]) : default,
-                    reward_group_id = idx.TryGetValue("reward_group_id", out var i1) && i1 < cols.Length && !string.IsNullOrEmpty(cols[i1]) ? int.Parse(cols[i1]) : default,
-                    version = idx.TryGetValue("version", out var i2) && i2 < cols.Length && !string.IsNullOrEmpty(cols[i2]) ? int.Parse(cols[i2]) : default,
-                    display_key = idx.TryGetValue("display_key", out var i3) && i3 < cols.Length ? (cols[i3] ?? "") : "",
-                    is_enabled = idx.TryGetValue("is_enabled", out var i4) && i4 < cols.Length && cols[i4] == "true",
+                    reward_group_id = idx.TryGetValue("reward_group_id", out var i0) && i0 < cols.Length && !string.IsNullOrEmpty(cols[i0]) ? int.Parse(cols[i0]) : default,
+                    version = idx.TryGetValue("version", out var i1) && i1 < cols.Length && !string.IsNullOrEmpty(cols[i1]) ? int.Parse(cols[i1]) : default,
+                    display_key = idx.TryGetValue("display_key", out var i2) && i2 < cols.Length ? (cols[i2] ?? "") : "",
+                    is_enabled = idx.TryGetValue("is_enabled", out var i3) && i3 < cols.Length && cols[i3] == "true",
                 });
             }
             return result;
         }
 
         public static IReadOnlyDictionary<int, RewardGroup> LoadAsDict(string csvPath)
-            => LoadAll(csvPath).ToDictionary(r => r.id);
+            => LoadAll(csvPath).ToDictionary(r => r.reward_group_id);
 
         private static string[] SplitCsvLine(string line)
         {

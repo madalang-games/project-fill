@@ -6,7 +6,7 @@ namespace ProjectFill.Domain.StaticData;
 
 public class IapProductData
 {
-    public int Id { get; set; }
+    public int InfoId { get; set; }
     public string StoreProductId { get; set; } = "";
     public IapProductType ProductType { get; set; }
     public string NameKey { get; set; } = "";

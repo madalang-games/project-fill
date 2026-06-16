@@ -6,7 +6,7 @@
 | `tutorial_step.csv` | Static data defining tutorial step parameters, triggers, target UI identifiers, and text localizations |
 
 ## Columns of `tutorial_step.csv`
-- `id` (int32): Unique ID of the step (e.g. 101, 102). PK.
+- `info_id` (int32): Range-based info_id for the step (e.g. 101, 102). PK. Range encodes tutorial group: 1xx = group 1, 2xx = group 2.
 - `trigger_type` (TutorialTriggerType): Condition that starts the tutorial (`FirstLaunch`, `GimmickAppear`, `FailRepeat`).
 - `trigger_value` (string): Context/value for the trigger condition (e.g., stage ID, gimmick name, fail count).
 - `step_index` (int32): 0-indexed step sequence inside the group.
@@ -19,7 +19,7 @@
 
 ## Rules
 - When changing this CSV, re-run `tools/info_generator.bat` or `tools/all_generator.bat` to rebuild the C# static tables and JSON bundles.
-- Keep `id` values unique and logically grouped.
+- Keep `info_id` values unique within each range group and logically grouped.
 
 ## Cross-refs
 - Gen output: `client/project-fill/Assets/Resources/Data/tutorial/tutorial_step.csv` (via `info_generator`)

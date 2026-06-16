@@ -21,4 +21,5 @@
 ## Cross-refs
 - Depends on: `shared/datas/string/client_string.csv`
 - Depends on: `shared/datas/common/dynamic_resource.csv`
-- Consumed by: `Game.InGame.Booster`
+- Consumed by: `Game.Services.ItemDataService`
+- Consumed by: `Game.InGame.Controller.InGameController` (BoosterType handling)

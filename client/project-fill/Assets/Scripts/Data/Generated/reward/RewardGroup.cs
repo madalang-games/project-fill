@@ -9,7 +9,6 @@ namespace ProjectFill.Data.Generated
     {
         public const string ResourcePath = "data/reward/reward_group";
 
-        public int id;
         public int reward_group_id;
         public int version;
         public string display_key;
