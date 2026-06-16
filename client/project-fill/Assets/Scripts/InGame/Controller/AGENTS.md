@@ -1,18 +1,22 @@
 # Scripts/InGame/Controller
 
-MonoBehaviour orchestrators for gameplay execution and scene entry in Signal Sort.
+MonoBehaviour orchestrators for the Signal Sort loop and scene entry.
 
 ## Files
 | file | class | role |
 |------|-------|------|
-| `InGameController.cs` | `InGameController` | Empty stub for gameplay orchestration |
-| `InGameSceneEntry.cs` | `InGameSceneEntry` | Empty stub for scene entry logic |
+| `InGameSceneEntry.cs` | `InGameSceneEntry` | Sets portrait/fps; starts controller at `_startStageIndex` |
+| `InGameController.cs` | `InGameController` | Loop: select/move, boosters, Soft/Hard Stuck, clear; cycles per-chapter sample stages |
 
 ## Symbols
 | symbol | kind | note |
 |--------|------|------|
-| `InGameController` | class | MonoBehaviour stub |
-| `InGameSceneEntry` | class | MonoBehaviour stub |
+| `InGameController.Begin(startIndex)` | method | Subscribes to BoardView events (once) + loads first stage |
+| `InGameController._boardView` | SerializeField | Bound in InGame.unity |
+| `InGameSceneEntry._controller` / `_sceneBg` | SerializeField | Bound in InGame.unity (`_sceneBg` kept for compat) |
+| `InGameSceneEntry._startStageIndex` | SerializeField | Index into `StageLibrary.Samples` (0 = Ch1) |
 
 ## Rules
-- Keep these as stub classes to preserve Unity scene components serialization until core loop integration.
+- Controller owns game logic; BoardView owns rendering/animation. Controller never touches GameObjects.
+- BoardView events are subscribed once in `Begin` (BoardView persists across stage reloads).
+- Move flow: capture top chip + slot → `Board.Move` → `BoardView.AnimateMove(…, onComplete: PostMoveCheck)`.

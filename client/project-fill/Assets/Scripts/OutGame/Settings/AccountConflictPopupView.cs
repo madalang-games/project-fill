@@ -27,6 +27,8 @@ namespace Game.OutGame.Settings
         [SerializeField] private Button   _keepCloudButton;
 
         [SerializeField] private Button _cancelButton;
+        [SerializeField] private Button _backdropButton;
+        [SerializeField] private Button _closeButton;
 
         public void Init(
             int localMaxStage, long localGold, int localStars, int localItems,
@@ -63,6 +65,8 @@ namespace Game.OutGame.Settings
             _keepLocalButton?.onClick.AddListener(() => { onKeepLocal?.Invoke(); Close(); });
             _keepCloudButton?.onClick.AddListener(() => { onKeepCloud?.Invoke(); Close(); });
             _cancelButton?.onClick.AddListener(Close);
+            _backdropButton?.onClick.AddListener(Close);
+            _closeButton?.onClick.AddListener(Close);
         }
 
         private void Close()

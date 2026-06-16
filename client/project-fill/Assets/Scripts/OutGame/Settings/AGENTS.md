@@ -25,7 +25,9 @@ Namespace: `Game.OutGame.Settings`
 | `AccountPopupView.ResolveConflict(token,selection)` | method | Calls `AuthService.ResolveConflict`; restart handled by `CompleteSession` |
 | `AccountPopupView.SetTabVisuals()` | method | Applies Primary color to current tab and Secondary color to inactive tab via `Button.targetGraphic` |
 | `AccountRestartPopupView.Init(onConfirm)` | method | Sets localized strings; confirm button fires `onConfirm` then closes popup |
-| `AccountConflictPopupView.Init(...)` | method | 8 save-snapshot ints + 2 action callbacks; cancel button available |
+| `AccountConflictPopupView._backdropButton` | SerializeField | Interactive backdrop Btn; calls Close() — wired in UIEditorSetup |
+| `AccountConflictPopupView._closeButton` | SerializeField | Square top-right ✕ button; calls Close() |
+| `AccountConflictPopupView.Init(...)` | method | 8 save-snapshot ints + 2 action callbacks; cancel/backdrop/close all call Close() |
 
 ## Rules
 - SettingsPanelView entry points: Lobby Header ⚙ button AND InGame Pause popup [Settings]

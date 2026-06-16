@@ -82,7 +82,7 @@ namespace Game.Services.Tutorial
             if (_allSteps == null) return;
             foreach (var step in _allSteps)
             {
-                int groupId = GetGroupId(step.id);
+                int groupId = GetGroupId(step.info_id);
                 if (PlayerPrefs.GetInt("tut_done_" + groupId, 0) == 1)
                 {
                     _completedTutorialIds.Add(groupId);
@@ -142,7 +142,7 @@ namespace Game.Services.Tutorial
             var steps = new List<TutorialStep>();
             foreach (var step in _allSteps)
             {
-                if (GetGroupId(step.id) == groupId)
+                if (GetGroupId(step.info_id) == groupId)
                 {
                     steps.Add(step);
                 }

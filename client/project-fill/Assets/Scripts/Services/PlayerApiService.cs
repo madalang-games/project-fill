@@ -60,13 +60,13 @@ namespace Game.Services
                     var response = new UserProfileUpdateResponse
                     {
                         DisplayName = res.displayName,
-                        AvatarId = res.avatarId,
-                        BoardThemeId = res.boardThemeId
+                        AvatarId = res.avatarId
                     };
                     AuthService.Instance.UpdateCachedProfile(response.DisplayName, response.AvatarId);
                     if (PlayerProgressService.Instance != null)
                     {
-                        PlayerProgressService.Instance.SetEquippedBoardTheme(response.BoardThemeId);
+                        // BoardThemeId dropped from contract — equip from the raw server JSON field.
+                        PlayerProgressService.Instance.SetEquippedBoardTheme(res.boardThemeId);
                     }
                     CurrencyApiService.Instance?.UpdateGold(new ProjectFill.Contracts.Currency.CurrencySnapshot
                     {
@@ -101,37 +101,15 @@ namespace Game.Services
         [Serializable]
         private class PlayerProgressJson
         {
-            public int maxClearedStageId;
-            public StageProgressEntryJson[] stages;
             public List<int> unlockedAvatarIds;
-            public int equippedBoardThemeId;
-            public List<int> unlockedBoardThemeIds;
+            public bool isNoAds;
 
             public PlayerProgressResponse ToContract()
-            {
-                var response = new PlayerProgressResponse
+                => new PlayerProgressResponse
                 {
-                    MaxClearedStageId = maxClearedStageId,
-                    Stages = new List<StageProgressEntry>(),
                     UnlockedAvatarIds = unlockedAvatarIds ?? new List<int>(),
-                    EquippedBoardThemeId = equippedBoardThemeId == 0 ? 1 : equippedBoardThemeId,
-                    UnlockedBoardThemeIds = unlockedBoardThemeIds ?? new List<int>()
+                    IsNoAds = isNoAds,
                 };
-                if (stages != null)
-                    foreach (var s in stages)
-                        response.Stages.Add(s.ToContract());
-                return response;
-            }
-        }
-
-        [Serializable]
-        private class StageProgressEntryJson
-        {
-            public int stageId;
-            public int bestStar;
-
-            public StageProgressEntry ToContract()
-                => new StageProgressEntry { StageId = stageId, BestStar = bestStar };
         }
     }
 }

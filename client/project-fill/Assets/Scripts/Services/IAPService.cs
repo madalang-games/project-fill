@@ -114,7 +114,7 @@ namespace Game.Services
                 return;
             }
 
-            var remaining = GetRemainingPurchases(product.id);
+            var remaining = GetRemainingPurchases(product.info_id);
             if (remaining.HasValue && remaining.Value <= 0)
             {
                 onComplete?.Invoke(false, "PURCHASE_LIMIT_REACHED");
@@ -126,7 +126,7 @@ namespace Game.Services
 
             var request = new VerifyIapRequestJson
             {
-                infoId = product.id,
+                infoId = product.info_id,
                 storeProductId = storeProductId,
                 orderId = mockOrderId,
                 purchaseToken = mockToken,
@@ -137,7 +137,7 @@ namespace Game.Services
             };
 
             var jsonPayload = JsonUtility.ToJson(request);
-            Debug.Log($"[IAPService] Requesting verify: infoId={product.id} storeId={storeProductId}");
+            Debug.Log($"[IAPService] Requesting verify: infoId={product.info_id} storeId={storeProductId}");
 
             NetworkService.Instance.Post("/api/iap/verify", jsonPayload, (ok, text) =>
             {
@@ -189,7 +189,7 @@ namespace Game.Services
                                 }
                             }
 
-                            _remainingPurchases[product.id] = response.remainingPurchases < 0
+                            _remainingPurchases[product.info_id] = response.remainingPurchases < 0
                                 ? null
                                 : (int?)response.remainingPurchases;
 

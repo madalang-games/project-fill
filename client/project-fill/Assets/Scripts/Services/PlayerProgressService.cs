@@ -161,14 +161,6 @@ namespace Game.Services
                 foreach (var id in response.UnlockedAvatarIds)
                     _unlockedAvatarIds.Add(id);
 
-            _unlockedBoardThemeIds.Clear();
-            if (response.UnlockedBoardThemeIds != null)
-                foreach (var id in response.UnlockedBoardThemeIds)
-                    _unlockedBoardThemeIds.Add(id);
-
-            if (response.EquippedBoardThemeId > 0)
-                _equippedBoardThemeId = response.EquippedBoardThemeId;
-
             PlayerPrefs.Save();
             Debug.Log($"[PlayerProgressService] Loaded from server: unlockedAvatars={response.UnlockedAvatarIds?.Count ?? 0}");
         }

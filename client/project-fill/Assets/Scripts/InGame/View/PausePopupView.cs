@@ -9,5 +9,6 @@ namespace Game.InGame.View
         [SerializeField] private Button _restartButton;
         [SerializeField] private Button _settingsButton;
         [SerializeField] private Button _stageSelectButton;
+        [SerializeField] private Button _closeButton;
     }
 }
