@@ -5,7 +5,7 @@
 |------|------|------|
 | `Common/` | Error codes and API exception type | `Common/AGENTS.md` |
 | `Logging/` | Event log row factory | `Logging/AGENTS.md` |
-| `Stage/` | Interstitial ad cooldown and double reward ad services | `Stage/AGENTS.md` |
+| `Stage/` | Campaign stage-clear flow (progress, first-clear reward, chapter milestone) + interstitial ad cooldown | `Stage/AGENTS.md` |
 | `Ranking/` | Global ranking Redis indexes and rebuilds | `Ranking/AGENTS.md` |
 | `Rewards/` | Generic reward source, ad reward claim services, SSV infrastructure | `Rewards/AGENTS.md` |
 | `Currency/` | Soft currency balance service | `Currency/AGENTS.md` |

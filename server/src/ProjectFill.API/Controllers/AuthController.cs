@@ -329,9 +329,9 @@ public sealed class AuthController : ControllerBase
             .Select(x => x.SoftAmount)
             .FirstOrDefaultAsync(ct);
 
-        var stars = await _db.UserRankingTotals.Query()
+        var clearedStages = await _db.UserRankingTotals.Query()
             .Where(x => x.UserId == userId)
-            .Select(x => x.TotalEarnedStars)
+            .Select(x => x.TotalClearedStages)
             .FirstOrDefaultAsync(ct);
 
         var items = await _db.UserInventory.Query()
@@ -342,7 +342,7 @@ public sealed class AuthController : ControllerBase
         {
             MaxStageId = maxStage,
             Gold = gold,
-            TotalStars = stars,
+            TotalClearedStages = clearedStages,
             TotalItems = items
         };
     }

@@ -23,9 +23,17 @@ public sealed class RankingController : ControllerBaseEx
     public Task<MyRankingResponse> GetMyGlobal(string type, CancellationToken ct)
         => _ranking.GetMyGlobalRankAsync(PlayerId, type, ct);
 
+    [HttpGet("weekly")]
+    public Task<RankingPageResponse> GetWeekly([FromQuery] int offset = 0, [FromQuery] int limit = 50, CancellationToken ct = default)
+        => _ranking.GetWeeklyPageAsync(offset, limit, ct);
+
+    [HttpGet("weekly/me")]
+    public Task<MyRankingResponse> GetMyWeekly(CancellationToken ct)
+        => _ranking.GetMyWeeklyRankAsync(PlayerId, ct);
+
     [HttpGet("stages/{stageId:int}/me")]
     public Task<StageRankResponse> GetMyStageRank(int stageId, CancellationToken ct)
-        => Task.FromResult(new StageRankResponse { StageId = stageId });
+        => _ranking.GetStageRankAsync(PlayerId, stageId, ct);
 
     [HttpPost("admin/rebuild")]
     public async Task<RankingRebuildResponse> Rebuild(CancellationToken ct)

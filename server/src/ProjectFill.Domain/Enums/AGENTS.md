@@ -10,8 +10,8 @@
 ## Symbols
 | symbol | kind | note |
 |--------|------|------|
-| `GlobalRankingType.Stars` | enum value | Redis key suffix: `ranking:global:stars` |
-| `GlobalRankingType.MaxStage` | enum value | Redis key suffix: `ranking:global:max_stage` |
+| `GlobalRankingType.ClearedStages` | enum value | Total cleared-stage count ranking; Redis key `ranking:global:stages` |
+| `GlobalRankingType.MaxStage` | enum value | Highest cleared stage ranking; Redis key `ranking:global:max-stage` |
 | `AdPlacementKeys.AddLane` | const string | `"STUCK_ADD_LANE"` — rewarded ad for Add Lane item grant; matches `ad_placement.csv` placement_key |
 | `AdPlacementKeys.InterstitialPostStage` | const string | `"INTERSTITIAL_POST_STAGE"` — cooldown-gated interstitial |
 | `AvatarUnlockTypes.Achievement` | const string | `"achievement"` — avatar unlock gated by reward claim |

@@ -26,7 +26,7 @@ public sealed class AccountConflictTests
         var snap = new SaveSnapshotDto();
         Assert.Equal(0, snap.MaxStageId);
         Assert.Equal(0L, snap.Gold);
-        Assert.Equal(0, snap.TotalStars);
+        Assert.Equal(0, snap.TotalClearedStages);
         Assert.Equal(0, snap.TotalItems);
     }
 
@@ -37,8 +37,8 @@ public sealed class AccountConflictTests
         {
             Success = false,
             Conflict = true,
-            LocalSave = new SaveSnapshotDto { MaxStageId = 50, Gold = 1000, TotalStars = 100, TotalItems = 3 },
-            CloudSave = new SaveSnapshotDto { MaxStageId = 20, Gold = 500,  TotalStars = 40,  TotalItems = 1 },
+            LocalSave = new SaveSnapshotDto { MaxStageId = 50, Gold = 1000, TotalClearedStages = 100, TotalItems = 3 },
+            CloudSave = new SaveSnapshotDto { MaxStageId = 20, Gold = 500,  TotalClearedStages = 40,  TotalItems = 1 },
             ConflictToken = "tok123"
         };
         Assert.True(resp.Conflict);

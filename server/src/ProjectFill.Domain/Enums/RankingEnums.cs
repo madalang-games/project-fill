@@ -2,6 +2,6 @@ namespace ProjectFill.Domain.Enums;
 
 public enum GlobalRankingType
 {
-    Stars,
+    ClearedStages,
     MaxStage,
 }

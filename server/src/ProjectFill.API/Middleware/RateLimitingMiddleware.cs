@@ -12,7 +12,7 @@ namespace ProjectFill.API.Middleware
     public sealed class RateLimitingMiddleware
     {
         private static readonly Regex StageStartRegex = new Regex(@"^/api/stages/(?<stageId>\d+)/attempts/start$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-        private static readonly Regex StageClearRegex = new Regex(@"^/api/stages/(?<stageId>\d+)/attempts/[^/]+/clear$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        private static readonly Regex StageClearRegex = new Regex(@"^/api/stages/(?<stageId>\d+)/clear$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
         private readonly RequestDelegate _next;
         private readonly ProjectFillConfiguration _config;

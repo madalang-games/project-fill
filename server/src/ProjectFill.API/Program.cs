@@ -85,6 +85,7 @@ builder.Services.AddHostedService(sp => sp.GetRequiredService<AdMobSsvKeyCache>(
 builder.Services.AddScoped<CurrencyService>();
 builder.Services.AddScoped<PlayerService>();
 builder.Services.AddScoped<RankingService>();
+builder.Services.AddScoped<StageService>();
 builder.Services.AddScoped<RewardService>();
 builder.Services.AddScoped<InventoryService>();
 builder.Services.AddScoped<TutorialService>();
