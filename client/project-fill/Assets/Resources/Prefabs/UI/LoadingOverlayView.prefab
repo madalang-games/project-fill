@@ -12,6 +12,22 @@ PrefabInstance:
       propertyPath: m_Name
       value: LoadingOverlayView
       objectReference: {fileID: 0}
+    - target: {fileID: 3408422442823905100, guid: 4c87c1e88e5cfee4aae2931d91374f43, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: 1e9ede19ddb7f6f4eb385ce4e5e5b1bb, type: 3}
+    - target: {fileID: 3408422442823905100, guid: 4c87c1e88e5cfee4aae2931d91374f43, type: 3}
+      propertyPath: m_Color.b
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3408422442823905100, guid: 4c87c1e88e5cfee4aae2931d91374f43, type: 3}
+      propertyPath: m_Color.g
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3408422442823905100, guid: 4c87c1e88e5cfee4aae2931d91374f43, type: 3}
+      propertyPath: m_Color.r
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6145568629584607680, guid: 4c87c1e88e5cfee4aae2931d91374f43, type: 3}
       propertyPath: m_Pivot.x
       value: 0.5
@@ -93,9 +109,21 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8798011413303507786, guid: 4c87c1e88e5cfee4aae2931d91374f43, type: 3}
+      propertyPath: m_fontSize
+      value: 32
+      objectReference: {fileID: 0}
+    - target: {fileID: 8798011413303507786, guid: 4c87c1e88e5cfee4aae2931d91374f43, type: 3}
       propertyPath: m_sharedMaterial
       value: 
       objectReference: {fileID: 5096344758848160942, guid: ea305f60c38832d48a4cb9a30779389f, type: 2}
+    - target: {fileID: 8798011413303507786, guid: 4c87c1e88e5cfee4aae2931d91374f43, type: 3}
+      propertyPath: m_fontColor32.rgba
+      value: 4294961384
+      objectReference: {fileID: 0}
+    - target: {fileID: 8798011413303507786, guid: 4c87c1e88e5cfee4aae2931d91374f43, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

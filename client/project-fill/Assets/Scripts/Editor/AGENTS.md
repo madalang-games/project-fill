@@ -57,12 +57,13 @@
 | `UIEditorSetup.GetEditorDefaultFont()` | method | Loads EN TMP_FontAsset from FontLocalizationConfig.asset; cached after first call; null if config not yet generated. Called by `TMP()` to apply editor-time font. |
 | `UIEditorSetup.Panel(parent, name, size, color, outline?)` | method | 3-layer pixel panel: returns `Content` GO (the fill layer). Creates PanelRoot (no image, size+16 to include 8px border padding each side) → Shadow (child 0, stretch, right+8 bottom+8) → Border (child 1, stretch, outline color) → Content (child 2, 8px inset, fill color). Default outline = `UI_BORDER`. |
 | `UIEditorSetup.PixelShadow(parent, color?)` | method | Pixel art drop shadow: stretch-stretch on parent, offsetMin/Max=(8,-8) → right+8 bottom+8; always SetAsFirstSibling; auto-called by Panel/Btn/BtnHlg/RibbonTitle |
-| `UIEditorSetup.CloseBtnAt(parent, pos, size?)` | method | Square explicit close button (default **96px**); has PixelShadow + UIButtonAnimator + "✕" label; wire returned Button to View._backdropButton or _closeButton |
+| `UIEditorSetup.CloseBtnAt(parent, pos, size?)` | method | Square explicit close button (default **96px**); Visual = white-tinted `ui_close_button.png` sprite (no shadow, no label) + UIButtonAnimator; wire returned Button to View._backdropButton or _closeButton |
 | `UIEditorSetup.Btn(parent, name, pos, size, color, label, ...)` | method | Pixel art button; size clamped to minimum 96×96 before layout; has PixelShadow + Visual layer |
 | `UIEditorSetup.TryMapImageSprite()` | method | Helper to map sprite directly onto Image component target |
 | `UIEditorSetup.BtnNavTab()` | method | Nav bar tab button — icon (color-tinted) above label; `_homeHighlight` etc. wire to `Visual/Icon` Image |
 | `UIEditorSetup.ItemToggleRow()` | method | Toggle row with item icon on left; Label TMP is a child of Toggle GO (GetComponentInChildren finds it) |
 | `UIEditorSetup.MapStarAndIconSprites()` | method | Re-maps star_empty/star_filled/lock icon on Common prefabs without recreating them |
+| `UIEditorSetup.CreateForceUpdateView()` | method | [MenuItem ".../ForceUpdateView"] forced-action update popup; opaque `UI_BG_DEEP` bg, Update button wired to `ForceUpdateView._updateButton` |
 | `UIEditorSetup.CreateRewardPopup()` | method | Also creates `RewardItemCell.prefab` inline (background+Icon+Quantity badge+RewardItemCellView); wires `_itemRowPrefab` and `_closeButton` on RewardPopupView; adds visual-only Backdrop child |
 | `UIEditorSetup.CreateItemTooltip()` | method | Creates `ItemTooltipView.prefab` skeleton in Base/Common; missing Resources/Prefabs/UI variant is created automatically |
 | `UIEditorSetup.CreateVariantIfMissing()` | method | Creates Final prefab variants from Base prefabs; skips when target variant already exists |

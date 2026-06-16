@@ -5537,7 +5537,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Star Ranking
+  m_text: Stage Ranking
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: ea305f60c38832d48a4cb9a30779389f, type: 2}
   m_sharedMaterial: {fileID: 0}
@@ -5621,7 +5621,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ed7c992486bb06740990123c74fc8ac1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Core.UI.LocalizedText
-  _stringId: lobby.ranking.stars_title
+  _stringId: lobby.ranking.stages_title
 --- !u!114 &1102904964600439651
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7982,9 +7982,7 @@ MonoBehaviour:
   _virtualizedScrollRect: {fileID: 3787983106538949104}
   _myRankPin: {fileID: 313872072776326655}
   _avatarSprites: []
-  _starResourceKey: star_filled
   _stageResourceKey: nav_home
-  _starSprite: {fileID: 0}
   _stageSprite: {fileID: 0}
   _activeTabColor: {r: 0.29803923, g: 0.7882353, b: 0.9411765, a: 1}
   _inactiveTabColor: {r: 0.09411765, g: 0.09411765, b: 0.21176471, a: 1}
@@ -9264,7 +9262,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Stars
+  m_text: Stage
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: ea305f60c38832d48a4cb9a30779389f, type: 2}
   m_sharedMaterial: {fileID: 0}
@@ -9348,7 +9346,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ed7c992486bb06740990123c74fc8ac1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Core.UI.LocalizedText
-  _stringId: lobby.ranking.tab_stars
+  _stringId: lobby.ranking.tab_stages
 --- !u!114 &7786319670110317351
 MonoBehaviour:
   m_ObjectHideFlags: 0

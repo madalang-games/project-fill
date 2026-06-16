@@ -70,6 +70,7 @@ namespace Game.Editor
             CreateToast();
             CreateLoadingOverlay();
             CreateNetworkError();
+            CreateForceUpdateView();
             CreateRewardPopup();
             CreateReLoginView();
             CreateStageInfoPopup();
@@ -150,6 +151,9 @@ namespace Game.Editor
 
         [MenuItem("Tools/UI Setup/Prefabs/ClearPopup",       false, 135)]
         static void CreateClearPopupSingle()     { EnsureDirs(); CreateClearPopup();    AssetDatabase.Refresh(); }
+
+        [MenuItem("Tools/UI Setup/Prefabs/ForceUpdateView", false, 119)]
+        static void CreateForceUpdateViewSingle() { EnsureDirs(); CreateForceUpdateView(); AssetDatabase.Refresh(); }
 
         [MenuItem("Tools/UI Setup/Prefabs/InGameCanvas",     false, 118)]
         static void CreateInGameCanvasSingle()   { EnsureDirs(); SetupInGame();          AssetDatabase.Refresh(); }
@@ -621,11 +625,11 @@ namespace Game.Editor
 
             var rankingTab = Child(tabContent, "RankingTab"); Stretch(rankingTab); rankingTab.SetActive(false);
             var rankingView = Comp<RankingTabView>(rankingTab);
-            var starsTab = Btn(rankingTab, "StarsTabButton", new Vector2(-280, 700), new Vector2(260, 80), UI_PRIMARY, "Stars", LobbyRankingTabStars);
+            var starsTab = Btn(rankingTab, "StarsTabButton", new Vector2(-280, 700), new Vector2(260, 80), UI_PRIMARY, "Stage", LobbyRankingTabStages);
             var maxStageTab = Btn(rankingTab, "MaxStageTabButton", new Vector2(0, 700), new Vector2(260, 80), UI_BG_MID, "Max Stage", LobbyRankingTabMaxStage);
             var challengeTab = Btn(rankingTab, "ChallengeTabButton", new Vector2(280, 700), new Vector2(260, 80), UI_BG_MID, "Challenge", "ranking.tab.challenge");
-            
-            var rankTitle = TMP(rankingTab, "TitleText", Center(0, 580, 760, 70), 30, UI_CTA, "Star Ranking", LobbyRankingStarsTitle, TextCategory.Header);
+
+            var rankTitle = TMP(rankingTab, "TitleText", Center(0, 580, 760, 70), 30, UI_CTA, "Stage Ranking", LobbyRankingStagesTitle, TextCategory.Header);
             var myRank = TMP(rankingTab, "MyRankText", Center(0, 490, 760, 80), 24, UI_TEXT, "My Rank: -", LobbyRankingMyRankEmpty, TextCategory.Normal);
             var entries = TMP(rankingTab, "EntriesText", Center(0, -190, 820, 1220), 20, UI_TEXT, "Ranking unavailable", LobbyRankingUnavailable, TextCategory.Normal);
             entries.alignment = TextAlignmentOptions.TopLeft;
@@ -841,17 +845,10 @@ namespace Game.Editor
                 }
             }
 
-            // Populate Star and Stage icons on RankingTabView using specified resource keys
-            string starKey = soRanking.FindProperty("_starResourceKey").stringValue;
-            if (string.IsNullOrEmpty(starKey)) starKey = "star_filled";
+            // Populate the Stage score icon on RankingTabView (star rating removed)
             string stageKey = soRanking.FindProperty("_stageResourceKey").stringValue;
             if (string.IsNullOrEmpty(stageKey)) stageKey = "nav_home";
 
-            if (resMap.TryGetValue(starKey, out string starPath))
-            {
-                var starSprite = AssetDatabase.LoadAssetAtPath<Sprite>(starPath);
-                soRanking.FindProperty("_starSprite").objectReferenceValue = starSprite;
-            }
             if (resMap.TryGetValue(stageKey, out string stagePath))
             {
                 var stageSprite = AssetDatabase.LoadAssetAtPath<Sprite>(stagePath);
@@ -914,10 +911,20 @@ namespace Game.Editor
             Img(hud, UI_BG_MID);
 
             // Positioning relative to center of the 240px HUD (vertical center is Y = -120 local)
-            var stageText = TMP(hud, "StageText", Center(-200, 0, 600, 100), 40, UI_TEXT, "Stage", null, TextCategory.Header);
+            var stageText = TMP(hud, "StageText", Center(-200, 40, 600, 90), 40, UI_TEXT, "Stage", null, TextCategory.Header);
             stageText.alignment = TextAlignmentOptions.Left;
             Comp<LocalizedText>(stageText.gameObject);
             Comp<UITextStyle>(stageText.gameObject).ApplyStyle();
+
+            // Live move readouts (design §6/§8): current Moves + personal Best Moves. Values are set at
+            // runtime by BoardView.UpdateHud (stringId null → LocalizedText leaves the number untouched).
+            TMP(hud, "MovesCaption", Center(120, 30, 200, 46), 22, Hex("A6B0C9"), "MOVES", IngameMovesLabel, TextCategory.Normal);
+            var movesText = TMP(hud, "MovesText", Center(120, -32, 200, 70), 40, UI_TEXT, "0", null, TextCategory.Header);
+            Comp<UITextStyle>(movesText.gameObject).ApplyStyle();
+
+            TMP(hud, "BestCaption", Center(310, 30, 180, 46), 22, Hex("A6B0C9"), "BEST", IngameBestLabel, TextCategory.Normal);
+            var bestText = TMP(hud, "BestText", Center(310, -32, 180, 70), 40, UI_TEXT, "-", null, TextCategory.Header);
+            Comp<UITextStyle>(bestText.gameObject).ApplyStyle();
 
             // Resources mapping
             var resMap = LoadDynamicResourceMap();
@@ -1364,6 +1371,25 @@ namespace Game.Editor
             Save(root, "NetworkErrorView");
         }
 
+        static void CreateForceUpdateView()
+        {
+            var root = FullScreen("ForceUpdateView");
+            Img(root, UI_BG_DEEP); Comp<ForceUpdateView>(root);
+
+            var panel = Panel(root, "Panel", new Vector2(900, 480), UI_BG_MID);
+            RibbonTitle(panel, "TitleText", "Update Required", BootForceUpdateTitle);
+            var msg = TMP(panel, "MessageText", Center(0, 30, 760, 130), 20, UI_TEXT, "A new version is available.", BootForceUpdateBody, TextCategory.Normal);
+            msg.enableWordWrapping = true;
+            msg.alignment = TextAlignmentOptions.Center;
+            var btn = Btn(panel, "UpdateButton", new Vector2(0, -160), new Vector2(500, 90), UI_SUCCESS, "Update", BootForceUpdateBtn);
+
+            var so = new SerializedObject(root.GetComponent<ForceUpdateView>());
+            so.FindProperty("_updateButton").objectReferenceValue = btn.GetComponent<Button>();
+            so.ApplyModifiedProperties();
+
+            Save(root, "ForceUpdateView");
+        }
+
         static void CreateRewardPopup()
         {
             // Build RewardItemCell prefab first (background + icon + quantity badge)
@@ -1795,17 +1821,10 @@ namespace Game.Editor
             var title = RibbonTitle(panel, "StageTitleText", "Stage 1", PopupStageInfoTitle);
             var ribbonImg = title.transform.parent.GetComponent<Image>();
 
-            var best  = TMP(panel, "BestRecordText", Center(0, 195, 600, 55), 20, UI_TEXT, "Best: 2 Stars", null, TextCategory.Normal);
+            // Best-moves record (campaign ranking metric; "-" until cleared). Star rating was removed.
+            var best  = TMP(panel, "BestRecordText", Center(0, 140, 600, 60), 20, UI_TEXT, "-", null, TextCategory.Normal);
             var bestCsf = Comp<ContentSizeFitter>(best.gameObject);
             bestCsf.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
-
-            // 3 star placeholders — empty always visible, Fill child shown per bestStars
-            var starsRoot = Child(panel, "Stars"); Fixed(starsRoot, new Vector2(0, 90), new Vector2(450, 130));
-            var hlg = Comp<HorizontalLayoutGroup>(starsRoot);
-            hlg.spacing = 16; hlg.childAlignment = TextAnchor.MiddleCenter;
-            hlg.childControlWidth = false; hlg.childControlHeight = false;
-            hlg.childForceExpandWidth = false; hlg.childForceExpandHeight = false;
-            var s0 = StarGO(starsRoot, "Star0", 110f); var s1 = StarGO(starsRoot, "Star1", 110f); var s2 = StarGO(starsRoot, "Star2", 110f);
 
             var play = Btn(panel, "PlayButton", new Vector2(0, -285), new Vector2(400, 80), UI_CTA, "Play", CommonBtnPlay);
 
@@ -1818,23 +1837,7 @@ namespace Game.Editor
             so.FindProperty("_ribbonImage").objectReferenceValue      = ribbonImg;
             so.FindProperty("_playButton").objectReferenceValue       = play.GetComponent<Button>();
             so.FindProperty("_backdropButton").objectReferenceValue   = closeBtn;
-            var starsArr = so.FindProperty("_bestStarFills");
-            starsArr.arraySize = 3;
-            starsArr.GetArrayElementAtIndex(0).objectReferenceValue = s0.transform.Find("Fill").gameObject;
-            starsArr.GetArrayElementAtIndex(1).objectReferenceValue = s1.transform.Find("Fill").gameObject;
-            starsArr.GetArrayElementAtIndex(2).objectReferenceValue = s2.transform.Find("Fill").gameObject;
-
-            var resMap = LoadDynamicResourceMap();
-            var starEmpty  = resMap.TryGetValue("star_empty",  out string ep) ? AssetDatabase.LoadAssetAtPath<Sprite>(ep)  : null;
-            var starFilled = resMap.TryGetValue("star_filled", out string fp) ? AssetDatabase.LoadAssetAtPath<Sprite>(fp) : null;
             so.ApplyModifiedProperties();
-
-            foreach (var star in new[] { s0, s1, s2 })
-            {
-                if (starEmpty  != null) { star.GetComponent<Image>().sprite = starEmpty; }
-                var fillImg = star.transform.Find("Fill")?.GetComponent<Image>();
-                if (fillImg != null && starFilled != null) fillImg.sprite = starFilled;
-            }
 
             Save(root, "StageInfoPopupView");
         }
@@ -1957,6 +1960,9 @@ namespace Game.Editor
             var panel = Panel(root, "Panel", new Vector2(850, 720), UI_BG_MID);
             var uidTxt = RibbonTitle(panel, "UserIdText", "Guest", CommonGuest);
 
+            // PID copy button — right of the user id ribbon; copies PID to clipboard
+            var copyBtn = Btn(panel, "CopyPidButton", new Vector2(250, 250), new Vector2(150, 96), UI_PRIMARY, "Copy", PopupAccountBtnCopyPid);
+
             // Avatar selection + Achievements entry moved out (Shop avatar section / lobby Achievement tab).
 
             // 1. Nickname Input Area (grouped in NicknameArea)
@@ -2014,12 +2020,20 @@ namespace Game.Editor
             // 2. Platform Account Buttons (Link for guest / Switch for OAuth — only one shown at runtime)
             var linkBtn = Btn(panel, "LinkAccountButton",   new Vector2(0, -180), new Vector2(600, 96), UI_CTA, "Link Account",   PopupAccountBtnLink);
             var swBtn   = Btn(panel, "SwitchAccountButton", new Vector2(0, -180), new Vector2(600, 96), UI_CTA, "Switch Account", PopupAccountBtnSwitch);
+
+            // Legal links (Privacy / Terms) — open web page per environment
+            var privacyBtn = Btn(panel, "PrivacyButton", new Vector2(-160, -290), new Vector2(290, 96), UI_BG_DEEP, "Privacy Policy",   PopupAccountBtnPrivacy);
+            var termsBtn   = Btn(panel, "TermsButton",   new Vector2( 160, -290), new Vector2(290, 96), UI_BG_DEEP, "Terms of Service", PopupAccountBtnTerms);
+
             var closeBtn = CloseBtnAt(panel, new Vector2(377, 312));
 
             // 3. Serialize Object Wiring (avatar sprite mapping retained for HeaderView / TutorialOverlay)
             var resMap = LoadDynamicResourceMap();
             var so = new SerializedObject(root.GetComponent<AccountPopupView>());
             so.FindProperty("_userIdText").objectReferenceValue          = uidTxt;
+            so.FindProperty("_copyPidButton").objectReferenceValue       = copyBtn.GetComponent<Button>();
+            so.FindProperty("_privacyButton").objectReferenceValue       = privacyBtn.GetComponent<Button>();
+            so.FindProperty("_termsButton").objectReferenceValue         = termsBtn.GetComponent<Button>();
             so.FindProperty("_linkAccountButton").objectReferenceValue   = linkBtn.GetComponent<Button>();
             so.FindProperty("_switchAccountButton").objectReferenceValue = swBtn.GetComponent<Button>();
             so.FindProperty("_closeButton").objectReferenceValue         = closeBtn;
@@ -2071,16 +2085,11 @@ namespace Game.Editor
             // Label
             var stageLabel = TMP(inner, "StageLabel", Center(0, 0, 110, 110), 22, UI_TEXT, "1", null, TextCategory.Button);
             
-            // Stars container — empty sprite always visible; Fill child shown per earned stars
-            var starsRoot = Child(root, "Stars");
-            Fixed(starsRoot, new Vector2(0f, -60f), new Vector2(110f, 32f));
-            var hlg = Comp<HorizontalLayoutGroup>(starsRoot);
-            hlg.spacing = 4; hlg.childAlignment = TextAnchor.MiddleCenter;
-            hlg.childControlWidth = false; hlg.childControlHeight = false;
-            hlg.childForceExpandWidth = false; hlg.childForceExpandHeight = false;
-            var s0 = StarGO(starsRoot, "Star0", 30f);
-            var s1 = StarGO(starsRoot, "Star1", 30f);
-            var s2 = StarGO(starsRoot, "Star2", 30f);
+            // Cleared badge — single marker shown when the stage has been cleared (star rating removed)
+            var clearedBadge = Child(root, "ClearedBadge");
+            Fixed(clearedBadge, new Vector2(0f, -60f), new Vector2(36f, 36f));
+            Img(clearedBadge, UI_SUCCESS);
+            clearedBadge.SetActive(false);
 
             // Lock Overlay
             var lockOverlay = Child(root, "LockOverlay");
@@ -2111,24 +2120,11 @@ namespace Game.Editor
             so.FindProperty("_border").objectReferenceValue           = borderImg;
             so.FindProperty("_difficultyOutline").objectReferenceValue = diffOutlineImg;
             so.FindProperty("_skullIcon").objectReferenceValue        = skullBadge;
-
-            var starFillsArr = so.FindProperty("_starFills");
-            starFillsArr.arraySize = 3;
-            starFillsArr.GetArrayElementAtIndex(0).objectReferenceValue = s0.transform.Find("Fill").gameObject;
-            starFillsArr.GetArrayElementAtIndex(1).objectReferenceValue = s1.transform.Find("Fill").gameObject;
-            starFillsArr.GetArrayElementAtIndex(2).objectReferenceValue = s2.transform.Find("Fill").gameObject;
+            so.FindProperty("_clearedBadge").objectReferenceValue     = clearedBadge;
             so.ApplyModifiedProperties();
 
             var resMap = LoadDynamicResourceMap();
-            var starEmpty  = resMap.TryGetValue("star_empty",  out string ep) ? AssetDatabase.LoadAssetAtPath<Sprite>(ep)  : null;
-            var starFilled = resMap.TryGetValue("star_filled", out string fp) ? AssetDatabase.LoadAssetAtPath<Sprite>(fp) : null;
             var lockSpr    = resMap.TryGetValue("ui_lock_icon", out string lp) ? AssetDatabase.LoadAssetAtPath<Sprite>(lp) : null;
-            foreach (var star in new[] { s0, s1, s2 })
-            {
-                if (starEmpty  != null) { star.GetComponent<Image>().sprite = starEmpty; }
-                var fillImg = star.transform.Find("Fill")?.GetComponent<Image>();
-                if (fillImg != null && starFilled != null) fillImg.sprite = starFilled;
-            }
             var lockImgComp = lockIcon.GetComponent<Image>();
             if (lockImgComp != null && lockSpr != null) { lockImgComp.sprite = lockSpr; lockImgComp.preserveAspect = true; }
             var skullSpr = resMap.TryGetValue("ui_hard_skull", out string skulp) ? AssetDatabase.LoadAssetAtPath<Sprite>(skulp) : null;
@@ -2301,8 +2297,8 @@ namespace Game.Editor
             psRenderer.material = new Material(Shader.Find("Sprites/Default"));
             sparkleGo.SetActive(false);
 
-            // StarCountContainer — dark pill below chest image; shows {current}/{max} stars
-            var starContainer = Child(root, "StarCountContainer");
+            // ClearedCountContainer — dark pill below chest image; shows {cleared}/{total} stages
+            var starContainer = Child(root, "ClearedCountContainer");
             Fixed(starContainer, new Vector2(0, -85), new Vector2(150, 40));
             var starContainerImg = Img(starContainer, Hex("2A1635"));
             starContainerImg.raycastTarget = false;
@@ -2313,7 +2309,7 @@ namespace Game.Editor
             starShadowImg.raycastTarget = false;
             starShadow.transform.SetAsFirstSibling();
 
-            var starTxt = TMP(starContainer, "StarCountText", Center(0, 1, 140, 34), 16, UI_TEXT, "0/0", null, TextCategory.Normal);
+            var starTxt = TMP(starContainer, "ClearedCountText", Center(0, 1, 140, 34), 16, UI_TEXT, "0/0", null, TextCategory.Normal);
             starTxt.alignment = TextAlignmentOptions.Center;
             starTxt.enableWordWrapping = false;
 
@@ -2324,7 +2320,7 @@ namespace Game.Editor
             so.FindProperty("_glowEffect").objectReferenceValue = glow;
             so.FindProperty("_sparkleParticles").objectReferenceValue = ps;
             so.FindProperty("_canvasGroup").objectReferenceValue = chestCg;
-            so.FindProperty("_starCountLabel").objectReferenceValue = starTxt;
+            so.FindProperty("_clearedCountLabel").objectReferenceValue = starTxt;
 
             // Map chest sprites from dynamic_resource.csv
             var resMap = LoadDynamicResourceMap();
@@ -2427,14 +2423,14 @@ namespace Game.Editor
         {
             var go = Child(parent, "CloseButton");
             Fixed(go, anchoredPos, new Vector2(size, size));
-            PixelShadow(go);
             var visual = Child(go, "Visual");
             Stretch(visual);
-            var img = Img(visual, UI_BG_DEEP);
+            var img = Img(visual, Color.white);
+            var spr = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Sprites/UI/Icons/ui_close_button.png");
+            if (spr != null) { img.sprite = spr; img.preserveAspect = true; }
             var btn = Comp<Button>(go);
             btn.targetGraphic = img;
             Comp<UIButtonAnimator>(go);
-            TMP(visual, "Label", Center(0, 0, size, size), 32, UI_TEXT, "✕", null, TextCategory.Button);
             return btn;
         }
 
@@ -2655,25 +2651,6 @@ namespace Game.Editor
         {
             if (!go.TryGetComponent<RectTransform>(out var rt)) rt = Comp<RectTransform>(go);
             return rt;
-        }
-
-        static GameObject StarGO(GameObject parent, string name, float size = 70f)
-        {
-            var go = Child(parent, name);
-            RT(go).sizeDelta = new Vector2(size, size);
-            var le = Comp<LayoutElement>(go);
-            le.minWidth = le.preferredWidth = size;
-            le.minHeight = le.preferredHeight = size;
-            var emptyImg = Img(go, Color.white);
-            emptyImg.preserveAspect = true;
-            emptyImg.raycastTarget = false;
-            var fill = Child(go, "Fill");
-            Stretch(fill);
-            var fillImg = Img(fill, Color.white);
-            fillImg.preserveAspect = true;
-            fillImg.raycastTarget = false;
-            fill.SetActive(false);
-            return go;
         }
 
         static GameObject ToggleRow(GameObject parent, string rowName, Vector2 pos, string label, string labelStringId = null)
@@ -3198,40 +3175,11 @@ namespace Game.Editor
 
         private static void MapStarAndIconSprites(Dictionary<string, string> resMap)
         {
-            string[] stageInfoPaths = {
-                "Assets/Resources/Prefabs/UI/StageInfoPopupView.prefab",
-                "Assets/UI/Prefabs/Base/Common/StageInfoPopupView.prefab"
-            };
-            string[] resultPaths = {
-                "Assets/Resources/Prefabs/UI/ResultOverlayView.prefab",
-                "Assets/UI/Prefabs/Base/Common/ResultOverlayView.prefab"
-            };
+            // Star rating removed — only the stage-node lock icon needs remapping now.
             string[] stageNodePaths = {
                 "Assets/Resources/Prefabs/UI/StageNodeView.prefab",
                 "Assets/UI/Prefabs/Base/Common/StageNodeView.prefab"
             };
-
-            for (int i = 0; i < 3; i++)
-            {
-                foreach (var path in stageInfoPaths)
-                {
-                    var p = AssetDatabase.LoadAssetAtPath<GameObject>(path);
-                    MapHierarchyImageSprite(p, $"Panel/InnerPanel/Stars/Star{i}", "star_empty", resMap);
-                    MapHierarchyImageSprite(p, $"Panel/InnerPanel/Stars/Star{i}/Fill", "star_filled", resMap);
-                }
-                foreach (var path in resultPaths)
-                {
-                    var p = AssetDatabase.LoadAssetAtPath<GameObject>(path);
-                    MapHierarchyImageSprite(p, $"Panel/InnerPanel/Stars/Star{i}", "star_empty", resMap);
-                    MapHierarchyImageSprite(p, $"Panel/InnerPanel/Stars/Star{i}/Fill", "star_filled", resMap);
-                }
-                foreach (var path in stageNodePaths)
-                {
-                    var p = AssetDatabase.LoadAssetAtPath<GameObject>(path);
-                    MapHierarchyImageSprite(p, $"Stars/Star{i}", "star_empty", resMap);
-                    MapHierarchyImageSprite(p, $"Stars/Star{i}/Fill", "star_filled", resMap);
-                }
-            }
 
             foreach (var path in stageNodePaths)
             {
@@ -3264,7 +3212,7 @@ namespace Game.Editor
             Fixed(scoreIcon, new Vector2(200, 0), new Vector2(48, 48));
             var scoreImg = Img(scoreIcon, Color.white);
             scoreImg.preserveAspect = true;
-            if (resMap.TryGetValue("star_filled", out string sfp))
+            if (resMap.TryGetValue("nav_home", out string sfp))
             {
                 var spr = AssetDatabase.LoadAssetAtPath<Sprite>(sfp);
                 if (spr != null) scoreImg.sprite = spr;
@@ -3341,7 +3289,7 @@ namespace Game.Editor
             var localLabel      = TMP(localPanel, "LocalLabel",      Center(0, 240, 340, 60),  22, UI_TEXT, "Current Data",  PopupAccountConflictLocalLabel, TextCategory.Header);
             var localStageText  = TMP(localPanel, "LocalStageText",  Center(0, 150, 340, 55),  18, UI_TEXT, "Stage 0",       PopupAccountConflictStageFmt,   TextCategory.Normal);
             var localGoldText   = TMP(localPanel, "LocalGoldText",   Center(0,  80, 340, 55),  18, UI_TEXT, "Gold: 0",       PopupAccountConflictGoldFmt,    TextCategory.Normal);
-            var localStarsText  = TMP(localPanel, "LocalStarsText",  Center(0,  10, 340, 55),  18, UI_TEXT, "★ 0",          PopupAccountConflictStarsFmt,   TextCategory.Normal);
+            var localClearedText  = TMP(localPanel, "LocalClearedText", Center(0,  10, 340, 55),  18, UI_TEXT, "Cleared: 0",   PopupAccountConflictClearedFmt, TextCategory.Normal);
             var localItemsText  = TMP(localPanel, "LocalItemsText",  Center(0, -60, 340, 55),  18, UI_TEXT, "Items: 0",      PopupAccountConflictItemsFmt,   TextCategory.Normal);
             var keepLocalBtn    = Btn(localPanel, "KeepLocalButton", new Vector2(0, -190), new Vector2(340, 75), UI_PRIMARY, "Keep Current", PopupAccountConflictBtnKeepLocal);
 
@@ -3352,7 +3300,7 @@ namespace Game.Editor
             var cloudLabel      = TMP(cloudPanel, "CloudLabel",      Center(0, 240, 340, 60),  22, UI_TEXT, "Google Account Data", PopupAccountConflictCloudLabel,        TextCategory.Header);
             var cloudStageText  = TMP(cloudPanel, "CloudStageText",  Center(0, 150, 340, 55),  18, UI_TEXT, "Stage 0",             PopupAccountConflictStageFmt,          TextCategory.Normal);
             var cloudGoldText   = TMP(cloudPanel, "CloudGoldText",   Center(0,  80, 340, 55),  18, UI_TEXT, "Gold: 0",             PopupAccountConflictGoldFmt,           TextCategory.Normal);
-            var cloudStarsText  = TMP(cloudPanel, "CloudStarsText",  Center(0,  10, 340, 55),  18, UI_TEXT, "★ 0",                PopupAccountConflictStarsFmt,          TextCategory.Normal);
+            var cloudClearedText  = TMP(cloudPanel, "CloudClearedText", Center(0,  10, 340, 55),  18, UI_TEXT, "Cleared: 0",          PopupAccountConflictClearedFmt,        TextCategory.Normal);
             var cloudItemsText  = TMP(cloudPanel, "CloudItemsText",  Center(0, -60, 340, 55),  18, UI_TEXT, "Items: 0",            PopupAccountConflictItemsFmt,          TextCategory.Normal);
             var keepCloudBtn    = Btn(cloudPanel, "KeepCloudButton", new Vector2(0, -190), new Vector2(340, 75), UI_PRIMARY, "Use Google Data", PopupAccountConflictBtnKeepCloud);
 
@@ -3365,13 +3313,13 @@ namespace Game.Editor
             so.FindProperty("_localLabel").objectReferenceValue     = localLabel;
             so.FindProperty("_localStageText").objectReferenceValue = localStageText;
             so.FindProperty("_localGoldText").objectReferenceValue  = localGoldText;
-            so.FindProperty("_localStarsText").objectReferenceValue = localStarsText;
+            so.FindProperty("_localClearedText").objectReferenceValue = localClearedText;
             so.FindProperty("_localItemsText").objectReferenceValue = localItemsText;
             so.FindProperty("_keepLocalButton").objectReferenceValue = keepLocalBtn.GetComponent<Button>();
             so.FindProperty("_cloudLabel").objectReferenceValue     = cloudLabel;
             so.FindProperty("_cloudStageText").objectReferenceValue = cloudStageText;
             so.FindProperty("_cloudGoldText").objectReferenceValue  = cloudGoldText;
-            so.FindProperty("_cloudStarsText").objectReferenceValue = cloudStarsText;
+            so.FindProperty("_cloudClearedText").objectReferenceValue = cloudClearedText;
             so.FindProperty("_cloudItemsText").objectReferenceValue = cloudItemsText;
             so.FindProperty("_keepCloudButton").objectReferenceValue = keepCloudBtn.GetComponent<Button>();
             so.FindProperty("_cancelButton").objectReferenceValue   = cancelBtn.GetComponent<Button>();

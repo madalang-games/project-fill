@@ -37,15 +37,11 @@ namespace Game.Editor
             var style = label.AddComponent<Game.Core.UI.UITextStyle>();
             style.ApplyStyle();
 
-            // 3 star fills (small dots at bottom)
-            var starsRow = Child(root, "Stars");
-            Fixed(starsRow, new Vector2(0, -40), new Vector2(90, 24));
-            var hlg = starsRow.AddComponent<HorizontalLayoutGroup>();
-            hlg.spacing = 4; hlg.childAlignment = TextAnchor.MiddleCenter;
-            hlg.childControlHeight = false; hlg.childControlWidth = false;
-            var s0 = StarDot(starsRow, "StarFill0");
-            var s1 = StarDot(starsRow, "StarFill1");
-            var s2 = StarDot(starsRow, "StarFill2");
+            // Cleared badge (single marker at bottom; star rating removed)
+            var clearedBadge = Child(root, "ClearedBadge");
+            Fixed(clearedBadge, new Vector2(0, -40), new Vector2(24, 24));
+            clearedBadge.AddComponent<Image>().color = UIEditorColors.UI_SUCCESS;
+            clearedBadge.SetActive(false);
 
             // Lock overlay
             var lockOverlay = Child(root, "LockOverlay");
@@ -67,11 +63,7 @@ namespace Game.Editor
             so.FindProperty("_button").objectReferenceValue     = root.GetComponent<Button>();
             so.FindProperty("_lockOverlay").objectReferenceValue = lockOverlay;
             so.FindProperty("_pulseRing").objectReferenceValue  = ring;
-            var starsArr = so.FindProperty("_starFills");
-            starsArr.arraySize = 3;
-            starsArr.GetArrayElementAtIndex(0).objectReferenceValue = s0;
-            starsArr.GetArrayElementAtIndex(1).objectReferenceValue = s1;
-            starsArr.GetArrayElementAtIndex(2).objectReferenceValue = s2;
+            so.FindProperty("_clearedBadge").objectReferenceValue = clearedBadge;
             so.ApplyModifiedProperties();
 
             PrefabUtility.SaveAsPrefabAsset(root, PrefabRoot + "/StageNodeView.prefab");
@@ -114,12 +106,6 @@ namespace Game.Editor
             rt.sizeDelta = size; rt.anchoredPosition = pos;
         }
 
-        static GameObject StarDot(GameObject parent, string name)
-        {
-            var go = Child(parent, name); Fixed(go, Vector2.zero, new Vector2(20, 20));
-            go.AddComponent<Image>().color = UIEditorColors.UI_CTA;
-            return go;
-        }
     }
 
     internal static class UIEditorColors
@@ -127,6 +113,7 @@ namespace Game.Editor
         public static Color UI_BG_MID => Hex("1A2F45");
         public static Color UI_CTA    => Hex("E8A020");
         public static Color UI_TEXT   => Hex("F0EAD6");
+        public static Color UI_SUCCESS => Hex("3DBE6E");
         static Color Hex(string h) { ColorUtility.TryParseHtmlString("#" + h, out Color c); return c; }
     }
 }
