@@ -3,10 +3,13 @@
 ## Nav
 | file/dir | role |
 |----------|------|
-| `config-loader.js` | Loads required `template.ini` + `.env.dev`/`.env.prod` values, including generator output paths |
+| `config-loader.js` | Loads required `template.ini` + `.env.dev`/`.env.prod` + `types.json`; exposes paths, namespaces, `cfg.types`, `cfg.infoGenSkip` |
+| `types.json` | **Shared type registry** — normalized type → `{csharp, mysql}`. SoT for type mapping; consumed by info_generator (csharp) + db_generator (csharp+mysql). NEVER duplicate maps in a generator |
 | `info_generator/` | `shared/datas/**/*.csv` -> `*/generated/data/**/*.csv` + `StaticData/*.g.cs` + `IStaticDataService.g.cs` (diff-only + manifest stale cleanup) |
-| `db_generator/` | `server/db/schema.json` -> DB CREATE/ALTER TABLE + migration SQL + generated EF data access (diff-only ORM writes) |
+| `db_generator/` | `server/db/schema.json` -> DB CREATE/ALTER TABLE + migration SQL + generated EF data access (diff-only ORM writes). Detects column type/nullability changes (`MODIFY`, commented unless `--allow-drops`); records applied migrations in `schema_migrations` ledger |
 | `pkt_generator/` | `shared/contracts/**/*.cs` -> configured client contracts output dir (diff-only, preserves `.meta`) |
+| `validate/` | Read-only cross-source validator (enum membership / FK integrity / CSV↔DB type); `npm run gen:validate` | -> `validate/AGENTS.md` |
+| `gen.js` | **Incremental orchestrator** — hashes each gen's source tree, runs only changed gens in order (`info`->`db`->`pkt`); `npm run gen` (incremental), `--all`, `--check`, `npm run gen:watch`. Cache: `.gen-cache/orchestrator.json` |
 | `all_generator.bat` | Runs all gen steps in order (`info_generator` -> `db_generator` -> `pkt_generator`) |
 | `info_generator.bat` | Runs info_generator only |
 | `db_generator.bat` | Runs db_generator only |
@@ -29,4 +32,5 @@
 1. Create `tools/[name]/[name].js` — use `require('../config-loader')` for all config
 2. Add `"gen:[name]": "node tools/[name]/[name].js"` to root `package.json` scripts
 3. Add step to `all_generator.bat`
-4. Update this Nav section
+4. Register in `gen.js` `GENERATORS` (name, script path, source paths) for incremental runs
+5. Update this Nav section

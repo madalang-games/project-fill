@@ -19,6 +19,8 @@
 
 ## Rules
 - Read all output paths and namespaces from `tools/config-loader.js` / `template.ini`.
+- Type→C# mapping comes from `tools/types.json` via `cfg.types` — never inline a type map.
+- Domain POCO / auto-service skip lists come from `template.ini [info-gen-skip]` via `cfg.infoGenSkip` — never hardcode CSV filenames in the generator.
 - Do not hardcode project names such as `ProjectLink`.
 - Game enum usings come from `[data-gen].game_types_namespace`.
 - `--check` must not write or delete generated files.

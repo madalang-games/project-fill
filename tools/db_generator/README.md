@@ -17,6 +17,14 @@ npm run gen:orm -- --allow-drops
 `--generate-only` skips DB connection and regenerates C# plus review SQL.
 `--allow-drops` is required before DROP statements can be executed against a dev DB.
 
+## Migration behavior
+Diff is computed against live `INFORMATION_SCHEMA`:
+- **Added column** → `ADD COLUMN` (applied).
+- **Changed column** (type or nullability differ) → `MODIFY COLUMN`, **commented out by default** — review and apply manually, or pass `--allow-drops`. MODIFY can truncate data. Column `DEFAULT` changes are not diffed.
+- **Removed column / table** → `DROP`, commented out unless `--allow-drops`.
+
+Applied migrations are recorded in a tool-managed `schema_migrations` ledger table (`version`, `applied_at`). The ledger is excluded from schema diffs and never dropped.
+
 ## Config
 The generator reads paths and behavior from `template.ini`, then DB credentials from `.env.dev` or `.env.prod` via `tools/config-loader.js`.
 
@@ -25,6 +33,8 @@ Important settings:
 - `[paths].migrations_dir`
 - `[paths].orm_generated_dir`
 - `[orm-gen].dry_run`
+
+The **connection target DB is the env `DB_NAME`** (the database docker actually creates and grants), not `schema.json`'s `database` field. `schema.database` is advisory: if it differs from `DB_NAME` the generator warns (DB names are case-sensitive on Linux MySQL). Keep them aligned.
 
 ## Generated C# Surface
 Each table produces one `{Table}Db.g.cs` containing:

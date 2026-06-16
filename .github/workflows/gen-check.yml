@@ -1,0 +1,40 @@
+name: gen-check
+
+# Drift gate: fails if generated outputs are stale relative to their sources.
+# Generators are pure Node (no DB needed for --check), so this runs without services.
+
+on:
+  pull_request:
+    paths:
+      - 'shared/**'
+      - 'server/db/schema.json'
+      - 'server/generated/**'
+      - 'server/src/ProjectFill.Infrastructure/Generated/**'
+      - 'client/project-fill/Assets/Resources/Data/**'
+      - 'client/project-fill/Assets/Scripts/Data/Generated/**'
+      - 'client/project-fill/Assets/Scripts/Generated/**'
+      - 'tools/**'
+      - 'template.ini'
+      - 'package.json'
+  push:
+    branches: [main]
+
+jobs:
+  gen-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # config-loader requires an env file; the example carries all keys --check needs.
+      - name: Prepare dev env file
+        run: cp .env.dev.example .env.dev
+
+      - name: Validate cross-source integrity (enum / FK / type)
+        run: npm run gen:validate
+
+      - name: Verify generated outputs are up to date
+        run: npm run gen:check

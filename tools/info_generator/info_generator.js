@@ -288,8 +288,8 @@ function toPascalCase(str) {
 }
 
 function toCSharpType(csvType) {
-  const map = cfg.typeMap.csharp;
-  if (map[csvType]) return map[csvType];
+  const t = cfg.types[csvType];
+  if (t) return t.csharp;
   if (/^string\(\d+\)$/.test(csvType)) return 'string';
   return csvType; // enum — keep PascalCase type name as-is
 }
@@ -445,9 +445,10 @@ function generateServerCSharpFile(className, serverCols, pkCols, namespace, sour
 
 // ── Domain POCO / IStaticDataService / StaticDataService codegen ──────────────
 
-const SKIP_DOMAIN_SUBDIRS    = new Set(['ingame', 'string', 'tutorial']);
-const SKIP_DOMAIN_POCO_FILES = new Set(['outgame_shop_catalog', 'config_reward_group', 'config_reward_item']);
-const SKIP_AUTO_SVC_FILES    = new Set([...SKIP_DOMAIN_POCO_FILES, 'streak_challenge_event']);
+// Codegen exclusions are configured in template.ini [info-gen-skip] (no project filenames hardcoded here).
+const SKIP_DOMAIN_SUBDIRS    = new Set(cfg.infoGenSkip.domainSubdirs);
+const SKIP_DOMAIN_POCO_FILES = new Set(cfg.infoGenSkip.domainPocoFiles);
+const SKIP_AUTO_SVC_FILES    = new Set([...cfg.infoGenSkip.domainPocoFiles, ...cfg.infoGenSkip.autoServiceFiles]);
 
 function toDomainPocoClassName(csvBasename) {
   return toPascalCase(csvBasename) + 'Data';

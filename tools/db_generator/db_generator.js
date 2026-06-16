@@ -9,49 +9,15 @@ const GENERATE_ONLY = process.argv.includes('--generate-only');
 const ALLOW_DROPS   = process.argv.includes('--allow-drops');
 const CHECK_ONLY    = process.argv.includes('--check');
 
+// Migration ledger table — managed by this tool; excluded from schema diff/drops.
+const MIGRATIONS_TABLE = 'schema_migrations';
+
+// Loose MySQL type comparison (case/whitespace-insensitive) for column-change detection.
+function normalizeType(t) { return String(t).toLowerCase().replace(/\s+/g, ' ').trim(); }
+
 // ── Type maps ──────────────────────────────────────────────────────────────────
-
-const MYSQL_TYPES = {
-  int8:     'TINYINT',
-  int16:    'SMALLINT',
-  int32:    'INT',
-  int64:    'BIGINT',
-  uint8:    'TINYINT UNSIGNED',
-  uint16:   'SMALLINT UNSIGNED',
-  uint32:   'INT UNSIGNED',
-  uint64:   'BIGINT UNSIGNED',
-  float:    'FLOAT',
-  double:   'DOUBLE',
-  bool:     'TINYINT(1)',
-  string:   'TEXT',
-  longtext: 'LONGTEXT',
-  datetime: 'DATETIME(6)',
-  date:     'DATE',
-  json:     'JSON',
-  bytes:    'BLOB',
-  uuid:     'CHAR(36)',
-};
-
-const CSHARP_TYPES = {
-  int8:     'sbyte',
-  int16:    'short',
-  int32:    'int',
-  int64:    'long',
-  uint8:    'byte',
-  uint16:   'ushort',
-  uint32:   'uint',
-  uint64:   'ulong',
-  float:    'float',
-  double:   'double',
-  bool:     'bool',
-  string:   'string',
-  longtext: 'string',
-  datetime: 'DateTimeOffset',
-  date:     'DateOnly',
-  json:     'string',
-  bytes:    'byte[]',
-  uuid:     'Guid',
-};
+// Normalized type → mysql/csharp comes from tools/types.json (cfg.types). Do not
+// redefine those maps here — db-specific concerns only live below.
 
 // Types that Pomelo maps from C# primitive without explicit HasColumnType
 const POMELO_NATIVE = new Set(['int32', 'int64', 'float', 'double', 'bool']);
@@ -86,14 +52,14 @@ function getMysqlType(type) {
   const varcharMatch = type.match(/^string\((\d+)\)$/);
   if (varcharMatch) return `VARCHAR(${varcharMatch[1]})`;
   const bt = baseType(type);
-  if (!MYSQL_TYPES[bt]) die(`Unknown schema type: ${type}`);
-  return MYSQL_TYPES[bt];
+  if (!cfg.types[bt]) die(`Unknown schema type: ${type}`);
+  return cfg.types[bt].mysql;
 }
 
 function getCsharpBaseType(type) {
   const bt = baseType(type);
-  if (!CSHARP_TYPES[bt]) die(`Unknown schema type: ${type}`);
-  return CSHARP_TYPES[bt];
+  if (!cfg.types[bt]) die(`Unknown schema type: ${type}`);
+  return cfg.types[bt].csharp;
 }
 
 function getCsharpType(type, nullable) {
@@ -344,8 +310,9 @@ function buildMigrationSql(schema, dbState) {
   for (const table of schema.tables) {
     if (!dbState.has(table.name)) continue;
     const { columns: dbCols, indexes: dbIdxs } = dbState.get(table.name);
-    const addParts     = [];
-    const dropComments = [];
+    const addParts       = [];
+    const modifyComments = [];
+    const dropComments   = [];
 
     for (const col of table.columns) {
       if (!dbCols.has(col.name)) {
@@ -358,8 +325,27 @@ function buildMigrationSql(schema, dbState) {
       }
     }
 
+    // Existing column changed (type or nullability). MODIFY can truncate data, so it is
+    // commented out by default — review and apply manually, or pass --allow-drops.
+    for (const col of table.columns) {
+      const dbCol = dbCols.get(col.name);
+      if (!dbCol) continue; // new column already handled above
+      const wantType = normalizeType(getMysqlType(col.type));
+      const wantNull = isColNullable(col);
+      if (wantType === normalizeType(dbCol.type) && wantNull === dbCol.nullable) continue;
+      const mysqlType = getMysqlType(col.type);
+      const notNull   = (!isColNullable(col)) ? ' NOT NULL' : ' NULL';
+      const autoInc   = col.auto ? ' AUTO_INCREMENT' : '';
+      const dflt      = sqlDefaultClause(col);
+      const before    = `${normalizeType(dbCol.type)} ${dbCol.nullable ? 'NULL' : 'NOT NULL'}`;
+      const after     = `${wantType} ${wantNull ? 'NULL' : 'NOT NULL'}`;
+      const stmt = `ALTER TABLE \`${table.name}\` MODIFY COLUMN \`${col.name}\` ${mysqlType}${notNull}${autoInc}${dflt};`;
+      modifyComments.push(ALLOW_DROPS ? stmt : `-- ${stmt}  -- was: ${before} -> ${after}`);
+      hasChanges = true;
+    }
+
     const schemaCols = new Set(table.columns.map(c => c.name));
-    for (const dbCol of dbCols) {
+    for (const dbCol of dbCols.keys()) {
       if (!schemaCols.has(dbCol)) {
         const stmt = `ALTER TABLE \`${table.name}\` DROP COLUMN \`${dbCol}\`;`;
         dropComments.push(ALLOW_DROPS ? stmt : `-- ${stmt}`);
@@ -382,14 +368,22 @@ function buildMigrationSql(schema, dbState) {
       }
     }
 
+    // FK columns get an InnoDB auto-index named after the FK constraint (`fk_<table>_<col>`).
+    // It is owned by the FK, not the index diff — never flag it as a stray index to drop.
+    const fkIdxNames = new Set(fkColumns(table).map(fk => `fk_${table.name}_${fk.column.name}`));
+
     for (const dbIdx of dbIdxs) {
-      if (dbIdx === 'PRIMARY' || schemaIdxs.has(dbIdx)) continue;
+      if (dbIdx === 'PRIMARY' || schemaIdxs.has(dbIdx) || fkIdxNames.has(dbIdx)) continue;
       const stmt = `ALTER TABLE \`${table.name}\` DROP INDEX \`${dbIdx}\`;`;
       dropComments.push(ALLOW_DROPS ? stmt : `-- ${stmt}`);
       hasChanges = true;
     }
 
     if (addParts.length) { lines.push(`ALTER TABLE \`${table.name}\`\n${addParts.join(',\n')};`, ''); }
+    if (modifyComments.length) {
+      lines.push(`-- ${table.name}: column type/nullability changed (review before applying — MODIFY can truncate data):`);
+      lines.push(...modifyComments, '');
+    }
     if (dropComments.length) {
       lines.push(`-- ${table.name}: removed from schema (review before applying):`);
       lines.push(...dropComments, '');
@@ -397,6 +391,7 @@ function buildMigrationSql(schema, dbState) {
   }
 
   for (const dbTableName of dbState.keys()) {
+    if (dbTableName === MIGRATIONS_TABLE) continue; // ledger table is tool-managed
     if (!schemaTables.has(dbTableName)) {
       const stmt = `DROP TABLE IF EXISTS \`${dbTableName}\`;`;
       lines.push('-- Table removed from schema (review before applying):');
@@ -700,7 +695,7 @@ async function getDbState(dbName) {
 
   try {
     const [colRows] = await conn.execute(
-      `SELECT TABLE_NAME, COLUMN_NAME
+      `SELECT TABLE_NAME, COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE
        FROM INFORMATION_SCHEMA.COLUMNS
        WHERE TABLE_SCHEMA = ?
        ORDER BY TABLE_NAME, ORDINAL_POSITION`,
@@ -715,13 +710,15 @@ async function getDbState(dbName) {
     );
 
     const state = new Map();
-    for (const { TABLE_NAME, COLUMN_NAME } of colRows) {
-      if (!state.has(TABLE_NAME)) state.set(TABLE_NAME, { columns: new Set(), indexes: new Set() });
-      state.get(TABLE_NAME).columns.add(COLUMN_NAME);
+    const ensure = (t) => {
+      if (!state.has(t)) state.set(t, { columns: new Map(), indexes: new Set() });
+      return state.get(t);
+    };
+    for (const { TABLE_NAME, COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE } of colRows) {
+      ensure(TABLE_NAME).columns.set(COLUMN_NAME, { type: COLUMN_TYPE, nullable: IS_NULLABLE === 'YES' });
     }
     for (const { TABLE_NAME, INDEX_NAME } of idxRows) {
-      if (!state.has(TABLE_NAME)) state.set(TABLE_NAME, { columns: new Set(), indexes: new Set() });
-      state.get(TABLE_NAME).indexes.add(INDEX_NAME);
+      ensure(TABLE_NAME).indexes.add(INDEX_NAME);
     }
     return { conn, dbState: state };
   } catch (err) {
@@ -745,6 +742,23 @@ async function executeSQL(conn, sql) {
   for (const stmt of stmts) {
     await conn.execute(stmt);
   }
+}
+
+async function ensureMigrationsTable(conn) {
+  await conn.execute(
+    `CREATE TABLE IF NOT EXISTS \`${MIGRATIONS_TABLE}\` (` +
+    ` \`version\` VARCHAR(64) NOT NULL,` +
+    ` \`applied_at\` DATETIME(6) NOT NULL,` +
+    ` PRIMARY KEY (\`version\`)` +
+    `) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+  );
+}
+
+async function recordMigration(conn, version) {
+  await conn.execute(
+    `INSERT INTO \`${MIGRATIONS_TABLE}\` (\`version\`, \`applied_at\`) VALUES (?, NOW(6))`,
+    [version]
+  );
 }
 
 // ── File I/O ──────────────────────────────────────────────────────────────────
@@ -848,9 +862,15 @@ async function main() {
 
   await ensureDriver();
 
+  // Connection target is the env DB_NAME (the DB docker actually creates + grants).
+  // schema.database is advisory; warn on drift (DB names are case-sensitive on Linux MySQL).
+  if (schema.database && schema.database !== cfg.db.name) {
+    console.warn(`[db-generator] schema.json database "${schema.database}" != env DB_NAME "${cfg.db.name}"; connecting to env DB_NAME. Align schema.json to silence this.`);
+  }
+
   let conn, dbState;
   try {
-    ({ conn, dbState } = await getDbState(schema.database));
+    ({ conn, dbState } = await getDbState(cfg.db.name));
   } catch (err) {
     if (cfg.ormGen.dryRun) {
       console.warn(`[db-generator] DB connection failed: ${err.message}. Falling back to generate-only mode.`);
@@ -876,8 +896,10 @@ async function main() {
 
     if (!cfg.ormGen.dryRun) {
       console.log('[db-generator] Executing migration...');
+      await ensureMigrationsTable(conn);
       await executeSQL(conn, sql);
-      console.log('[db-generator] Migration applied.');
+      await recordMigration(conn, path.basename(file));
+      console.log('[db-generator] Migration applied + recorded in schema_migrations.');
     } else {
       console.log('[db-generator] dry_run=true — review SQL and apply manually.');
     }

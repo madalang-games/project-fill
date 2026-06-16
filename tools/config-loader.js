@@ -108,6 +108,26 @@ function csv(value) {
   return value.split(',').map(s => s.trim()).filter(Boolean);
 }
 
+function loadTypes() {
+  const typesPath = path.join(ROOT, 'tools', 'types.json');
+  if (!fs.existsSync(typesPath)) throw new ConfigError(rel(typesPath), 'file not found');
+  let parsed;
+  try {
+    parsed = JSON.parse(fs.readFileSync(typesPath, 'utf-8'));
+  } catch (e) {
+    throw new ConfigError(rel(typesPath), `invalid JSON: ${e.message}`);
+  }
+  const types = {};
+  for (const [key, value] of Object.entries(parsed)) {
+    if (key.startsWith('_')) continue; // skip _comment and other meta keys
+    if (!value || !value.csharp || !value.mysql) {
+      throw new ConfigError(`${rel(typesPath)} "${key}"`, 'each type must define both "csharp" and "mysql"');
+    }
+    types[key] = value;
+  }
+  return types;
+}
+
 function load() {
   const iniPath = path.join(ROOT, 'template.ini');
   const envPath = resolveEnvPath();
@@ -154,12 +174,16 @@ function load() {
       gameTypesNamespace: requiredIni(ini, iniPath, 'data-gen', 'game_types_namespace'),
     },
 
+    infoGenSkip: (() => {
+      const s = requiredSection(ini, iniPath, 'info-gen-skip');
+      return {
+        domainSubdirs:    csv(s.domain_subdirs || ''),
+        domainPocoFiles:  csv(s.domain_poco_files || ''),
+        autoServiceFiles: csv(s.auto_service_files || ''),
+      };
+    })(),
+
     packetGen: {
-      mode: requiredIni(ini, iniPath, 'packet-gen', 'mode'),
-      clientLanguage: requiredIni(ini, iniPath, 'packet-gen', 'client_language'),
-      serverLanguage: requiredIni(ini, iniPath, 'packet-gen', 'server_language'),
-      clientNamespace: requiredIni(ini, iniPath, 'packet-gen', 'client_namespace'),
-      serverNamespace: requiredIni(ini, iniPath, 'packet-gen', 'server_namespace'),
       clientOutputDir: requiredPath(ini, iniPath, 'packet-gen', 'client_output_dir'),
     },
 
@@ -183,11 +207,7 @@ function load() {
       password: requiredEnv(env, envPath, 'DB_PASSWORD'),
     },
 
-    typeMap: {
-      proto: requiredSection(ini, iniPath, 'type-map.proto'),
-      csharp: requiredSection(ini, iniPath, 'type-map.csharp'),
-      cpp: requiredSection(ini, iniPath, 'type-map.cpp'),
-    },
+    types: loadTypes(),
 
     github: {
       token: env.GITHUB_TOKEN || '',

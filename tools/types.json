@@ -1,0 +1,22 @@
+{
+  "_comment": "Shared type registry — single source of truth for normalized type → language/db mappings. Consumed by config-loader.js (cfg.types); used by info_generator (csharp) and db_generator (csharp + mysql). NEVER duplicate these maps inside a generator.",
+
+  "int8":     { "csharp": "sbyte",          "mysql": "TINYINT" },
+  "int16":    { "csharp": "short",          "mysql": "SMALLINT" },
+  "int32":    { "csharp": "int",            "mysql": "INT" },
+  "int64":    { "csharp": "long",           "mysql": "BIGINT" },
+  "uint8":    { "csharp": "byte",           "mysql": "TINYINT UNSIGNED" },
+  "uint16":   { "csharp": "ushort",         "mysql": "SMALLINT UNSIGNED" },
+  "uint32":   { "csharp": "uint",           "mysql": "INT UNSIGNED" },
+  "uint64":   { "csharp": "ulong",          "mysql": "BIGINT UNSIGNED" },
+  "float":    { "csharp": "float",          "mysql": "FLOAT" },
+  "double":   { "csharp": "double",         "mysql": "DOUBLE" },
+  "bool":     { "csharp": "bool",           "mysql": "TINYINT(1)" },
+  "string":   { "csharp": "string",         "mysql": "TEXT" },
+  "longtext": { "csharp": "string",         "mysql": "LONGTEXT" },
+  "datetime": { "csharp": "DateTimeOffset", "mysql": "DATETIME(6)" },
+  "date":     { "csharp": "DateOnly",       "mysql": "DATE" },
+  "json":     { "csharp": "string",         "mysql": "JSON" },
+  "bytes":    { "csharp": "byte[]",         "mysql": "BLOB" },
+  "uuid":     { "csharp": "Guid",           "mysql": "CHAR(36)" }
+}

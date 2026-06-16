@@ -17,6 +17,9 @@
     "test:orm-schema":  "node --test tools/db_generator/schema-validation.test.js",
     "font:subset":      "node tools/subset_tool/subset_fonts.js",
     "font:subset:check": "node tools/subset_tool/subset_fonts.js --check",
+    "gen":              "node tools/gen.js",
+    "gen:watch":        "node tools/gen.js --watch",
+    "gen:validate":     "node tools/validate/validate.js",
     "gen:all":          "npm run gen:info && npm run gen:db && npm run gen:pkt",
     "gen:check":        "npm run gen:info:check && npm run gen:db:check && npm run gen:pkt:check"
   },
