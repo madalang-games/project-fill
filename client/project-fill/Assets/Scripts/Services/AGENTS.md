@@ -13,7 +13,7 @@ Namespace: `Game.Services`
 | `StageDataService.cs` | `StageDataService` | DDOL singleton (lazy-instantiated if not in scene, e.g. InGame entered without Boot); loads Stage CSV via CsvLoader; GetStage(id), GetAll(), MaxStageId() |
 | `DynamicResourceService.cs` | `DynamicResourceService` | DDOL singleton; loads dynamic_resource CSV; GetSprite(resourceKey) via Resources.Load (Resources-path entries only) |
 | `CurrencyDataService.cs` | `CurrencyDataService` | DDOL singleton; loads currency CSV; GetByRewardType(string) |
-| `PlayerProgressService.cs` | `PlayerProgressService` | DDOL singleton; gold balance, per-stage stars/unlock, booster inventories |
+| `PlayerProgressService.cs` | `PlayerProgressService` | DDOL singleton; gold balance, per-stage best-moves/unlock (server-authoritative, cached), booster inventories |
 | `AuthService.cs` | `AuthService` | DDOL singleton; auth result enum; Initialize(callback); stub until real HTTP auth wiring |
 | `LocalizationService.cs` | `LocalizationService` | DDOL singleton; loads string/error CSV tables; Get(key), GetError(code), SetLanguage(Language), GetFont(Language) |
 | `IAdService.cs` | `IAdService`, `AdWatchResult` | Ad service interface; WatchRewardedAd(placementId, cb); ShowInterstitialIfEligible(stageId, suppress, cb) |
@@ -21,7 +21,8 @@ Namespace: `Game.Services`
 | `AdEligibilityCache.cs` | `AdEligibilityCache` | DDOL singleton; GET /api/ad/eligibility on session start; IsEligible(placementId); OnInterstitialShown() |
 | `AdApiService.cs` | `AdApiService` | API client for ad operations: interstitial shown recording |
 | `NetworkService.cs` | `NetworkService` | DDOL singleton; centralised HTTP client; Get/Post; injects Application.version + authToken headers; configurable log level |
-| `StageApiService.cs` | `StageApiService` | Stub stage API service to preserve Unity boot flow references |
+| `BootstrapService.cs` | `BootstrapService` | DDOL singleton; pre-auth boot gate: GET `/api/bootstrap/config` → force-update / schema-mismatch / OTA meta-hash patch via `/api/data/bundle` + `CsvLoader.ApplyPatchAtomic`; uses raw `UnityWebRequest` (pre-auth, custom headers/timeout) |
+| `StageApiService.cs` | `StageApiService` | `POST /api/stages/{id}/clear` — server-authoritative stage-clear submit; syncs gold + returns best/rank/first-clear/chapter-chest/rewards |
 | `RankingApiService.cs` | `RankingApiService` | Optional server ranking page/my-rank fetcher |
 | `CurrencyApiService.cs` | `CurrencyApiService` | Server soft currency fetch + spend; syncs `PlayerProgressService.Gold` on response |
 | `InventoryApiService.cs` | `InventoryApiService` | Server-backed items fetch + spend API client |
@@ -48,7 +49,12 @@ Namespace: `Game.Services`
 | `SoundManager.BGMMute` | prop | bool; persisted to PlayerPrefs |
 | `SoundManager.SFXMute` | prop | bool; blocks all SFX including catalog-based |
 | `NetworkService.Instance` | prop | DDOL singleton; lazy-instantiated if not in scene |
+| `NetworkService.BaseUrl` | prop | public; env-resolved server base URL (Dev/Prod) |
+| `NetworkService.ProtocolVersion` | prop | public; `_protocolVersion` Inspector value sent as `X-Protocol-Version` |
 | `NetworkService.SetAuthToken(string)` | method | Called by AuthService after login; injects Bearer token into all subsequent requests |
+| `BootstrapService.Instance` | prop | DDOL singleton; place GameObject in Boot scene |
+| `BootstrapService.Initialize(Action<BootstrapResult>)` | method | Runs boot gate coroutine; callback OK / ForceUpdate / PatchFailed |
+| `BootstrapService.BootstrapResult` | enum | OK / ForceUpdate / PatchFailed |
 | `NetworkService.Get(string,Action<bool,string>)` | method | HTTP GET; path relative to AppConfig BaseUrl |
 | `NetworkService.Post(string,string,Action<bool,string>)` | method | HTTP POST with JSON body |
 | `NetworkLogLevel` | enum | None / ErrorOnly / Normal / Verbose — controls log output granularity |
@@ -70,11 +76,14 @@ Namespace: `Game.Services`
 | `PlayerProgressService.SpendGold(int)` | method | Returns false if insufficient gold |
 | `PlayerProgressService.AddGold(int)` | method | Persists to PlayerPrefs |
 | `PlayerProgressService.SetGold(int)` | method | Overwrite gold to server-authoritative value; persists to PlayerPrefs |
-| `PlayerProgressService.GetBestStars(int)` | method | 0..3; lazy-loaded from PlayerPrefs |
+| `PlayerProgressService.GetBestMoves(int)` | method | Personal best move count for a stage (0 = none); lazy-loaded from PlayerPrefs (`bestmoves_`); also the "cleared" proxy (`>0`) |
+| `PlayerProgressService.RecordBestMoves(int,int)` | method | Stores a new best when it beats the record (lower wins); returns true if improved |
+| `PlayerProgressService.ApplyMaxClearedStage(int)` | method | Unlocks stages 1..maxClearedStageId+1 from the server-authoritative campaign reach |
 | `PlayerProgressService.IsStageUnlocked(int)` | method | Stage 1 always true; lazy-loaded |
-| `PlayerProgressService.RecordClear(int,int)` | method | Updates best stars + unlocks stageId+1 |
+| `PlayerProgressService.UnlockStage(int)` | method | Marks a single stage unlocked (persisted) |
 | `AuthService.IsGuest` | prop | true until OAuth link |
 | `AuthService.UserId` | prop | Device UUID or OAuth ID |
+| `AuthService.Pid` | prop | Player ID used in JWT; reads PlayerPrefs `auth_pid`; exposed for AccountPopup copy |
 | `AuthService.PendingBootMessage` | static prop | Optional toast message to show after Boot redirect (currently unused) |
 | `AuthService.Initialize(Action<AuthResult>)` | method | Guest by default; fires NetworkError if refresh is rate-limited (429); fires ReLoginRequired if token is invalid; fires NewGuestCreated if account switch detected |
 | `AuthService.ContinueAsGuest(Action<AuthResult>)` | method | Explicit guest login path — skips token check, calls LoginGuest directly; use from ReLoginView "Continue as Guest" only |
@@ -158,7 +167,7 @@ UIManager.Instance?.ShowToast(msg, ToastType.Warning);
 
 ## Rules
 - All services are DDOL; place GameObjects in Boot scene only.
-- PlayerPrefs keys must not clash: prefix `auth_`, `gold`, `stars_`, `unlocked_`, `lang`.
+- PlayerPrefs keys must not clash: prefix `auth_`, `gold`, `stars_`, `unlocked_`, `bestmoves_`, `lang`.
 - AuthService is a stub; server-side auth is Phase 2.
 - LocalizationService must initialize before any LocalizedText.Awake(); place it first in Boot scene.
 - AdEligibilityCache.Refresh() must be called after auth is available (token set via NetworkService).

@@ -1,6 +1,9 @@
+using System;
 using Game.Core;
+using Game.Core.UI;
 using Game.InGame.View;
 using Game.OutGame.Settings;
+using Game.Services;
 using UnityEngine;
 
 namespace Game.InGame.Controller
@@ -11,6 +14,9 @@ namespace Game.InGame.Controller
     {
         private const int SoftStuckNodeCap = 8000;
 
+        // Rewarded-ad placement key for the Stuck Add Lane (mirror shared/datas/ad/ad_placement.csv).
+        private const string PlacementAddLane = "STUCK_ADD_LANE";
+
         [SerializeField] private BoardView _boardView;
         [SerializeField] private bool      _isDevMode; // kept for scene compatibility
 
@@ -19,9 +25,14 @@ namespace Game.InGame.Controller
         private int  _stageIndex;
         private int  _selectedLane = -1;
         private bool _subscribed;
+        private bool _adRewardedThisStage; // §5.4: set on rewarded-ad watch; suppresses this stage's interstitial; reset on stage enter
+        private bool _challenge;           // daily-challenge mode (board from ChallengeContext seed, separate clear submit)
+        private float _challengeStart;     // realtime seconds at challenge board load → clear time
 
         public void Begin(int startIndex)
         {
+            _challenge  = ChallengeContext.Active; // consume-once: clear the flag so a later campaign entry isn't hijacked
+            ChallengeContext.Clear();
             _stageIndex = startIndex;
             if (_boardView == null)
             {
@@ -55,6 +66,7 @@ namespace Game.InGame.Controller
 
         private void LoadCurrent()
         {
+            if (_challenge) { LoadChallenge(); return; }
             var row = ResolveRow(_stageIndex);
             _def = row != null ? BuildDefinition(row) : StageLibrary.Get(_stageIndex);
             // Saved stages carry an explicit board layout (board column) — decode it directly.
@@ -68,7 +80,24 @@ namespace Game.InGame.Controller
                 _board = BoardFactory.Generate(_def);
             }
             _selectedLane = -1;
+            _adRewardedThisStage = false; // new stage → clear the rewarded-ad / interstitial-suppression flag
             _boardView.Init(_board, _def);
+            var progress = Game.Services.PlayerProgressService.Instance;
+            _boardView.SetBestMoves(progress != null ? progress.GetBestMoves(_stageIndex + 1) : 0);
+            UpdateSoftStuck();
+        }
+
+        // Daily challenge: board comes from the server-provided seed/params (identical worldwide).
+        private void LoadChallenge()
+        {
+            _def   = ChallengeContext.BuildDefinition();
+            _board = BoardFactory.Generate(_def);
+            if (_board == null) { _def = StageLibrary.Get(0); _board = BoardFactory.Generate(_def); }
+            _selectedLane = -1;
+            _adRewardedThisStage = false;
+            _challengeStart = Time.realtimeSinceStartup;
+            _boardView.Init(_board, _def);
+            _boardView.SetBestMoves(0); // challenge has no per-stage personal best surface
             UpdateSoftStuck();
         }
 
@@ -181,16 +210,71 @@ namespace Game.InGame.Controller
 
             switch (type)
             {
-                case BoosterType.Undo:
+                case BoosterType.Undo: // free + unlimited (spec §4)
                     if (_board.Undo()) { _boardView.RefreshAll(); UpdateSoftStuck(); }
                     break;
                 case BoosterType.Shuffle:
-                    _board.Shuffle(); _boardView.RefreshAll(); UpdateSoftStuck();
+                    SpendThen(type, () => { _board.Shuffle(); _boardView.RefreshAll(); UpdateSoftStuck(); });
                     break;
                 case BoosterType.AddLane:
-                    if (_board.TryAddLane()) { _boardView.RefreshAll(); UpdateSoftStuck(); }
+                    if (_board.AddLaneUsed) break; // max 1/stage (spec §4) — don't charge for a no-op
+                    SpendThen(type, () => { if (_board.TryAddLane()) { _boardView.RefreshAll(); UpdateSoftStuck(); } });
                     break;
             }
+        }
+
+        // Server-authoritative gold spend (spec §4 prices live in item.csv). Pre-checks the local
+        // balance for instant feedback, then POSTs /api/currency/spend; the booster applies only on
+        // server confirmation. Falls back to a local deduction when the currency service is absent
+        // (e.g. InGame scene entered directly without Boot) so dev play still works.
+        private void SpendThen(BoosterType type, Action onPaid)
+        {
+            int cost = BoosterCost(type);
+            var progress = PlayerProgressService.Instance;
+            if (progress != null && !progress.CanAfford(cost)) { ShowInsufficientGold(); return; }
+
+            var currency = CurrencyApiService.Instance;
+            if (currency == null)
+            {
+                if (progress != null && !progress.SpendGold(cost)) { ShowInsufficientGold(); return; }
+                onPaid();
+                return;
+            }
+
+            _boardView.BlockInput(true);
+            currency.SpendGold(cost, BoosterReason(type),
+                onSuccess: _   => { _boardView.BlockInput(false); onPaid(); },
+                onError:   err => { _boardView.BlockInput(false); ShowSpendError(err); });
+        }
+
+        private static int BoosterCost(BoosterType type)
+        {
+            var items = Game.Utils.CsvLoader.Load<ProjectFill.Data.Generated.Item>(
+                ProjectFill.Data.Generated.Item.ResourcePath);
+            int id = type.ItemId();
+            if (items != null)
+                foreach (var it in items)
+                    if (it.id == id) return it.price;
+            return 0;
+        }
+
+        private static string BoosterReason(BoosterType type) => type switch
+        {
+            BoosterType.Shuffle => "booster_shuffle",
+            BoosterType.AddLane => "booster_add_lane",
+            _                   => "booster",
+        };
+
+        private static void ShowInsufficientGold()
+        {
+            var loc = LocalizationService.Instance;
+            UIManager.Instance?.ShowToast(loc != null ? loc.Get("toast.insufficient_gold") : "Insufficient Gold!", ToastType.Warning);
+        }
+
+        private static void ShowSpendError(string err)
+        {
+            var loc = LocalizationService.Instance;
+            UIManager.Instance?.ShowToast(loc != null ? loc.GetErrorFromResponse(err) : err, ToastType.Warning);
         }
 
         // ── Post-move resolution ─────────────────────────────────────────────
@@ -202,9 +286,8 @@ namespace Game.InGame.Controller
             if (_board.IsCleared)
             {
                 _boardView.BlockInput(true);
-                _boardView.ShowClearPanel(
-                    onNext:  () => { _stageIndex++; LoadCurrent(); },
-                    onLobby: () => BoardView.GoToScene("Lobby"));
+                if (_challenge) SubmitChallengeClear();
+                else            SubmitClear(_stageIndex + 1);
                 return;
             }
 
@@ -213,8 +296,8 @@ namespace Game.InGame.Controller
                 _boardView.BlockInput(true);
                 _boardView.ShowStuckPanel(
                     addLaneAvailable: !_board.AddLaneUsed,
-                    onAddLane: () => { _board.TryAddLane(); _boardView.RefreshAll(); PostMoveCheck(); },
-                    onShuffle: () => { _board.Shuffle();    _boardView.RefreshAll(); PostMoveCheck(); },
+                    onAddLane: WatchAdForAddLane, // ad reward → free 1/stage (spec §5.1/§5.4)
+                    onShuffle: () => SpendThen(BoosterType.Shuffle, () => { _board.Shuffle(); _boardView.RefreshAll(); PostMoveCheck(); }),
                     onGiveUp:  () => BoardView.GoToScene("Lobby"));
                 return;
             }
@@ -226,6 +309,110 @@ namespace Game.InGame.Controller
         {
             bool solvable = BoardSolver.IsSolvable(_board, SoftStuckNodeCap, resultOnCapExceeded: true);
             _boardView.SetSoftStuck(!solvable);
+        }
+
+        // ── Stage clear (server-authoritative) ────────────────────────────────
+
+        // Submits the clear to the server, which owns best-moves, ranking, first-clear / chapter-chest
+        // rewards, and achievement progress. Applies the returned snapshot (gold synced in the API
+        // service; unlock + best cached locally). Falls back to a local record when the API is absent.
+        private void SubmitClear(int stageId)
+        {
+            int moves = _board.MoveCount;
+            var completedTypes = new System.Collections.Generic.List<int>(_def.Types);
+            for (int t = 0; t < _def.Types; t++) completedTypes.Add(t);
+
+            var api = StageApiService.Instance;
+            if (api == null)
+            {
+                PlayerProgressService.Instance?.RecordBestMoves(stageId, moves);
+                PlayerProgressService.Instance?.UnlockStage(stageId + 1);
+                ShowClear();
+                return;
+            }
+
+            api.ClearStage(stageId, moves, completedTypes,
+                onSuccess: res =>
+                {
+                    var progress = PlayerProgressService.Instance;
+                    progress?.RecordBestMoves(stageId, res.BestMovesUsed);
+                    progress?.ApplyMaxClearedStage(res.MaxClearedStageId);
+                    _boardView.SetBestMoves(res.BestMovesUsed);
+                    ShowClear();
+                },
+                onError: err =>
+                {
+                    PlayerProgressService.Instance?.RecordBestMoves(stageId, moves);
+                    PlayerProgressService.Instance?.UnlockStage(stageId + 1);
+                    ShowSpendError(err); // reuse server-error toast
+                    ShowClear();
+                });
+        }
+
+        private void ShowClear()
+        {
+            _boardView.ShowClearPanel(
+                onNext:  () => ShowInterstitialThen(() => { _stageIndex++; LoadCurrent(); }),
+                onLobby: () => ShowInterstitialThen(() => BoardView.GoToScene("Lobby")));
+        }
+
+        // Daily-challenge clear: server records moves + clear time for the global ranking (one attempt/day).
+        // No "next stage" — both popup actions return to the lobby.
+        private void SubmitChallengeClear()
+        {
+            int moves   = _board.MoveCount;
+            int seconds = System.Math.Max(0, Mathf.RoundToInt(Time.realtimeSinceStartup - _challengeStart));
+            DailyChallengeApiService.Instance?.SubmitClear(moves, seconds, _ => { }, _ => { });
+            _boardView.ShowClearPanel(onNext: ReturnFromChallenge, onLobby: ReturnFromChallenge);
+        }
+
+        private void ReturnFromChallenge()
+        {
+            ChallengeContext.Clear();
+            BoardView.GoToScene("Lobby");
+        }
+
+        // ── Ads ──────────────────────────────────────────────────────────────
+
+        // Stuck-popup Add Lane is granted only after a completed rewarded ad (spec §5.1). Sets the
+        // suppression flag so this stage's post-stage interstitial won't also fire (§5.4). Re-runs the
+        // stuck check after, so cancelling the ad re-presents the rescue popup.
+        private void WatchAdForAddLane()
+        {
+            var ads = AdMobService.Instance;
+            if (ads == null) // no ad service (e.g. InGame entered without Boot) → grant free so the loop isn't soft-locked
+            {
+                if (_board.TryAddLane()) _boardView.RefreshAll();
+                PostMoveCheck();
+                return;
+            }
+            ads.WatchRewardedAd(PlacementAddLane, result =>
+            {
+                if (result.HasValue && result.Value.Earned)
+                {
+                    _adRewardedThisStage = true;
+                    if (_board.TryAddLane()) _boardView.RefreshAll();
+                }
+                PostMoveCheck();
+            });
+        }
+
+        // Post-stage interstitial (spec §5.4): eligibility (min-stage / cooldown) is gated inside the
+        // ad service; suppressed when a rewarded ad was watched this stage. Records the show server-side.
+        private void ShowInterstitialThen(Action proceed)
+        {
+            var ads = AdMobService.Instance;
+            if (ads == null) { proceed(); return; }
+            int stageId = _stageIndex + 1;
+            ads.ShowInterstitialIfEligible(stageId, _adRewardedThisStage, wasShown =>
+            {
+                if (wasShown)
+                {
+                    AdApiService.Instance?.RecordInterstitialShown(stageId);
+                    AdEligibilityCache.Instance?.OnInterstitialShown();
+                }
+                proceed();
+            });
         }
     }
 }

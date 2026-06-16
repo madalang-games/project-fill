@@ -26,8 +26,8 @@ namespace Game.OutGame.Lobby
         [SerializeField] private ParticleSystem _sparkleParticles;
         [SerializeField] private CanvasGroup _canvasGroup;
 
-        [Header("Star Count")]
-        [SerializeField] private TMP_Text _starCountLabel;
+        [Header("Cleared Count")]
+        [SerializeField] private TMP_Text _clearedCountLabel;
 
         private ChestState _state;
         public ChestState State => _state;
@@ -73,10 +73,11 @@ namespace Game.OutGame.Lobby
             }
         }
 
-        public void SetStarInfo(int current, int max)
+        // current/max = cleared stages / total stages in the chapter (milestone progress).
+        public void SetClearedInfo(int current, int max)
         {
-            if (_starCountLabel != null)
-                _starCountLabel.text = $"{current}/{max}";
+            if (_clearedCountLabel != null)
+                _clearedCountLabel.text = $"{current}/{max}";
         }
     }
 }

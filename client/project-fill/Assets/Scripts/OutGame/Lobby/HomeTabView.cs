@@ -129,7 +129,7 @@ namespace Game.OutGame.Lobby
             foreach (var s in _stages)
             {
                 if (progress == null || !progress.IsStageUnlocked(s.stage_id)) break;
-                if (progress.GetBestStars(s.stage_id) == 0) return s.stage_id;
+                if (progress.GetBestMoves(s.stage_id) == 0) return s.stage_id; // first not-yet-cleared
             }
             return _stages.Length > 0 ? _stages[^1].stage_id : 1;
         }
@@ -491,7 +491,7 @@ namespace Game.OutGame.Lobby
             _chestNodes.Add(chestView);
         }
 
-        private bool IsChapterAllThreeStars(int chapterNum)
+        private bool IsChapterAllCleared(int chapterNum)
         {
             var progress = PlayerProgressService.Instance;
             if (progress == null || _stages == null) return false;
@@ -500,12 +500,12 @@ namespace Game.OutGame.Lobby
             {
                 if (s.chapter_id != chapterNum) continue;
                 hasStages = true;
-                if (progress.GetBestStars(s.stage_id) < 3) return false;
+                if (progress.GetBestMoves(s.stage_id) == 0) return false; // any uncleared → not complete
             }
             return hasStages;
         }
 
-        private (int current, int max) GetChapterStarInfo(int chapterNum)
+        private (int current, int max) GetChapterClearInfo(int chapterNum)
         {
             var progress = PlayerProgressService.Instance;
             if (progress == null || _stages == null) return (0, 0);
@@ -514,8 +514,8 @@ namespace Game.OutGame.Lobby
             foreach (var s in _stages)
             {
                 if (s.chapter_id != chapterNum) continue;
-                current += progress.GetBestStars(s.stage_id);
-                max += 3;
+                if (progress.GetBestMoves(s.stage_id) > 0) current++;
+                max += 1;
             }
             return (current, max);
         }
@@ -533,13 +533,13 @@ namespace Game.OutGame.Lobby
                 ChapterChestView.ChestState state = ChapterChestView.ChestState.Inactive;
                 if (claimed)
                     state = ChapterChestView.ChestState.Claimed;
-                else if (IsChapterAllThreeStars(chapterNum))
+                else if (IsChapterAllCleared(chapterNum))
                     state = ChapterChestView.ChestState.Active;
 
                 chestView.SetState(state);
 
-                var (current, max) = GetChapterStarInfo(chapterNum);
-                chestView.SetStarInfo(current, max);
+                var (current, max) = GetChapterClearInfo(chapterNum);
+                chestView.SetClearedInfo(current, max);
 
                 chestView.gameObject.SetActive(true);
             }
@@ -555,7 +555,7 @@ namespace Game.OutGame.Lobby
 
             if (PlayerProgressService.Instance == null) return;
 
-            if (!IsChapterAllThreeStars(chapterNum))
+            if (!IsChapterAllCleared(chapterNum))
             {
                 Game.Core.UIManager.Instance?.ShowToast(LocalizationService.Instance.Get("toast.chapter_unlock_requirement"), Game.Core.UI.ToastType.Warning);
                 return;
@@ -813,7 +813,7 @@ namespace Game.OutGame.Lobby
                     isChapterLocked = false;
                 }
                 
-                if (progress.GetBestStars(stageId) == 0)
+                if (progress.GetBestMoves(stageId) == 0)
                 {
                     isChapterFullyCleared = false;
                 }
@@ -974,10 +974,10 @@ namespace Game.OutGame.Lobby
 
                 var node = _pool[poolIdx++];
                 var s    = _stages[i];
-                int  stars  = progress?.GetBestStars(s.stage_id) ?? 0;
-                bool unlock = progress?.IsStageUnlocked(s.stage_id) ?? (s.stage_id == 1);
-                bool cur    = s.stage_id == _currentStageId;
-                node.Bind(s.stage_id, stars, unlock, cur, s.chapter_id, (int)s.difficulty);
+                bool cleared = (progress?.GetBestMoves(s.stage_id) ?? 0) > 0;
+                bool unlock  = progress?.IsStageUnlocked(s.stage_id) ?? (s.stage_id == 1);
+                bool cur     = s.stage_id == _currentStageId;
+                node.Bind(s.stage_id, cleared, unlock, cur, s.chapter_id, (int)s.difficulty);
                 var rt      = node.GetComponent<RectTransform>();
                 rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 1f);
                 rt.pivot     = new Vector2(0.5f, 0.5f);
@@ -1035,13 +1035,12 @@ namespace Game.OutGame.Lobby
             if (stage == null) return;
 
             var progress  = PlayerProgressService.Instance;
-            int stars     = progress?.GetBestStars(stageId) ?? 0;
+            int bestMoves = progress?.GetBestMoves(stageId) ?? 0;
             bool isLocked = !(progress?.IsStageUnlocked(stageId) ?? (stageId == 1));
 
             Game.Core.UIManager.Instance?.ShowPopup<StageInfoPopupView>(v => v.Init(
                 stageId:    stageId,
-                bestStars:  stars,
-                bestMoves:  0,
+                bestMoves:  bestMoves,
                 onPlay:     () => EnterStage(stageId),
                 difficulty: (int)stage.difficulty,
                 isLocked:   isLocked));

@@ -2,6 +2,7 @@ using Game.Core;
 using Game.Core.UI;
 using Game.Services;
 using UnityEngine;
+using static Game.Services.BootstrapService;
 
 namespace Game.OutGame.Boot
 {
@@ -38,7 +39,29 @@ namespace Game.OutGame.Boot
             }
 
             UIManager.Instance?.ShowLoading();
-            AuthService.Instance.Initialize(OnAuthResult);
+
+            if (BootstrapService.Instance != null)
+                BootstrapService.Instance.Initialize(OnBootstrapResult);
+            else
+                AuthService.Instance.Initialize(OnAuthResult);
+        }
+
+        private void OnBootstrapResult(BootstrapResult result)
+        {
+            switch (result)
+            {
+                case BootstrapResult.ForceUpdate:
+                    UIManager.Instance?.HideLoading();
+                    UIManager.Instance?.ShowPopup<ForceUpdateView>(v => v?.Init());
+                    break;
+                case BootstrapResult.PatchFailed:
+                    UIManager.Instance?.HideLoading();
+                    UIManager.Instance?.ShowNetworkError(RetryFromBoot);
+                    break;
+                case BootstrapResult.OK:
+                    AuthService.Instance.Initialize(OnAuthResult);
+                    break;
+            }
         }
 
         private void OnAuthResult(AuthResult result)

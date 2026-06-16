@@ -17,7 +17,7 @@ slot-in via `BoardSkin`.
 | file | class | role |
 |------|-------|------|
 | `SignalType.cs` | `SignalType`, `BoosterType`, `SignalTypeExtensions` | 10 signal colors + glyphs; 3 boosters (Undo/Shuffle/AddLane) |
-| `InGameEnums.cs` | `LaneKind` | Normal / Locked / Blind lane kind |
+| `InGameEnums.cs` | `LaneKind`, `BoosterItem` | Normal / Locked / Blind lane kind; `BoosterItem.ItemId(BoosterType)` maps a booster to its `item.csv` id (price + inventory source) |
 | `Chip.cs` | `Chip` | Readonly struct: SignalType + Overload flag |
 | `SlotLane.cs` | `SlotLane` | Lane model: chip stack, capacity, Locked/Pending/Blind state, CanAccept rules |
 | `Board.cs` | `Board`, `BoardSnapshot` | Board model: move rules, relay-order cascade absorb, locked unlock, undo, solver hooks (Clone/EnumerateMoves/ApplyMoveRaw/StateKey) |
@@ -25,6 +25,7 @@ slot-in via `BoardSkin`.
 | `BoardFactory.cs` | `BoardFactory` | Seeded random-fill + solvability verify; **fallback** generator when a stage row has no `board`; in-place Reshuffle for Shuffle booster |
 | `BoardCodec.cs` | `BoardCodec` | Encode/decode the `board` column layout (4 chars/lane; lower=overload; `-`=empty); mirror of editor `board-codec.ts` |
 | `StageDefinition.cs` | `StageDefinition`, `StageLibrary` | Declarative stage layout; one sample stage per chapter (gimmick verification) |
+| `ChallengeContext.cs` | `ChallengeContext` | Daily-challenge hand-off (popup→InGame): server stageSeed/params → `BuildDefinition`; stable seed hash → identical board worldwide; consume-once `Active` flag |
 
 ## Symbols
 | symbol | kind | note |

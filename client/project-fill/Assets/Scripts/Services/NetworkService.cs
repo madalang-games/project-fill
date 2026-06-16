@@ -55,9 +55,10 @@ namespace Game.Services
 
         // ─── 프로퍼티 ────────────────────────────────────────────────────
         public AppEnvironment Environment => _environment;
-        string BaseUrl => _environment == AppEnvironment.Prod
+        public string BaseUrl => _environment == AppEnvironment.Prod
             ? AppConfig.ProdGameServerUrl
             : AppConfig.DevGameServerUrl;
+        public string ProtocolVersion => _protocolVersion;
 
         // ─── 생명주기 ────────────────────────────────────────────────────
         void Awake()

@@ -11,7 +11,7 @@ namespace Game.OutGame.Lobby
     public class StageNodeView : MonoBehaviour
     {
         [SerializeField] private TMP_Text       _stageLabel;
-        [SerializeField] private GameObject[]   _starFills;    // 3 star fill images
+        [SerializeField] private GameObject     _clearedBadge; // shown when the stage has been cleared
         [SerializeField] private Button         _button;
         [SerializeField] private Image          _border;
         [SerializeField] private Image          _difficultyOutline; // neon border (Normal=blue, Hard=red)
@@ -33,7 +33,7 @@ namespace Game.OutGame.Lobby
             _button.onClick.AddListener(() => OnTapped?.Invoke(_stageId));
         }
 
-        public void Bind(int stageId, int stars, bool unlocked, bool isCurrent, int chapterId = 0, int difficulty = 0)
+        public void Bind(int stageId, bool cleared, bool unlocked, bool isCurrent, int chapterId = 0, int difficulty = 0)
         {
             _stageId    = stageId;
             _difficulty = difficulty;
@@ -41,8 +41,7 @@ namespace Game.OutGame.Lobby
             if (_stageLabel != null) _stageLabel.text = stageId.ToString();
             if (_lockOverlay != null) _lockOverlay.SetActive(!unlocked);
 
-            for (int i = 0; i < _starFills.Length; i++)
-                if (_starFills[i] != null) _starFills[i].SetActive(i < stars);
+            if (_clearedBadge != null) _clearedBadge.SetActive(cleared && unlocked);
 
             if (_border != null && chapterId > 0)
             {

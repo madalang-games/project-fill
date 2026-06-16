@@ -16,6 +16,7 @@
 | `CsvLoader.GetPatchedMetaHash()` | method | static; reads `data_patch/meta_hash.txt` |
 | `CsvLoader.SavePatchedMetaHash(string)` | method | static; writes metaHash to patch file |
 | `CsvLoader.ClearPatch()` | method | static; deletes entire `data_patch/` dir |
+| `CsvLoader.ApplyPatchAtomic(Dictionary<string,string>,string)` | method | static; writes OTA bundle files to `data_patch_tmp/` then atomically swaps into `data_patch/` + saves metaHash; used by `BootstrapService` |
 | `ArcLayoutGroup.radius` | field | circle radius; controls arc height and item spacing |
 | `ArcLayoutGroup.arcSpanDegrees` | field | total angle span (1–360°) |
 | `ArcLayoutGroup.invertArch` | field | false = upward arch; true = downward arch |

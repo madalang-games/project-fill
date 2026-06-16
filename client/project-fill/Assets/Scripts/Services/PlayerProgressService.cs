@@ -10,11 +10,11 @@ namespace Game.Services
         public static PlayerProgressService Instance { get; private set; }
 
         private const string KeyGold         = "gold";
-        private const string KeyStarPrefix   = "stars_";
         private const string KeyUnlockPrefix = "unlocked_";
+        private const string KeyMovesPrefix  = "bestmoves_";
 
         private int _gold;
-        private readonly Dictionary<int, int> _bestStars     = new Dictionary<int, int>();
+        private readonly Dictionary<int, int> _bestMoves     = new Dictionary<int, int>();
         private readonly Dictionary<int, bool> _unlocked     = new Dictionary<int, bool>();
         private readonly Dictionary<int, int> _inventory    = new Dictionary<int, int>();
         private readonly HashSet<int>          _unlockedAvatarIds = new HashSet<int>();
@@ -96,15 +96,7 @@ namespace Game.Services
         public void UnlockThemeLocally(int themeId)      => _unlockedBoardThemeIds.Add(themeId);
         public void SetEquippedBoardTheme(int themeId)   => _equippedBoardThemeId = themeId;
 
-        // --- Stage stars / unlock (local cache, game-mechanics TBD) ---
-        public int GetBestStars(int stageId)
-        {
-            if (_bestStars.TryGetValue(stageId, out int s)) return s;
-            s = PlayerPrefs.GetInt(KeyStarPrefix + stageId, 0);
-            if (s > 0) _bestStars[stageId] = s;
-            return s;
-        }
-
+        // --- Stage unlock + best moves (server-authoritative; cached locally for offline display) ---
         public bool IsStageUnlocked(int stageId)
         {
             if (_unlocked.TryGetValue(stageId, out bool u)) return u;
@@ -113,14 +105,31 @@ namespace Game.Services
             return u;
         }
 
-        public void RecordClear(int stageId, int stars)
+        // 0 = no record yet. Lower is better (move-count ranking, design §6).
+        public int GetBestMoves(int stageId)
         {
-            if (stars > GetBestStars(stageId))
-            {
-                _bestStars[stageId] = stars;
-                PlayerPrefs.SetInt(KeyStarPrefix + stageId, stars);
-            }
-            UnlockStage(stageId + 1);
+            if (_bestMoves.TryGetValue(stageId, out int m)) return m;
+            m = PlayerPrefs.GetInt(KeyMovesPrefix + stageId, 0);
+            if (m > 0) _bestMoves[stageId] = m;
+            return m;
+        }
+
+        // Records a new best when it beats the stored record (or none exists). Returns true if improved.
+        public bool RecordBestMoves(int stageId, int moves)
+        {
+            int prev = GetBestMoves(stageId);
+            if (prev != 0 && moves >= prev) return false;
+            _bestMoves[stageId] = moves;
+            PlayerPrefs.SetInt(KeyMovesPrefix + stageId, moves);
+            return true;
+        }
+
+        // Applies the server's authoritative campaign reach: every stage up to maxClearedStageId+1
+        // becomes unlocked/playable.
+        public void ApplyMaxClearedStage(int maxClearedStageId)
+        {
+            if (maxClearedStageId < 1) return;
+            for (int id = 1; id <= maxClearedStageId + 1; id++) UnlockStage(id);
         }
 
         public void UnlockStage(int stageId)
@@ -168,7 +177,7 @@ namespace Game.Services
         public void ResetData()
         {
             _gold = 500;
-            _bestStars.Clear();
+            _bestMoves.Clear();
             _unlocked.Clear();
             _unlocked[1] = true;
             _inventory.Clear();

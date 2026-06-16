@@ -1,5 +1,6 @@
 using Game.Core;
 using Game.Core.UI;
+using Game.InGame;
 using Game.Services;
 using ProjectFill.Contracts.DailyChallenge;
 using TMPro;
@@ -15,6 +16,8 @@ namespace Game.OutGame.Lobby
     /// </summary>
     public class DailyChallengePopupView : MonoBehaviour
     {
+        private const string InGameScene = "InGame";
+
         [SerializeField] private TMP_Text _titleText;
         [SerializeField] private TMP_Text _dateText;
         [SerializeField] private TMP_Text _difficultyText;
@@ -39,9 +42,13 @@ namespace Game.OutGame.Lobby
             DailyChallengeApiService.Instance.FetchToday(Bind, _ => { });
         }
 
+        private DailyChallengeTodayResponse _today;
+
         private void Bind(DailyChallengeTodayResponse today)
         {
+            _today = today;
             var loc = LocalizationService.Instance;
+            if (_startButton != null) _startButton.interactable = !today.IsCleared; // one attempt/day
             if (_dateText != null) _dateText.text = today.ChallengeDate;
             if (_difficultyText != null) _difficultyText.text = DifficultyStars(today.SignalTypeCount);
             if (_participantsText != null && loc != null)
@@ -52,9 +59,15 @@ namespace Game.OutGame.Lobby
 
         private void OnStart()
         {
-            // InGame challenge play is out of scope — board flow not yet wired.
-            var loc = LocalizationService.Instance;
-            UIManager.Instance?.ShowToast(loc != null ? loc.Get("shop.coming_soon") : "Coming soon", ToastType.Warning);
+            if (_today == null || _today.IsCleared) return;
+
+            // Hand the server seed/params to the InGame scene; the board is generated identically worldwide.
+            ChallengeContext.Set(_today.StageSeed, _today.SignalTypeCount, _today.LaneCount, _today.GimmickId);
+            Close();
+
+            var transition = SceneTransition.Instance;
+            if (transition != null) transition.SlideUpToScene(InGameScene);
+            else UnityEngine.SceneManagement.SceneManager.LoadScene(InGameScene);
         }
 
         private void OnRanking()

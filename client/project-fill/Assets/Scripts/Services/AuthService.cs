@@ -37,6 +37,7 @@ namespace Game.Services
         public bool IsAuthenticated => !string.IsNullOrEmpty(_accessToken);
         public bool IsGuest => _provider == "guest";
         public string UserId => PlayerPrefs.GetString(ClientIdKey, string.Empty);
+        public string Pid => PlayerPrefs.GetString(PlayerPrefsPidKey, string.Empty);
         public string AccessToken => _accessToken;
         public string DisplayName => _displayName;
         public int AvatarId => _avatarId;
@@ -529,7 +530,7 @@ namespace Game.Services
         {
             public int maxStageId;
             public long gold;
-            public int totalStars;
+            public int totalClearedStages;
             public int totalItems;
         }
 

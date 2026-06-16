@@ -11,6 +11,12 @@ namespace Game.Core
         public const string DevGameServerUrl            = "http://localhost:20301"; // 개발 서버 URL
         public const string ProdGameServerUrl           = "https://pixelpop.madalang.com"; // TODO: 실제 프로덕션 서버 URL로 교체
 
+        // 약관/정책 웹 페이지 베이스 URL (게임 API 서버와 별개)
+        public const string DevWebUrl                   = "http://localhost:20001"; // 개발 웹 URL
+        public const string ProdWebUrl                  = "https://www.madalang.com"; // 프로덕션 웹 URL
+        public const string WebPrivacyPath              = "/privacy"; // 개인정보처리방침 경로
+        public const string WebTermsPath                = "/terms"; // 이용약관 경로
+
         // Google OAuth 2.0 web client ID — Google Cloud Console > APIs & Services > Credentials
         public const string GoogleWebClientId           = "598353589064-33klnpsljo3sia08kaineica4dfpknsg.apps.googleusercontent.com";
 
@@ -21,5 +27,9 @@ namespace Game.Core
         // Google Mobile Ads App IDs (SDK Settings)
         public const string AdMobAndroidAppId           = "ca-app-pub-3940256099942544~3347511713"; // Test ID (Replace with production App ID before release)
         public const string AdMobIOSAppId               = "ca-app-pub-3940256099942544~1458002511"; // Test ID (Replace with production App ID before release)
+
+        // Store URLs for force update flow — TODO: update before release
+        public const string GooglePlayStoreUrl          = "https://play.google.com/store/apps/details?id=com.madalang.pixelpop";
+        public const string AppStoreUrl                 = ""; // TODO: fill in App Store ID before iOS release
     }
 }

@@ -11,6 +11,7 @@ namespace Game.Utils
     public static class CsvLoader
     {
         static string PatchDir => Path.Combine(Application.persistentDataPath, "data_patch");
+        static string PatchTmpDir => Path.Combine(Application.persistentDataPath, "data_patch_tmp");
         static string PatchHashPath => Path.Combine(PatchDir, "meta_hash.txt");
 
         public static T[] Load<T>(string resourcePath) where T : new()
@@ -50,6 +51,22 @@ namespace Game.Utils
         {
             if (Directory.Exists(PatchDir))
                 Directory.Delete(PatchDir, true);
+        }
+
+        public static void ApplyPatchAtomic(System.Collections.Generic.Dictionary<string, string> files, string metaHash)
+        {
+            if (Directory.Exists(PatchTmpDir)) Directory.Delete(PatchTmpDir, true);
+
+            foreach (var kv in files)
+            {
+                var filePath = Path.Combine(PatchTmpDir, kv.Key + ".csv");
+                Directory.CreateDirectory(Path.GetDirectoryName(filePath));
+                File.WriteAllText(filePath, kv.Value, Encoding.UTF8);
+            }
+
+            if (Directory.Exists(PatchDir)) Directory.Delete(PatchDir, true);
+            Directory.Move(PatchTmpDir, PatchDir);
+            File.WriteAllText(PatchHashPath, metaHash, Encoding.UTF8);
         }
 
         static T[] Parse<T>(string text) where T : new()

@@ -39,11 +39,14 @@
 | `AppEnvironment` | enum | Dev / Prod |
 | `AppConfig.DevGameServerUrl` | const | Dev server base URL |
 | `AppConfig.ProdGameServerUrl` | const | Prod server base URL |
+| `AppConfig.DevWebUrl` / `ProdWebUrl` | const | Web page base URL (Dev `localhost:20001` / Prod `www.madalang.com`); for Privacy/Terms links |
+| `AppConfig.WebPrivacyPath` / `WebTermsPath` | const | `/privacy` / `/terms` redirect paths appended to web base URL |
 | `AppConfig.GoogleWebClientId` | const | Google OAuth2 web client ID — fill in before release |
 | `AppConfig.AdMobAndroidAppId` | const | Google Mobile Ads Android App ID (test ID by default) |
 | `AppConfig.AdMobIOSAppId` | const | Google Mobile Ads iOS App ID (test ID by default) |
 | `AppConfig.AdMobAndroidAppIdFree` | const | Google Mobile Ads Android Interstitial Ad Unit ID |
 | `AppConfig.AdMobAndroidAppIdReward` | const | Google Mobile Ads Android Rewarded Ad Unit ID |
+| `AppConfig.GooglePlayStoreUrl` / `AppStoreUrl` | const | Store URLs for force-update flow (`ForceUpdateView`) — fill in before release |
 | `GoogleSignInBridge.Instance` | prop | DDOL singleton; auto-created at BeforeSceneLoad on Android |
 | `GoogleSignInBridge.SignIn(webClientId,cb)` | method | Starts Google Sign-In flow; cb(idToken, errorCode) |
 | `GoogleSignInBridge.SignOut(webClientId)` | method | Clears Google account session |

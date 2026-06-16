@@ -25,6 +25,11 @@ namespace Game.InGame.View
 
         [Header("HUD (authored)")]
         [SerializeField] private TMP_Text _stageText;
+        [SerializeField] private TMP_Text _movesText;
+        [SerializeField] private TMP_Text _bestText;
+
+        // Personal best for the active stage, pushed by the controller (0 = no record).
+        private int _bestMoves;
 
         [Header("Boosters (authored)")]
         [SerializeField] private Button   _undoBtn;
@@ -221,6 +226,8 @@ namespace Game.InGame.View
             if (hud)
             {
                 if (!_stageText)   _stageText   = FindTMP(hud, "StageText");
+                if (!_movesText)   _movesText   = FindTMP(hud, "MovesText");
+                if (!_bestText)    _bestText    = FindTMP(hud, "BestText");
                 if (!_pauseBtn)    _pauseBtn    = FindBtn(hud, "PauseButton");
             }
             var bar = FindDeep(searchRoot, "BoosterBar");
@@ -336,9 +343,18 @@ namespace Game.InGame.View
             return Mathf.Max(1, idx - _board.RelayProgress + 1);
         }
 
+        // Pushes the personal best for the active stage; HUD then redraws via UpdateHud.
+        public void SetBestMoves(int best)
+        {
+            _bestMoves = best;
+            UpdateHud();
+        }
+
         public void UpdateHud()
         {
             if (_stageText)   _stageText.text   = _def.Name;
+            if (_movesText)   _movesText.text   = _board.MoveCount.ToString();
+            if (_bestText)    _bestText.text    = _bestMoves > 0 ? _bestMoves.ToString() : "-";
         }
 
         public void UpdateBoosters()
@@ -346,35 +362,27 @@ namespace Game.InGame.View
             if (_undoBtn)    _undoBtn.interactable    = _board.CanUndo;
             if (_addLaneBtn) _addLaneBtn.interactable = !_board.AddLaneUsed;
 
-            if (Game.Services.PlayerProgressService.Instance != null)
-            {
-                var progress = Game.Services.PlayerProgressService.Instance;
-                int undoCount = progress.GetItemCount(4);
-                int shuffleCount = progress.GetItemCount(2);
-                int addLaneCount = progress.GetItemCount(1);
+            // Boosters are gold-priced (spec §4): show the cost from item.csv. Undo is free/unlimited.
+            var undoTxt = FindDeep(_undoBtn.transform, "Label")?.GetComponent<TMP_Text>()
+                       ?? FindDeep(_undoBtn.transform, "Text")?.GetComponent<TMP_Text>();
+            if (undoTxt) undoTxt.text = ""; // free/unlimited — icon alone conveys it (no locale text)
 
-                var undoTxt = FindDeep(_undoBtn.transform, "Label")?.GetComponent<TMP_Text>() 
-                           ?? FindDeep(_undoBtn.transform, "Text")?.GetComponent<TMP_Text>();
-                if (undoTxt) undoTxt.text = $"× {undoCount}";
+            var shuffleTxt = FindDeep(_shuffleBtn.transform, "Label")?.GetComponent<TMP_Text>()
+                          ?? FindDeep(_shuffleBtn.transform, "Text")?.GetComponent<TMP_Text>();
+            if (shuffleTxt) shuffleTxt.text = BoosterPrice(BoosterType.Shuffle).ToString();
 
-                var shuffleTxt = FindDeep(_shuffleBtn.transform, "Label")?.GetComponent<TMP_Text>() 
-                              ?? FindDeep(_shuffleBtn.transform, "Text")?.GetComponent<TMP_Text>();
-                if (shuffleTxt) shuffleTxt.text = $"× {shuffleCount}";
+            if (_addLaneLabel) _addLaneLabel.text = BoosterPrice(BoosterType.AddLane).ToString();
+        }
 
-                if (_addLaneLabel) _addLaneLabel.text = $"× {addLaneCount}";
-            }
-            else
-            {
-                var undoTxt = FindDeep(_undoBtn.transform, "Label")?.GetComponent<TMP_Text>() 
-                           ?? FindDeep(_undoBtn.transform, "Text")?.GetComponent<TMP_Text>();
-                if (undoTxt) undoTxt.text = "× 0";
-
-                var shuffleTxt = FindDeep(_shuffleBtn.transform, "Label")?.GetComponent<TMP_Text>() 
-                              ?? FindDeep(_shuffleBtn.transform, "Text")?.GetComponent<TMP_Text>();
-                if (shuffleTxt) shuffleTxt.text = "× 0";
-
-                if (_addLaneLabel) _addLaneLabel.text = "× 0";
-            }
+        private static int BoosterPrice(BoosterType type)
+        {
+            var items = Game.Utils.CsvLoader.Load<ProjectFill.Data.Generated.Item>(
+                ProjectFill.Data.Generated.Item.ResourcePath);
+            int id = type.ItemId();
+            if (items != null)
+                foreach (var it in items)
+                    if (it.id == id) return it.price;
+            return 0;
         }
 
         // ── Selection / highlight ────────────────────────────────────────────

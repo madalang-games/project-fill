@@ -33,10 +33,8 @@ namespace Game.OutGame.Lobby
         [Header("Assets / Mapping")]
         [SerializeField] private List<AvatarSpriteMapping> _avatarSprites = new List<AvatarSpriteMapping>();
 #pragma warning disable 0414
-        [SerializeField] private string _starResourceKey = "star_filled";
         [SerializeField] private string _stageResourceKey = "nav_home";
 #pragma warning restore 0414
-        [SerializeField] private Sprite _starSprite;
         [SerializeField] private Sprite _stageSprite;
 
         [Header("Tab Colors")]
@@ -44,12 +42,12 @@ namespace Game.OutGame.Lobby
         [SerializeField] private Color _inactiveTabColor = new Color(0.3f, 0.14f, 0.36f);
 
         private const int PageLimit = 50;
-        private string _rankingType = "stars";
+        private string _rankingType = "stages";
 
         private void Awake()
         {
             if (_starsTabButton != null)
-                _starsTabButton.onClick.AddListener(() => Select("stars"));
+                _starsTabButton.onClick.AddListener(() => Select("stages"));
             if (_maxStageTabButton != null)
                 _maxStageTabButton.onClick.AddListener(() => Select("max-stage"));
             if (_challengeTabButton != null)
@@ -86,13 +84,13 @@ namespace Game.OutGame.Lobby
             }
 
             if (_titleText != null)
-                _titleText.text = _rankingType == "stars" ? LocalizationService.Instance.Get("lobby.ranking.stars_title") : LocalizationService.Instance.Get("lobby.ranking.stage_title");
+                _titleText.text = _rankingType == "stages" ? LocalizationService.Instance.Get("lobby.ranking.stages_title") : LocalizationService.Instance.Get("lobby.ranking.stage_title");
             if (_myRankText != null)
                 _myRankText.text = LocalizationService.Instance.Get("lobby.ranking.my_rank_empty");
             if (_entriesText != null)
                 _entriesText.text = LocalizationService.Instance.Get("lobby.ranking.loading");
 
-            var scoreSprite = _rankingType == "stars" ? _starSprite : _stageSprite;
+            var scoreSprite = _stageSprite;
 
             api.FetchGlobalPage(_rankingType, 0, PageLimit, page =>
             {

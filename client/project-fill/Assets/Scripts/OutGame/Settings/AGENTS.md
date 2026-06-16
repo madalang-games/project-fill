@@ -6,7 +6,7 @@ Namespace: `Game.OutGame.Settings`
 | file | class | role |
 |------|-------|------|
 | `SettingsPanelView.cs` | `SettingsPanelView` | Bottom-sheet popup: BGM/SFX/ScreenShake/Haptic toggles, language dropdown, version text |
-| `AccountPopupView.cs` | `AccountPopupView` | Nickname + userID; guest → Link Account; OAuth → Switch Account. Avatar selection moved to Shop avatar section; achievements moved to lobby Achievement tab. Retains `_avatarSprites` + `GetAvatarSprite` (HeaderView/TutorialOverlay read equipped avatar sprite from this prefab) |
+| `AccountPopupView.cs` | `AccountPopupView` | Nickname + PID (Copy → clipboard + toast); Privacy/Terms web links; guest → Link Account; OAuth → Switch Account. Avatar selection moved to Shop avatar section; achievements moved to lobby Achievement tab. Retains `_avatarSprites` + `GetAvatarSprite` (HeaderView/TutorialOverlay read equipped avatar sprite from this prefab) |
 | `AccountRestartPopupView.cs` | `AccountRestartPopupView` | Inform popup: game restart required; single confirm → FadeToScene("Boot") |
 | `AccountConflictPopupView.cs` | `AccountConflictPopupView` | Shows local vs cloud SaveSnapshot; user picks keep-local or use-cloud |
 
@@ -20,6 +20,8 @@ Namespace: `Game.OutGame.Settings`
 | `SettingsPanelView._langDropdown` | SerializeField | TMP_Dropdown; options built from `_supportedLangs`; saves via `LocalizationService.SetLanguage` |
 | `SettingsPanelView._supportedLangs` | static field | `Language[]` — currently `{KO, EN}`; expand to add more languages |
 | `SettingsPanelView._langStringIds`   | static field | CSV keys aligned with `_supportedLangs`; `LocalizationService.Get()` resolves to current-language name (e.g. EN→"Korean"/"English", KO→"한국어"/"영어") |
+| `AccountPopupView.OnCopyPid()` | method | Copies `AuthService.Pid` to `GUIUtility.systemCopyBuffer`; success toast `toast.pid_copied`; no-op if PID empty |
+| `AccountPopupView.OpenWeb(path)` | method | `Application.OpenURL` to `AppConfig.{Dev,Prod}WebUrl + path`; env from `NetworkService.Environment`; called by Privacy/Terms buttons (`AppConfig.WebPrivacyPath`/`WebTermsPath`) |
 | `AccountPopupView.OnLinkAccount()` | method | Guest only; Google Sign-In → `AuthService.LinkGoogle` → conflict popup or close |
 | `AccountPopupView.OnSwitchAccount()` | method | OAuth only; confirm dialog → Google Sign-In → `AuthService.LoginGoogle`; PID mismatch triggers restart via `CompleteSession` |
 | `AccountPopupView.ResolveConflict(token,selection)` | method | Calls `AuthService.ResolveConflict`; restart handled by `CompleteSession` |
@@ -27,7 +29,7 @@ Namespace: `Game.OutGame.Settings`
 | `AccountRestartPopupView.Init(onConfirm)` | method | Sets localized strings; confirm button fires `onConfirm` then closes popup |
 | `AccountConflictPopupView._backdropButton` | SerializeField | Interactive backdrop Btn; calls Close() — wired in UIEditorSetup |
 | `AccountConflictPopupView._closeButton` | SerializeField | Square top-right ✕ button; calls Close() |
-| `AccountConflictPopupView.Init(...)` | method | 8 save-snapshot ints + 2 action callbacks; cancel/backdrop/close all call Close() |
+| `AccountConflictPopupView.Init(...)` | method | save-snapshot (maxStage/gold/**cleared stages**/items, local+cloud) + 2 action callbacks; cancel/backdrop/close all call Close(). Star rating removed → shows `Cleared: {n}` from server `totalClearedStages` |
 
 ## Rules
 - SettingsPanelView entry points: Lobby Header ⚙ button AND InGame Pause popup [Settings]

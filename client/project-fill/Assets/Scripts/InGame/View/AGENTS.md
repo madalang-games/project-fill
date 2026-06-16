@@ -30,6 +30,7 @@ Signal Sort board views. UI Chrome (HUD, Booster Bar, Stuck/Clear/Pause popups) 
 | `BoardView.AnimateMove(from,to,chip,count,destBase,absorbed,onComplete)` | method | Teleport FX: source run shrinks-to-center + white flash then warps out (`VanishAll`); dest chips flash in white above slot, restore color (`MaterializeAll`), then gravity-drop (`DropAll`, ease-in fall, bottom-first stagger); landing slot read live (no snap); refreshes dest the instant chips land; then runs completion sweeps |
 | `ChipView.SetFlash(a)` | method | White-tint overlay (0=normal,1=white) for the move teleport FX; `_flashing` makes `Update` cede visual control |
 | `BoardView.Show{Stuck,Clear}Panel(...)` | method | Facade → `UIManager.ShowPopup<{Stuck,Clear}PopupView>` |
+| `BoardView.SetBestMoves(int)` | method | Caches the stage personal best (controller-pushed) then redraws HUD; `UpdateHud` writes live `MoveCount`→`MovesText` and best→`BestText` (`-` if none) |
 | `BoardView.On{LaneTapped,BoosterTapped,PauseTapped}` | event | Taps on lanes are caught via 2D physics raycasts |
 | `LaneView.Initialize(i,sprites,lane,chipPrefab,size)` | method | Sets up BoxCollider2D size and builds procedural World layouts |
 | `LaneView.SlotWorldPos(i)` / `ChipPixelSize()` | method | Return world-coordinate targets for moving chips |

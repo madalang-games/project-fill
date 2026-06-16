@@ -12,9 +12,14 @@ namespace Game.OutGame.Settings
     public class AccountPopupView : MonoBehaviour
     {
         [SerializeField] private TMP_Text       _userIdText;
+        [SerializeField] private Button         _copyPidButton;
         [SerializeField] private Button         _linkAccountButton;
         [SerializeField] private Button         _switchAccountButton;
         [SerializeField] private Button         _closeButton;
+
+        [Header("Legal")]
+        [SerializeField] private Button         _privacyButton;
+        [SerializeField] private Button         _termsButton;
 
         [Header("Profile Modifications")]
         [SerializeField] private TMP_InputField _displayNameInput;
@@ -51,12 +56,18 @@ namespace Game.OutGame.Settings
             var auth = AuthService.Instance;
             bool isGuest = auth == null || auth.IsGuest;
 
+            string pid = auth?.Pid ?? string.Empty;
             if (_userIdText != null)
-                _userIdText.text = isGuest ? (LocalizationService.Instance?.Get("common.guest") ?? "Guest") : auth.UserId;
+                _userIdText.text = string.IsNullOrEmpty(pid)
+                    ? (LocalizationService.Instance?.Get("common.guest") ?? "Guest")
+                    : pid;
 
             if (_linkAccountButton   != null) _linkAccountButton.gameObject.SetActive(isGuest);
             if (_switchAccountButton != null) _switchAccountButton.gameObject.SetActive(!isGuest);
 
+            _copyPidButton?.onClick.AddListener(OnCopyPid);
+            _privacyButton?.onClick.AddListener(OnOpenPrivacy);
+            _termsButton?.onClick.AddListener(OnOpenTerms);
             _linkAccountButton?.onClick.AddListener(OnLinkAccount);
             _switchAccountButton?.onClick.AddListener(OnSwitchAccount);
             if (_closeButton != null) _closeButton.onClick.AddListener(Close);
@@ -170,11 +181,11 @@ namespace Game.OutGame.Settings
                             Game.Core.UIManager.Instance?.ShowPopup<AccountConflictPopupView>(v => v.Init(
                                 localMaxStage: local?.maxStageId ?? 0,
                                 localGold:     local?.gold ?? 0,
-                                localStars:    local?.totalStars ?? 0,
+                                localCleared:  local?.totalClearedStages ?? 0,
                                 localItems:    local?.totalItems ?? 0,
                                 cloudMaxStage: cloud?.maxStageId ?? 0,
                                 cloudGold:     cloud?.gold ?? 0,
-                                cloudStars:    cloud?.totalStars ?? 0,
+                                cloudCleared:  cloud?.totalClearedStages ?? 0,
                                 cloudItems:    cloud?.totalItems ?? 0,
                                 onKeepLocal: () => ResolveConflict(token, "local"),
                                 onKeepCloud: () => ResolveConflict(token, "cloud")
@@ -278,6 +289,27 @@ namespace Game.OutGame.Settings
 #else
             Game.Core.UIManager.Instance?.ShowToast(LocalizationService.Instance.Get("toast.google_signin_android_only"), Core.UI.ToastType.Error);
 #endif
+        }
+
+        private void OnCopyPid()
+        {
+            var pid = AuthService.Instance?.Pid ?? string.Empty;
+            if (string.IsNullOrEmpty(pid)) return;
+
+            GUIUtility.systemCopyBuffer = pid;
+            Game.Core.UIManager.Instance?.ShowToast(
+                LocalizationService.Instance.Get("toast.pid_copied"), Core.UI.ToastType.Success);
+        }
+
+        private void OnOpenPrivacy() => OpenWeb(Game.Core.AppConfig.WebPrivacyPath);
+        private void OnOpenTerms()   => OpenWeb(Game.Core.AppConfig.WebTermsPath);
+
+        private void OpenWeb(string path)
+        {
+            bool isProd = NetworkService.Instance != null
+                && NetworkService.Instance.Environment == Game.Core.AppEnvironment.Prod;
+            var baseUrl = isProd ? Game.Core.AppConfig.ProdWebUrl : Game.Core.AppConfig.DevWebUrl;
+            Application.OpenURL(baseUrl + path);
         }
 
         private void Close()

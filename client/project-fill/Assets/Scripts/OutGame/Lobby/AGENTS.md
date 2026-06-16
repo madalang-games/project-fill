@@ -8,12 +8,12 @@ Namespace: `Game.OutGame.Lobby`
 | `LobbyView.cs` | `LobbyView` | Root lobby controller; shows/hides tabs; refreshes gold |
 | `HeaderView.cs` | `HeaderView` | Avatar tap → AccountPopup; Gold display |
 | `BottomNavBarView.cs` | `BottomNavBarView` | 3-tab nav; fires OnTabChanged |
-| `RankingTabView.cs` | `RankingTabView` | Ranking tab UI; stars/max-stage tabs, my rank, virtualized list via VirtualizedScrollRect |
+| `RankingTabView.cs` | `RankingTabView` | Ranking tab UI; stage(best-moves)/max-stage/challenge tabs, my rank, virtualized list via VirtualizedScrollRect |
 | `RankingItemView.cs` | `RankingItemView` | Component on RankingItemPrefab; Bind(entry,avatar,score) + SetHighlight(bool) for MyRankPin highlight |
 | `HomeTabView.cs` | `HomeTabView` | Chapter/stage scroll with object pool; milestone chest rendering + claim API; out-of-life ad prompt uses AdMobService token |
 | `ChapterChestView.cs` | `ChapterChestView` | Milestone chest node displaying Locked (INACTIVE), Claim! (ACTIVE), or Cleared (CLAIMED) states |
-| `StageNodeView.cs` | `StageNodeView` | Pooled node: stage label, 3 star fills, lock overlay, pulse ring; Bind(id,stars,unlocked,current) |
-| `StageInfoPopupView.cs` | `StageInfoPopupView` | Stage info popup: title, best stars, best moves, PLAY button |
+| `StageNodeView.cs` | `StageNodeView` | Pooled node: stage label, cleared badge, lock overlay, pulse ring; Bind(id,cleared,unlocked,current) |
+| `StageInfoPopupView.cs` | `StageInfoPopupView` | Stage info popup: title, best moves (campaign ranking metric), PLAY button |
 | `ScrollStateCache.cs` | `ScrollStateCache` | Static session memory: HomeScrollPosition, LastPlayedStageId |
 | `ChapterBgTheme.cs` | `ChapterBgTheme` | Static theme config per `bg_theme_id`; colors + particle params |
 | `ChapterBackgroundView.cs` | `ChapterBackgroundView` | Chapter scroll background: gradient + fade seams + animated particles + label |
@@ -26,7 +26,7 @@ Namespace: `Game.OutGame.Lobby`
 | `AttendancePopupView.cs` | `AttendancePopupView` | Daily attendance popup: 7 day cards (claimed/today/future), today reward preview, claim CTA → RewardPopup; auto-opened from `LobbyView` |
 | `AchievementTabView.cs` | `AchievementTabView` | Achievement lobby tab (right of Ranking): 4 category tabs + scroll list (tier badge, progress bar, claim). Migrated from former AchievementListPopupView |
 | `AchievementToastView.cs` | `AchievementToastView` | Slide-down achievement-unlocked toast (tier badge + name, 3s); `Show(nameKey,tier)` via ShowOverlay — gameplay trigger is InGame seam |
-| `DailyChallengePopupView.cs` | `DailyChallengePopupView` | Daily challenge entry popup: date/difficulty/participants/streak; [Start]=coming-soon (InGame seam), [Ranking]→Ranking Challenge tab |
+| `DailyChallengePopupView.cs` | `DailyChallengePopupView` | Daily challenge entry popup: date/difficulty/participants/streak; [Start]→`ChallengeContext.Set` + load InGame (disabled if already cleared today), [Ranking]→Ranking Challenge tab |
 
 ## Symbols
 | symbol | kind | note |
@@ -42,9 +42,9 @@ Namespace: `Game.OutGame.Lobby`
 | `RankingItemView.Bind(entry,avatarSprite,scoreSprite)` | method | Populates all text/icon fields from RankingEntryDto |
 | `RankingItemView.SetHighlight(bool)` | method | Switches background color: normal purple vs gold CTA highlight |
 | `HomeTabView` | component | OnEnable refreshes pool; OnDisable saves scroll position |
-| `StageNodeView.Bind(id,stars,unlocked,isCurrent,chapterId,difficulty)` | method | Updates visual states; toggles `_lockOverlay` on `!unlocked`; difficulty 0=Easy(no outline), 1=Normal(neon blue), 2=Hard(neon red+skull) |
+| `StageNodeView.Bind(id,cleared,unlocked,isCurrent,chapterId,difficulty)` | method | Updates visual states; `_clearedBadge` on `cleared && unlocked`; toggles `_lockOverlay` on `!unlocked`; difficulty 0=Easy(no outline), 1=Normal(neon blue), 2=Hard(neon red+skull) |
 | `StageNodeView.OnTapped` | event | `Action<int>` stageId |
-| `StageInfoPopupView.Init(stageId,bestStars,bestMoves,onPlay,difficulty,isLocked)` | method | Required before showing; isLocked=true disables PlayButton; difficulty tints ribbon: 0=amber(default), 1=neon blue, 2=coral red |
+| `StageInfoPopupView.Init(stageId,bestMoves,onPlay,difficulty,isLocked)` | method | Required before showing; bestMoves 0 → "-"; isLocked=true disables PlayButton; difficulty tints ribbon: 0=amber(default), 1=neon blue, 2=coral red |
 | `ScrollStateCache.HomeScrollPosition` | prop | Float 0..1; save on leave, restore on enter |
 | `ScrollStateCache.LastPlayedStageId` | prop | Set before entering InGame scene |
 | `LobbyTab` | enum | Home / Shop / Ranking / Achievement |
@@ -77,9 +77,9 @@ Namespace: `Game.OutGame.Lobby`
 | `HomeTabView.CreateChestNode` | method | Instantiates a ChapterChestView prefab near the chapter-end stage node |
 | `HomeTabView.OnChestTapped` | method | Invokes reward claim API; builds RewardItems via CurrencyDataService+ItemDataService+DynamicResourceService; shows RewardPopupView |
 | `ChapterChestView.SetState(ChestState)` | method | Configures sprites, button interactability, and glow overlays; Claimed blocks raycasts but keeps alpha=1 (no dim) |
-| `ChapterChestView.SetStarInfo(int,int)` | method | Updates `_starCountLabel` text to `"{current}/{max}"` |
-| `ChapterChestView._starCountLabel` | SerializeField | TMP_Text in StarCountContainer child; shows chapter star progress |
-| `HomeTabView.GetChapterStarInfo(int)` | method | Returns (current, max) stars for chapterNum; used by RefreshChestNodes |
+| `ChapterChestView.SetClearedInfo(int,int)` | method | Updates `_clearedCountLabel` text to `"{cleared}/{total}"` |
+| `ChapterChestView._clearedCountLabel` | SerializeField | TMP_Text in ClearedCountContainer child; shows chapter cleared-stage progress |
+| `HomeTabView.GetChapterClearInfo(int)` | method | Returns (cleared, total) stages for chapterNum; used by RefreshChestNodes |
 
 ## Rules
 - Scroll position must be saved in HomeTabView.OnDisable and restored in HomeTabView.OnEnable.
