@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 4d676f1acaf00614b9f42c5c2a81cd62
+guid: b602e6c55c4605c4f8f7422235668e4c
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -5236474859395285304
-    second: BoardSkins_7_0
+      213: -3984740125337063181
+    second: Icons3_19_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -46,7 +46,7 @@ TextureImporter:
   nPOTScale: 0
   lightmap: 0
   compressionQuality: 50
-  spriteMode: 1
+  spriteMode: 2
   spriteExtrude: 1
   spriteMeshType: 1
   alignment: 0
@@ -100,12 +100,12 @@ TextureImporter:
     buildTarget: Android
     maxTextureSize: 2048
     resizeAlgorithm: 0
-    textureFormat: 51
+    textureFormat: -1
     textureCompression: 1
     compressionQuality: 50
     crunchedCompression: 0
     allowsAlphaSplitting: 0
-    overridden: 1
+    overridden: 0
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
@@ -113,13 +113,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: BoardSkins_7_0
+      name: Icons3_19_0
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 237
-        height: 340
+        width: 184
+        height: 188
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -128,8 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 8cefa720cdd4457b0800000000000000
-      internalID: -5236474859395285304
+      spriteID: 3f0f903d7fb53b8c0800000000000000
+      internalID: -3984740125337063181
       vertices: []
       indices: 
       edges: []
@@ -138,7 +138,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 5e97eb03825dee720800000000000000
+    spriteID: 
     internalID: 0
     vertices: []
     indices: 
@@ -148,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      BoardSkins_7_0: -5236474859395285304
+      Icons3_19_0: -3984740125337063181
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
