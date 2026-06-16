@@ -7,10 +7,14 @@ namespace ProjectFill.Infrastructure.Data;
 
 public partial class StaticDataService
 {
+    private IReadOnlyDictionary<string, AchievementData> _achievements = new Dictionary<string, AchievementData>();
     private IReadOnlyDictionary<int, AdPlacementData> _adPlacements = new Dictionary<int, AdPlacementData>();
     private IReadOnlyDictionary<int, AvatarData> _avatars = new Dictionary<int, AvatarData>();
     private IReadOnlyDictionary<byte, ColorPaletteData> _colorPalettes = new Dictionary<byte, ColorPaletteData>();
+    private IReadOnlyDictionary<string, CosmeticItemData> _cosmeticItems = new Dictionary<string, CosmeticItemData>();
     private IReadOnlyDictionary<int, CurrencyData> _currencys = new Dictionary<int, CurrencyData>();
+    private IReadOnlyDictionary<int, DailyLoginMilestoneData> _dailyLoginMilestones = new Dictionary<int, DailyLoginMilestoneData>();
+    private IReadOnlyDictionary<int, DailyLoginRewardData> _dailyLoginRewards = new Dictionary<int, DailyLoginRewardData>();
     private IReadOnlyDictionary<int, ItemData> _items = new Dictionary<int, ItemData>();
     private IReadOnlyDictionary<int, RewardGroupData> _rewardGroups = new Dictionary<int, RewardGroupData>();
     private IReadOnlyDictionary<int, RewardItemData> _rewardItems = new Dictionary<int, RewardItemData>();
@@ -21,15 +25,31 @@ public partial class StaticDataService
 
     private void InitGeneratedData(string dataRoot)
     {
+        var achievementPath = System.IO.Path.Combine(dataRoot, "achievement");
         var adPath = System.IO.Path.Combine(dataRoot, "ad");
         var avatarPath = System.IO.Path.Combine(dataRoot, "avatar");
         var commonPath = System.IO.Path.Combine(dataRoot, "common");
+        var cosmeticPath = System.IO.Path.Combine(dataRoot, "cosmetic");
         var currencyPath = System.IO.Path.Combine(dataRoot, "currency");
+        var dailyLoginPath = System.IO.Path.Combine(dataRoot, "daily_login");
         var itemPath = System.IO.Path.Combine(dataRoot, "item");
         var rewardPath = System.IO.Path.Combine(dataRoot, "reward");
         var shopPath = System.IO.Path.Combine(dataRoot, "shop");
         var stagePath = System.IO.Path.Combine(dataRoot, "stage");
 
+        _achievements = AchievementLoader.LoadAll(System.IO.Path.Combine(achievementPath, "achievement.csv"))
+            .ToDictionary(r => r.achievement_id, r => new AchievementData
+            {
+                AchievementId = r.achievement_id,
+                Category = r.category,
+                NameKey = r.name_key,
+                DescKey = r.desc_key,
+                Tier = r.tier,
+                RewardGroupId = r.reward_group_id,
+                ConditionType = r.condition_type,
+                ConditionValue = r.condition_value,
+                SortOrder = r.sort_order,
+            });
         _adPlacements = AdPlacementLoader.LoadAll(System.IO.Path.Combine(adPath, "ad_placement.csv"))
             .ToDictionary(r => r.id, r => new AdPlacementData
             {
@@ -55,12 +75,42 @@ public partial class StaticDataService
             {
                 Id = r.id,
             });
+        _cosmeticItems = CosmeticItemLoader.LoadAll(System.IO.Path.Combine(cosmeticPath, "cosmetic_item.csv"))
+            .ToDictionary(r => r.cosmetic_id, r => new CosmeticItemData
+            {
+                CosmeticId = r.cosmetic_id,
+                Category = r.category,
+                NameKey = r.name_key,
+                DescKey = r.desc_key,
+                UnlockType = r.unlock_type,
+                UnlockCost = r.unlock_cost,
+                UnlockConditionId = r.unlock_condition_id,
+                PreviewRes = r.preview_res,
+                SortOrder = r.sort_order,
+            });
         _currencys = CurrencyLoader.LoadAll(System.IO.Path.Combine(currencyPath, "currency.csv"))
             .ToDictionary(r => r.id, r => new CurrencyData
             {
                 Id = r.id,
                 RewardTypeKey = r.reward_type_key,
                 NameKey = r.name_key,
+            });
+        _dailyLoginMilestones = DailyLoginMilestoneLoader.LoadAll(System.IO.Path.Combine(dailyLoginPath, "daily_login_milestone.csv"))
+            .ToDictionary(r => r.id, r => new DailyLoginMilestoneData
+            {
+                Id = r.id,
+                ThresholdDays = r.threshold_days,
+                RewardGroupId = r.reward_group_id,
+                CosmeticConditionId = r.cosmetic_condition_id,
+            });
+        _dailyLoginRewards = DailyLoginRewardLoader.LoadAll(System.IO.Path.Combine(dailyLoginPath, "daily_login_reward.csv"))
+            .ToDictionary(r => r.id, r => new DailyLoginRewardData
+            {
+                Id = r.id,
+                CycleType = r.cycle_type,
+                Day = r.day,
+                RewardGroupId = r.reward_group_id,
+                SortOrder = r.sort_order,
             });
         _items = ItemLoader.LoadAll(System.IO.Path.Combine(itemPath, "item.csv"))
             .ToDictionary(r => r.id, r => new ItemData
@@ -138,17 +188,31 @@ public partial class StaticDataService
                 StageOrder = r.stage_order,
                 Difficulty = r.difficulty,
                 RewardGroupId = r.reward_group_id,
+                Types = r.types,
+                LaneKinds = r.lane_kinds,
+                LockUnlock = r.lock_unlock,
+                OverloadType = r.overload_type,
+                RelayOrder = r.relay_order,
+                Board = r.board,
             });
     }
 
+    public AchievementData? GetAchievement(string achievement_id) => _achievements.GetValueOrDefault(achievement_id);
+    public IReadOnlyList<AchievementData> GetAllAchievements() => _achievements.Values.ToList();
     public AdPlacementData? GetAdPlacement(int id) => _adPlacements.GetValueOrDefault(id);
     public IReadOnlyList<AdPlacementData> GetAllAdPlacements() => _adPlacements.Values.ToList();
     public AvatarData? GetAvatar(int id) => _avatars.GetValueOrDefault(id);
     public IReadOnlyList<AvatarData> GetAllAvatars() => _avatars.Values.ToList();
     public ColorPaletteData? GetColorPalette(byte id) => _colorPalettes.GetValueOrDefault(id);
     public IReadOnlyList<ColorPaletteData> GetAllColorPalettes() => _colorPalettes.Values.ToList();
+    public CosmeticItemData? GetCosmeticItem(string cosmetic_id) => _cosmeticItems.GetValueOrDefault(cosmetic_id);
+    public IReadOnlyList<CosmeticItemData> GetAllCosmeticItems() => _cosmeticItems.Values.ToList();
     public CurrencyData? GetCurrency(int id) => _currencys.GetValueOrDefault(id);
     public IReadOnlyList<CurrencyData> GetAllCurrencys() => _currencys.Values.ToList();
+    public DailyLoginMilestoneData? GetDailyLoginMilestone(int id) => _dailyLoginMilestones.GetValueOrDefault(id);
+    public IReadOnlyList<DailyLoginMilestoneData> GetAllDailyLoginMilestones() => _dailyLoginMilestones.Values.ToList();
+    public DailyLoginRewardData? GetDailyLoginReward(int id) => _dailyLoginRewards.GetValueOrDefault(id);
+    public IReadOnlyList<DailyLoginRewardData> GetAllDailyLoginRewards() => _dailyLoginRewards.Values.ToList();
     public ItemData? GetItem(int id) => _items.GetValueOrDefault(id);
     public IReadOnlyList<ItemData> GetAllItems() => _items.Values.ToList();
     public RewardGroupData? GetRewardGroup(int reward_group_id) => _rewardGroups.GetValueOrDefault(reward_group_id);

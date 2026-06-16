@@ -208,6 +208,101 @@
       "indexes": [
         { "name": "idx_user_iap_purchase_counts_user_id", "columns": ["user_id"], "unique": false }
       ]
+    },
+    {
+      "name": "user_cosmetics",
+      "comment": "Cosmetics unlocked (owned) by each player.",
+      "columns": [
+        { "name": "user_id",     "type": "int64",      "pk": true, "null": false, "fk": "players.user_id" },
+        { "name": "cosmetic_id", "type": "string(32)", "pk": true, "null": false },
+        { "name": "unlocked_at", "type": "datetime",   "null": false }
+      ],
+      "indexes": [
+        { "name": "idx_user_cosmetics_user_id", "columns": ["user_id"], "unique": false }
+      ]
+    },
+    {
+      "name": "user_active_cosmetics",
+      "comment": "Currently equipped cosmetic skins per player.",
+      "columns": [
+        { "name": "user_id",               "type": "int64",      "pk": true, "null": false, "fk": "players.user_id" },
+        { "name": "active_chip_skin",      "type": "string(32)", "null": false, "default": "chip_default" },
+        { "name": "active_lane_skin",      "type": "string(32)", "null": false, "default": "lane_default" },
+        { "name": "active_board_skin",     "type": "string(32)", "null": false, "default": "board_default" },
+        { "name": "use_custom_board_skin", "type": "bool",       "null": false, "default": false },
+        { "name": "updated_at",            "type": "datetime",   "null": false }
+      ]
+    },
+    {
+      "name": "user_login_attendance",
+      "comment": "Daily attendance state per player. Non-punitive 7-day cycle, only streak resets on a missed day.",
+      "columns": [
+        { "name": "user_id",             "type": "int64",    "pk": true, "null": false, "fk": "players.user_id" },
+        { "name": "current_day",         "type": "int32",    "null": false, "default": 0 },
+        { "name": "current_cycle",       "type": "int32",    "null": false, "default": 1 },
+        { "name": "current_streak",      "type": "int32",    "null": false, "default": 0 },
+        { "name": "best_streak",         "type": "int32",    "null": false, "default": 0 },
+        { "name": "total_attended_days", "type": "int32",    "null": false, "default": 0 },
+        { "name": "last_attended_date",  "type": "datetime", "null": true },
+        { "name": "reward_claimed_today","type": "bool",     "null": false, "default": false },
+        { "name": "updated_at",          "type": "datetime", "null": false }
+      ]
+    },
+    {
+      "name": "user_achievements",
+      "comment": "Per-player achievement progress and claim state.",
+      "columns": [
+        { "name": "user_id",        "type": "int64",      "pk": true, "null": false, "fk": "players.user_id" },
+        { "name": "achievement_id", "type": "string(32)", "pk": true, "null": false },
+        { "name": "progress",       "type": "int32",      "null": false, "default": 0 },
+        { "name": "is_completed",   "type": "bool",       "null": false, "default": false },
+        { "name": "completed_at",   "type": "datetime",   "null": true },
+        { "name": "reward_claimed", "type": "bool",       "null": false, "default": false },
+        { "name": "updated_at",     "type": "datetime",   "null": false }
+      ],
+      "indexes": [
+        { "name": "idx_user_achievements_user_id", "columns": ["user_id"], "unique": false }
+      ]
+    },
+    {
+      "name": "daily_challenges",
+      "comment": "One shared daily challenge puzzle per UTC date. Seed and params only, board generation is client/InGame.",
+      "columns": [
+        { "name": "challenge_date",    "type": "string(10)", "pk": true, "null": false },
+        { "name": "stage_seed",        "type": "string(64)", "null": false },
+        { "name": "signal_type_count", "type": "int32",      "null": false },
+        { "name": "lane_count",        "type": "int32",      "null": false },
+        { "name": "gimmick_id",        "type": "int32",      "null": true },
+        { "name": "created_at",        "type": "datetime",   "null": false }
+      ]
+    },
+    {
+      "name": "user_daily_challenge_records",
+      "comment": "Per-player daily challenge attempt result, ranking source for the date.",
+      "columns": [
+        { "name": "user_id",            "type": "int64",      "pk": true, "null": false, "fk": "players.user_id" },
+        { "name": "challenge_date",     "type": "string(10)", "pk": true, "null": false },
+        { "name": "moves_used",         "type": "int32",      "null": false, "default": 0 },
+        { "name": "clear_time_seconds", "type": "int32",      "null": false, "default": 0 },
+        { "name": "is_cleared",         "type": "bool",       "null": false, "default": false },
+        { "name": "streak_at_clear",    "type": "int32",      "null": false, "default": 0 },
+        { "name": "reward_claimed",     "type": "bool",       "null": false, "default": false },
+        { "name": "updated_at",         "type": "datetime",   "null": false }
+      ],
+      "indexes": [
+        { "name": "idx_challenge_records_ranking", "columns": ["challenge_date", "moves_used", "clear_time_seconds"], "unique": false }
+      ]
+    },
+    {
+      "name": "user_challenge_streaks",
+      "comment": "Per-player daily challenge consecutive-clear streak.",
+      "columns": [
+        { "name": "user_id",         "type": "int64",      "pk": true, "null": false, "fk": "players.user_id" },
+        { "name": "current_streak",  "type": "int32",      "null": false, "default": 0 },
+        { "name": "best_streak",     "type": "int32",      "null": false, "default": 0 },
+        { "name": "last_clear_date", "type": "string(10)", "null": true },
+        { "name": "updated_at",      "type": "datetime",   "null": false }
+      ]
     }
   ]
 }

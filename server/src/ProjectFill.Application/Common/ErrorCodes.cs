@@ -72,4 +72,24 @@ public static class ErrorCodes
 
     // --- Ranking ---
     public const string InvalidRankingType = "INVALID_RANKING_TYPE";
+
+    // --- Cosmetic ---
+    public const string CosmeticNotFound       = "COSMETIC_NOT_FOUND";
+    public const string CosmeticAlreadyOwned   = "COSMETIC_ALREADY_OWNED";
+    public const string CosmeticNotOwned       = "COSMETIC_NOT_OWNED";
+    public const string CosmeticNotPurchasable = "COSMETIC_NOT_PURCHASABLE";
+    public const string CosmeticCategoryMismatch = "COSMETIC_CATEGORY_MISMATCH";
+
+    // --- Attendance ---
+    public const string AttendanceAlreadyClaimed = "ATTENDANCE_ALREADY_CLAIMED";
+
+    // --- Achievement ---
+    public const string AchievementNotFound      = "ACHIEVEMENT_NOT_FOUND";
+    public const string AchievementNotCompleted  = "ACHIEVEMENT_NOT_COMPLETED";
+    public const string AchievementAlreadyClaimed = "ACHIEVEMENT_ALREADY_CLAIMED";
+
+    // --- Daily Challenge ---
+    public const string ChallengeNotFound        = "CHALLENGE_NOT_FOUND";
+    public const string ChallengeAlreadyPlayed   = "CHALLENGE_ALREADY_PLAYED";
+    public const string ChallengeNotPlayed       = "CHALLENGE_NOT_PLAYED";
 }

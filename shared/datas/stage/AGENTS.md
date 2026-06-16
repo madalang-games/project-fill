@@ -4,7 +4,7 @@
 | file | class | role |
 |------|-------|------|
 | `chapter.csv` | `Chapter` | Chapter order, unlock chain, and background theme id |
-| `stage.csv` | `Stage` | Stage-to-chapter metadata and reward group references |
+| `stage.csv` | `Stage` | Stage progression metadata + Signal Sort definition (gimmicks) + explicit `board` layout |
 
 ## Symbols
 | symbol | kind | note |
@@ -14,11 +14,23 @@
 | `Chapter.bg_theme_id` | column | Visual theme id for Signal Sort stage map |
 | `Stage.stage_id` | column | Stable stage id |
 | `Stage.reward_group_id` | column | FK to `reward/reward_group.csv` |
+| `Stage.types` | column | Signal Type count = number of sets |
+| `Stage.lane_kinds` | column | Per-lane kind codes `N`/`L`/`B` (Normal/Locked/Blind); length = lane count |
+| `Stage.lock_unlock` | column | Per-lane unlock glyph for Locked lanes, `.` otherwise (e.g. `....R`) |
+| `Stage.overload_type` | column | Overload Signal Type index, `-1` = none |
+| `Stage.relay_order` | column | Relay absorb order as glyph sequence (e.g. `RBGYP`); blank = none |
+| `Stage.board` | column | Compact chip layout: `Capacity(4)` chars/lane, no delimiters; UPPER=normal, lower=overload, `-`=empty slot. `""` = not yet generated |
 
 ## Rules
-- Stage rows describe progression metadata only; board layouts and Signal Type arrangements belong in dedicated level data when added.
-- Do not add turn-limit, stamina, cell-clear ratio, or non-circuit fields.
+- `stage.csv` is authored by `tools/stage_editor` (Signal Sort). `board` stores the **explicit** initial
+  layout (no seed/regeneration) — unconditional render, decoupled from any generator algorithm.
+- Glyph order = SignalType order: `R B G Y P C O M L T` (0–9). `lane_kinds`=`N`/`L`/`B`.
+- Do not add turn-limit, stamina, cell-clear ratio, or other non-circuit fields.
+- The Unity runtime builds boards from these columns: `InGameController.LoadCurrent` reads
+  `StageDataService.GetStage(stage_id)`, maps gimmicks via `BuildDefinition`, and decodes `board` via
+  `BoardCodec.Decode`. Empty `board` (or no row) → `BoardFactory.Generate` fallback; null → `StageLibrary`.
 
 ## Cross-refs
 - Depends on: `shared/datas/reward/reward_group.csv`
 - Consumed by: `Game.OutGame.Lobby`
+- Authored by: `tools/stage_editor` → `tools/stage_generator` (C# CLI)

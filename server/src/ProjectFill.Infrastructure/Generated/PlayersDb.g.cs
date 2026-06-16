@@ -156,4 +156,28 @@ public sealed class PlayersDb
     public IQueryable<(PlayersRow Player, UserIapPurchaseCountsRow UserIapPurchaseCount)> JoinWithUserIapPurchaseCounts()
         => Query().Join(_db._UserIapPurchaseCounts, l => l.UserId, r => r.UserId,
             (l, r) => ValueTuple.Create(l, r));
+
+    public IQueryable<(PlayersRow Player, UserCosmeticsRow UserCosmetic)> JoinWithUserCosmetics()
+        => Query().Join(_db._UserCosmetics, l => l.UserId, r => r.UserId,
+            (l, r) => ValueTuple.Create(l, r));
+
+    public IQueryable<(PlayersRow Player, UserActiveCosmeticsRow UserActiveCosmetic)> JoinWithUserActiveCosmetics()
+        => Query().Join(_db._UserActiveCosmetics, l => l.UserId, r => r.UserId,
+            (l, r) => ValueTuple.Create(l, r));
+
+    public IQueryable<(PlayersRow Player, UserLoginAttendanceRow UserLoginAttendance)> JoinWithUserLoginAttendance()
+        => Query().Join(_db._UserLoginAttendance, l => l.UserId, r => r.UserId,
+            (l, r) => ValueTuple.Create(l, r));
+
+    public IQueryable<(PlayersRow Player, UserAchievementsRow UserAchievement)> JoinWithUserAchievements()
+        => Query().Join(_db._UserAchievements, l => l.UserId, r => r.UserId,
+            (l, r) => ValueTuple.Create(l, r));
+
+    public IQueryable<(PlayersRow Player, UserDailyChallengeRecordsRow UserDailyChallengeRecord)> JoinWithUserDailyChallengeRecords()
+        => Query().Join(_db._UserDailyChallengeRecords, l => l.UserId, r => r.UserId,
+            (l, r) => ValueTuple.Create(l, r));
+
+    public IQueryable<(PlayersRow Player, UserChallengeStreaksRow UserChallengeStreak)> JoinWithUserChallengeStreaks()
+        => Query().Join(_db._UserChallengeStreaks, l => l.UserId, r => r.UserId,
+            (l, r) => ValueTuple.Create(l, r));
 }

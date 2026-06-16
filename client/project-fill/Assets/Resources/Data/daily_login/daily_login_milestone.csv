@@ -1,0 +1,4 @@
+id,threshold_days,reward_group_id,cosmetic_condition_id
+1,30,4101,day_30
+2,60,4102,
+3,100,4103,day_100

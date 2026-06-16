@@ -6,14 +6,22 @@ namespace ProjectFill.Domain.Interfaces;
 
 public partial interface IStaticDataService
 {
+    AchievementData? GetAchievement(string achievement_id);
+    IReadOnlyList<AchievementData> GetAllAchievements();
     AdPlacementData? GetAdPlacement(int id);
     IReadOnlyList<AdPlacementData> GetAllAdPlacements();
     AvatarData? GetAvatar(int id);
     IReadOnlyList<AvatarData> GetAllAvatars();
     ColorPaletteData? GetColorPalette(byte id);
     IReadOnlyList<ColorPaletteData> GetAllColorPalettes();
+    CosmeticItemData? GetCosmeticItem(string cosmetic_id);
+    IReadOnlyList<CosmeticItemData> GetAllCosmeticItems();
     CurrencyData? GetCurrency(int id);
     IReadOnlyList<CurrencyData> GetAllCurrencys();
+    DailyLoginMilestoneData? GetDailyLoginMilestone(int id);
+    IReadOnlyList<DailyLoginMilestoneData> GetAllDailyLoginMilestones();
+    DailyLoginRewardData? GetDailyLoginReward(int id);
+    IReadOnlyList<DailyLoginRewardData> GetAllDailyLoginRewards();
     ItemData? GetItem(int id);
     IReadOnlyList<ItemData> GetAllItems();
     RewardGroupData? GetRewardGroup(int reward_group_id);

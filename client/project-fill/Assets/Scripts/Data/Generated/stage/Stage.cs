@@ -14,5 +14,11 @@ namespace ProjectFill.Data.Generated
         public int stage_order;
         public int difficulty;
         public int reward_group_id;
+        public int types;
+        public string lane_kinds;
+        public string lock_unlock;
+        public int overload_type;
+        public string relay_order;
+        public string board;
     }
 }

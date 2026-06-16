@@ -17,6 +17,10 @@
 | `AdRewardsStatusController.cs` | `AdRewardsStatusController` | `/api/ad-rewards/status/{adToken}` polling check for verified SSV rewards |
 | `InventoryController.cs` | `InventoryController` | `/api/inventory` endpoints for syncing, spending, and buying booster items |
 | `IapController.cs` | `IapController` | `/api/iap` purchase verification and product status listing |
+| `CosmeticController.cs` | `CosmeticController` | `/api/cosmetics` list, gold unlock, and active equip endpoints |
+| `AttendanceController.cs` | `AttendanceController` | `/api/attendance` daily status + claim endpoints |
+| `AchievementController.cs` | `AchievementController` | `/api/achievements` list + claim endpoints |
+| `DailyChallengeController.cs` | `DailyChallengeController` | `/api/daily-challenge` today/attempt/clear/ranking/me/streak endpoints |
 
 ## Symbols
 | symbol | kind | note |
@@ -41,6 +45,17 @@
 | `InventoryController.Buy` | method | POST buy items with Gold |
 | `IapController.Verify` | method | `POST /api/iap/verify` — validates purchase, grants reward group |
 | `IapController.GetProducts` | method | `GET /api/iap/products` — enabled products with remaining purchase counts |
+| `CosmeticController.Get` | method | `GET /api/cosmetics` — catalog + unlock state + active equip |
+| `CosmeticController.Unlock` | method | `POST /api/cosmetics/{id}/unlock` — gold unlock |
+| `CosmeticController.SetActive` | method | `POST /api/cosmetics/active` — equip chip/lane/board skins |
+| `AttendanceController.Status` | method | `GET /api/attendance/status` — current attendance state + 7 day cards |
+| `AttendanceController.Claim` | method | `POST /api/attendance/claim` — claim today's attendance reward |
+| `AchievementController.Get` | method | `GET /api/achievements` — list with progress + claim state |
+| `AchievementController.Claim` | method | `POST /api/achievements/{id}/claim` — claim completed achievement |
+| `DailyChallengeController.Today` | method | `GET /api/daily-challenge/today` — today's puzzle seed + my state |
+| `DailyChallengeController.Clear` | method | `POST /api/daily-challenge/today/clear` — submit result, streak + rewards |
+| `DailyChallengeController.Ranking` | method | `GET /api/daily-challenge/today/ranking` — paged global ranking |
+| `DailyChallengeController.Streak` | method | `GET /api/daily-challenge/streak` — my streak |
 
 ## Rules
 - Do not accept `user_id` from request bodies; use `ControllerBaseEx.PlayerId`.

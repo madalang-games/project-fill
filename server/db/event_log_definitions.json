@@ -74,6 +74,53 @@
         "reason": "spend|grant|admin",
         "current_after": "count after change"
       }
+    },
+    {
+      "tr_id": 8001,
+      "name": "CosmeticUnlocked",
+      "params": {
+        "cosmetic_id": "cosmetic id",
+        "unlock_type": "Gold|Achievement|Attendance|Challenge",
+        "condition_id": "condition id that granted it, or empty for Gold"
+      }
+    },
+    {
+      "tr_id": 8002,
+      "name": "CosmeticEquipped",
+      "params": {
+        "chip_skin": "active chip skin id",
+        "lane_skin": "active lane skin id",
+        "board_skin": "active board skin id",
+        "use_custom_board_skin": "true|false"
+      }
+    },
+    {
+      "tr_id": 8101,
+      "name": "AttendanceClaimed",
+      "params": {
+        "cycle": "1-based cycle number",
+        "day": "day within cycle 1-7",
+        "streak": "current consecutive streak",
+        "reward_group_id": "granted reward group id"
+      }
+    },
+    {
+      "tr_id": 8201,
+      "name": "AchievementClaimed",
+      "params": {
+        "achievement_id": "achievement id",
+        "reward_group_id": "granted reward group id"
+      }
+    },
+    {
+      "tr_id": 8301,
+      "name": "ChallengeCleared",
+      "params": {
+        "challenge_date": "challenge date UTC",
+        "moves_used": "moves used",
+        "clear_time_seconds": "clear time seconds",
+        "streak": "streak at clear"
+      }
     }
   ]
 }

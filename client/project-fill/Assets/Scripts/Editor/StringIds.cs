@@ -111,6 +111,19 @@ namespace Game.Editor
         public const string PopupBootContinueAsGuestTitle = "popup.boot.continue_as_guest_title";
         public const string PopupBootContinueAsGuestBody = "popup.boot.continue_as_guest_body";
         public const string PopupResultDoubleReward = "popup.result.double_reward";
+        public const string PopupAttendanceTitle = "popup.attendance.title";
+        public const string PopupAttendanceTodayReward = "popup.attendance.today_reward";
+        public const string PopupAttendanceBtnClaim = "popup.attendance.btn_claim";
+        public const string PopupAttendanceDayFmt = "popup.attendance.day_fmt";
+        public const string PopupAttendanceStreakFmt = "popup.attendance.streak_fmt";
+        public const string PopupAchievementTitle = "popup.achievement.title";
+        public const string PopupChallengeTitle = "popup.challenge.title";
+        public const string PopupChallengeBtnStart = "popup.challenge.btn_start";
+        public const string PopupChallengeBtnRanking = "popup.challenge.btn_ranking";
+        public const string PopupChallengeStreakFmt = "popup.challenge.streak_fmt";
+        public const string PopupChallengeParticipantsFmt = "popup.challenge.participants_fmt";
+        public const string PopupChallengeMyRankFmt = "popup.challenge.my_rank_fmt";
+        public const string PopupChallengeMovesFmt = "popup.challenge.moves_fmt";
 
         // toast
         public const string ToastAccountAlreadyActive = "toast.account_already_active";
@@ -145,6 +158,7 @@ namespace Game.Editor
         public const string ToastIapPurchaseSuccess = "toast.iap_purchase_success";
         public const string ToastIapAlreadyOwned = "toast.iap_already_owned";
         public const string ToastIapLimitReached = "toast.iap_limit_reached";
+        public const string ToastAchievementUnlockedFmt = "toast.achievement_unlocked_fmt";
 
         // lobby
         public const string LobbyRankingStarsTitle = "lobby.ranking.stars_title";
@@ -224,6 +238,126 @@ namespace Game.Editor
         public const string ShopIapLimitNone = "shop.iap.limit.none";
         public const string ShopCategorySpecialOffer = "shop.category.special_offer";
         public const string ShopCategoryBundle = "shop.category.bundle";
+        public const string ShopCosmeticSectionTitle = "shop.cosmetic.section_title";
+        public const string ShopCosmeticTabChip = "shop.cosmetic.tab_chip";
+        public const string ShopCosmeticTabLane = "shop.cosmetic.tab_lane";
+        public const string ShopCosmeticTabBoard = "shop.cosmetic.tab_board";
+        public const string ShopCosmeticBtnBuyApply = "shop.cosmetic.btn_buy_apply";
+        public const string ShopCosmeticBtnApply = "shop.cosmetic.btn_apply";
+        public const string ShopCosmeticApplied = "shop.cosmetic.applied";
+        public const string ShopCosmeticLockedAchievement = "shop.cosmetic.locked_achievement";
+        public const string ShopCosmeticLockedAttendance = "shop.cosmetic.locked_attendance";
+        public const string ShopCosmeticLockedChallenge = "shop.cosmetic.locked_challenge";
+
+        // cosmetic
+        public const string CosmeticChipDefaultName = "cosmetic.chip_default.name";
+        public const string CosmeticChipDefaultDesc = "cosmetic.chip_default.desc";
+        public const string CosmeticChipHexName = "cosmetic.chip_hex.name";
+        public const string CosmeticChipHexDesc = "cosmetic.chip_hex.desc";
+        public const string CosmeticChipCrystalName = "cosmetic.chip_crystal.name";
+        public const string CosmeticChipCrystalDesc = "cosmetic.chip_crystal.desc";
+        public const string CosmeticChipRetroName = "cosmetic.chip_retro.name";
+        public const string CosmeticChipRetroDesc = "cosmetic.chip_retro.desc";
+        public const string CosmeticChipNeonName = "cosmetic.chip_neon.name";
+        public const string CosmeticChipNeonDesc = "cosmetic.chip_neon.desc";
+        public const string CosmeticChipPlatinumName = "cosmetic.chip_platinum.name";
+        public const string CosmeticChipPlatinumDesc = "cosmetic.chip_platinum.desc";
+        public const string CosmeticChipGhostName = "cosmetic.chip_ghost.name";
+        public const string CosmeticChipGhostDesc = "cosmetic.chip_ghost.desc";
+        public const string CosmeticChipDailyName = "cosmetic.chip_daily.name";
+        public const string CosmeticChipDailyDesc = "cosmetic.chip_daily.desc";
+        public const string CosmeticLaneDefaultName = "cosmetic.lane_default.name";
+        public const string CosmeticLaneDefaultDesc = "cosmetic.lane_default.desc";
+        public const string CosmeticLaneHoloName = "cosmetic.lane_holo.name";
+        public const string CosmeticLaneHoloDesc = "cosmetic.lane_holo.desc";
+        public const string CosmeticLaneBronzeName = "cosmetic.lane_bronze.name";
+        public const string CosmeticLaneBronzeDesc = "cosmetic.lane_bronze.desc";
+        public const string CosmeticLaneCrystalName = "cosmetic.lane_crystal.name";
+        public const string CosmeticLaneCrystalDesc = "cosmetic.lane_crystal.desc";
+        public const string CosmeticLaneTerminalName = "cosmetic.lane_terminal.name";
+        public const string CosmeticLaneTerminalDesc = "cosmetic.lane_terminal.desc";
+        public const string CosmeticLaneGhostName = "cosmetic.lane_ghost.name";
+        public const string CosmeticLaneGhostDesc = "cosmetic.lane_ghost.desc";
+        public const string CosmeticBoardDefaultName = "cosmetic.board_default.name";
+        public const string CosmeticBoardDefaultDesc = "cosmetic.board_default.desc";
+        public const string CosmeticBoardVoidName = "cosmetic.board_void.name";
+        public const string CosmeticBoardVoidDesc = "cosmetic.board_void.desc";
+        public const string CosmeticBoardQuantumName = "cosmetic.board_quantum.name";
+        public const string CosmeticBoardQuantumDesc = "cosmetic.board_quantum.desc";
+        public const string CosmeticBoardRetroDosName = "cosmetic.board_retro_dos.name";
+        public const string CosmeticBoardRetroDosDesc = "cosmetic.board_retro_dos.desc";
+        public const string CosmeticBoardCircuitName = "cosmetic.board_circuit.name";
+        public const string CosmeticBoardCircuitDesc = "cosmetic.board_circuit.desc";
+        public const string CosmeticBoardVintageName = "cosmetic.board_vintage.name";
+        public const string CosmeticBoardVintageDesc = "cosmetic.board_vintage.desc";
+        public const string CosmeticBoardCollectorName = "cosmetic.board_collector.name";
+        public const string CosmeticBoardCollectorDesc = "cosmetic.board_collector.desc";
+        public const string CosmeticBoardChallengeName = "cosmetic.board_challenge.name";
+        public const string CosmeticBoardChallengeDesc = "cosmetic.board_challenge.desc";
+
+        // home
+        public const string HomeBadgeAttendance = "home.badge.attendance";
+        public const string HomeBadgeChallenge = "home.badge.challenge";
+
+        // achievement
+        public const string AchievementTabProgression = "achievement.tab.progression";
+        public const string AchievementTabSkill = "achievement.tab.skill";
+        public const string AchievementTabDedication = "achievement.tab.dedication";
+        public const string AchievementTabCollection = "achievement.tab.collection";
+        public const string AchievementBtnClaim = "achievement.btn_claim";
+        public const string AchievementProgressFmt = "achievement.progress_fmt";
+        public const string AchievementCompleted = "achievement.completed";
+
+        // ach
+        public const string AchPrg01Name = "ach.prg_01.name";
+        public const string AchPrg01Desc = "ach.prg_01.desc";
+        public const string AchPrg02Name = "ach.prg_02.name";
+        public const string AchPrg02Desc = "ach.prg_02.desc";
+        public const string AchPrg03Name = "ach.prg_03.name";
+        public const string AchPrg03Desc = "ach.prg_03.desc";
+        public const string AchPrg04Name = "ach.prg_04.name";
+        public const string AchPrg04Desc = "ach.prg_04.desc";
+        public const string AchPrg05Name = "ach.prg_05.name";
+        public const string AchPrg05Desc = "ach.prg_05.desc";
+        public const string AchPrg06Name = "ach.prg_06.name";
+        public const string AchPrg06Desc = "ach.prg_06.desc";
+        public const string AchSkl01Name = "ach.skl_01.name";
+        public const string AchSkl01Desc = "ach.skl_01.desc";
+        public const string AchSkl02Name = "ach.skl_02.name";
+        public const string AchSkl02Desc = "ach.skl_02.desc";
+        public const string AchSkl03Name = "ach.skl_03.name";
+        public const string AchSkl03Desc = "ach.skl_03.desc";
+        public const string AchSkl04Name = "ach.skl_04.name";
+        public const string AchSkl04Desc = "ach.skl_04.desc";
+        public const string AchSkl05Name = "ach.skl_05.name";
+        public const string AchSkl05Desc = "ach.skl_05.desc";
+        public const string AchSkl06Name = "ach.skl_06.name";
+        public const string AchSkl06Desc = "ach.skl_06.desc";
+        public const string AchDed01Name = "ach.ded_01.name";
+        public const string AchDed01Desc = "ach.ded_01.desc";
+        public const string AchDed02Name = "ach.ded_02.name";
+        public const string AchDed02Desc = "ach.ded_02.desc";
+        public const string AchDed03Name = "ach.ded_03.name";
+        public const string AchDed03Desc = "ach.ded_03.desc";
+        public const string AchDed04Name = "ach.ded_04.name";
+        public const string AchDed04Desc = "ach.ded_04.desc";
+        public const string AchDed05Name = "ach.ded_05.name";
+        public const string AchDed05Desc = "ach.ded_05.desc";
+        public const string AchDed06Name = "ach.ded_06.name";
+        public const string AchDed06Desc = "ach.ded_06.desc";
+        public const string AchCol01Name = "ach.col_01.name";
+        public const string AchCol01Desc = "ach.col_01.desc";
+        public const string AchCol02Name = "ach.col_02.name";
+        public const string AchCol02Desc = "ach.col_02.desc";
+        public const string AchCol03Name = "ach.col_03.name";
+        public const string AchCol03Desc = "ach.col_03.desc";
+        public const string AchCol04Name = "ach.col_04.name";
+        public const string AchCol04Desc = "ach.col_04.desc";
+        public const string AchCol05Name = "ach.col_05.name";
+        public const string AchCol05Desc = "ach.col_05.desc";
+
+        // ranking
+        public const string RankingTabChallenge = "ranking.tab.challenge";
     }
 }
 #endif

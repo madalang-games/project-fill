@@ -22,6 +22,8 @@
 | `TutorialContentType.HighlightOnly` | enum value | 2 |
 | `TargetSpaceType.UI` | enum value | 0 |
 | `TargetSpaceType.World` | enum value | 1 |
+| `CosmeticCategory.Chip/Lane/Board` | enum | 0/1/2; cosmetic skin slot |
+| `CosmeticUnlockType.Default/Gold/Achievement/Attendance/Challenge` | enum | 0–4; cosmetic unlock method |
 
 ## Rules
 - Namespace: `ProjectFill.Contracts.GameTypes`

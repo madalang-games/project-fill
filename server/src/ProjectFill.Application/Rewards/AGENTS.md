@@ -17,7 +17,8 @@
 | `AdVerifyResult` | record | `(bool Verified, string ProviderTxId)` |
 | `IAdRewardVerifier.VerifyAsync` | method | `(provider, adToken, ct)` -> `AdVerifyResult`; adToken = SSV nonce or temporary mock token |
 | `RewardService.ClaimAsync` | method | Claims `reward_source` and dispatches reward items |
-| `RewardService.GrantRewardGroupAsync` | method | Dispatches reward group items (SOFT_CURRENCY, ITEM) |
+| `RewardService.GrantRewardGroupAsync` | method | Dispatches reward group items (SOFT_CURRENCY, ITEM, AVATAR, NO_ADS) |
+| `RewardService.GrantAvatarAsync` | method | Unlocks avatar via `avatar_unlock:{id}` claim-state row (idempotent) |
 | `AdRewardService.ClaimAsync` | method | Routes ad reward through service |
 | `AdMobSsvKeyCache.GetKeyBytes` | method | Returns ECDSA public key bytes by keyId |
 | `AdMobSsvCallbackService.ProcessAsync` | method | rawQuery -> verify ECDSA -> Redis ssv:{nonce}=txid TTL 5min |

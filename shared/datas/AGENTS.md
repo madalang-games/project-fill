@@ -13,6 +13,9 @@
 | `common/` | Shared enums, difficulty labels, other lookup tables |
 | `avatar/` | Avatar unlock metadata |
 | `stage/` | Chapter and stage progression metadata |
+| `cosmetic/` | Cosmetic catalog (chip/lane/board skins) |
+| `daily_login/` | Daily attendance reward + milestone tables |
+| `achievement/` | Achievement catalog (tier/category/condition/reward) |
 
 ## CSV Format
 ```
@@ -49,7 +52,11 @@ Row 5+: data
 | `201–299` | Tutorial group 2 (FirstLaunch stage 2) | `tutorial/tutorial_step` |
 | `2001–2999` | Stage-clear reward groups | `reward/reward_group` |
 | `3001–3999` | Chapter-chest reward groups | `reward/reward_group` |
+| `4001–4099` | Daily-login day reward groups | `reward/reward_group` |
+| `4101–4199` | Daily-login milestone reward groups | `reward/reward_group` |
 | `5001–5999` | IAP reward groups | `reward/reward_group` |
+| `6001–6099` | Achievement reward groups | `reward/reward_group` |
+| `7001–7199` | Daily-challenge base + streak reward groups | `reward/reward_group` |
 
 ### Tables pending range design (currently sequential `id`)
 `avatar`, `item`, `currency`, `iap_category`, `ad_placement`, `reward_source` — assign ranges before adding new rows.

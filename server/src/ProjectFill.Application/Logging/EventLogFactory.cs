@@ -51,4 +51,19 @@ public static class EventLogFactory
 
     public static EventLogsRow IapPurchaseCompleted(long userId, string correlationId, int infoId, string storeProductId, string orderId, double price, string currency)
         => Create(userId, EventLogIds.IapPurchaseCompleted, correlationId, new { info_id = infoId, store_product_id = storeProductId, order_id = orderId, price, currency });
+
+    public static EventLogsRow CosmeticUnlocked(long userId, string correlationId, string cosmeticId, string unlockType, string conditionId)
+        => Create(userId, EventLogIds.CosmeticUnlocked, correlationId, new { cosmetic_id = cosmeticId, unlock_type = unlockType, condition_id = conditionId });
+
+    public static EventLogsRow CosmeticEquipped(long userId, string correlationId, string chipSkin, string laneSkin, string boardSkin, bool useCustomBoardSkin)
+        => Create(userId, EventLogIds.CosmeticEquipped, correlationId, new { chip_skin = chipSkin, lane_skin = laneSkin, board_skin = boardSkin, use_custom_board_skin = useCustomBoardSkin });
+
+    public static EventLogsRow AttendanceClaimed(long userId, string correlationId, int cycle, int day, int streak, int rewardGroupId)
+        => Create(userId, EventLogIds.AttendanceClaimed, correlationId, new { cycle, day, streak, reward_group_id = rewardGroupId });
+
+    public static EventLogsRow AchievementClaimed(long userId, string correlationId, string achievementId, int rewardGroupId)
+        => Create(userId, EventLogIds.AchievementClaimed, correlationId, new { achievement_id = achievementId, reward_group_id = rewardGroupId });
+
+    public static EventLogsRow ChallengeCleared(long userId, string correlationId, string challengeDate, int movesUsed, int clearTimeSeconds, int streak)
+        => Create(userId, EventLogIds.ChallengeCleared, correlationId, new { challenge_date = challengeDate, moves_used = movesUsed, clear_time_seconds = clearTimeSeconds, streak });
 }

@@ -110,11 +110,11 @@ public sealed class IapService
         var result = new GetIapProductsResponse();
         foreach (var p in products)
         {
-            var row = countRows.FirstOrDefault(r => r.InfoId == p.Id);
+            var row = countRows.FirstOrDefault(r => r.InfoId == p.InfoId);
             int count = GetEffectiveCount(p, row);
             result.Products.Add(new IapProductStatusDto
             {
-                InfoId = p.Id,
+                InfoId = p.InfoId,
                 StoreProductId = p.StoreProductId,
                 RemainingPurchases = RemainingToWire(GetRemainingPurchases(p, count)),
             });

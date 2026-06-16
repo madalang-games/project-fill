@@ -10,6 +10,11 @@
 | `PlayerServiceTests.cs` | `PlayerServiceTests` | Player progress query (max cleared stage, best stars) |
 | `RankingServiceTests.cs` | `RankingServiceTests` | Global ranking page/my-rank and Redis rebuild |
 | `TutorialServiceTests.cs` | `TutorialServiceTests` | Tutorial progress get/complete persistence |
+| `FakeStaticData.cs` | `FakeStaticData` | Shared `IStaticDataService` test fake; safe empty/null defaults, override per test |
+| `CosmeticServiceTests.cs` | `CosmeticServiceTests` | Cosmetic gold unlock, condition unlock, equip validation |
+| `AttendanceServiceTests.cs` | `AttendanceServiceTests` | Attendance cycle/streak advance, duplicate guard, milestone cosmetic unlock |
+| `AchievementServiceTests.cs` | `AchievementServiceTests` | Derived progress, claim + cosmetic unlock, report-progress seam |
+| `DailyChallengeServiceTests.cs` | `DailyChallengeServiceTests` | Deterministic challenge, clear/streak, duplicate guard, ranking order |
 
 ## Rules
 - Keep tests deterministic and engine-free

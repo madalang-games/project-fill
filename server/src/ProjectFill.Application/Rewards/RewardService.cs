@@ -97,6 +97,8 @@ public sealed class RewardService
                 currency = await _currency.GrantSoftAsync(userId, item.amount, $"claim:{source.source_key}", correlationId, ct);
             else if (item.reward_type == "ITEM")
                 await _inventory.GrantItemAsync(userId, item.target_id, item.amount, $"claim:{source.source_key}", correlationId, ct);
+            else if (item.reward_type == "AVATAR")
+                await GrantAvatarAsync(userId, item.target_id, ct);
             else if (item.reward_type == "NO_ADS")
             {
                 var player = await _db.Players.FindAsync(userId, ct);
@@ -149,6 +151,9 @@ public sealed class RewardService
                 case "ITEM":
                     await _inventory.GrantItemAsync(userId, item.target_id, item.amount, $"reward_group:{rewardGroupId}", correlationId, ct);
                     break;
+                case "AVATAR":
+                    await GrantAvatarAsync(userId, item.target_id, ct);
+                    break;
                 case "NO_ADS":
                     var player = await _db.Players.FindAsync(userId, ct);
                     if (player is not null) player.IsNoAds = true;
@@ -157,6 +162,24 @@ public sealed class RewardService
         }
 
         return (granted, currency);
+    }
+
+    private async Task GrantAvatarAsync(long userId, int avatarId, CancellationToken ct)
+    {
+        var sourceId = $"avatar_unlock:{avatarId}";
+        var existing = await _db.UserRewardClaimState.FindAsync(userId, sourceId, "once", ct);
+        if (existing is not null) return;
+
+        var now = DateTimeOffset.UtcNow;
+        _db.UserRewardClaimState.Insert(new UserRewardClaimStateRow
+        {
+            UserId = userId,
+            SourceId = sourceId,
+            PeriodKey = "once",
+            ClaimCount = 1,
+            LastClaimedAt = now,
+            UpdatedAt = now,
+        });
     }
 
     private static RewardDataSet LoadData()

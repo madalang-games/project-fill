@@ -24,7 +24,7 @@ namespace ProjectFill.API.Tests
             return new AppDbContext(options);
         }
 
-        private sealed class FakeStaticDataService : IStaticDataService
+        private sealed class FakeStaticDataService : FakeStaticData
         {
             private readonly Dictionary<int, AvatarData> _avatars = new()
             {
@@ -34,30 +34,8 @@ namespace ProjectFill.API.Tests
                 { 4, new AvatarData { Id = 4, ResourceName = "avatar_achievement_01", UnlockCost = 0, UnlockType = "achievement" } }
             };
 
-            public AvatarData? GetAvatar(int avatar_id) => _avatars.GetValueOrDefault(avatar_id);
-            public IReadOnlyList<AvatarData> GetAllAvatars() => new List<AvatarData>(_avatars.Values);
-
-            public AdPlacementData? GetAdPlacement(int id) => throw new NotImplementedException();
-            public IReadOnlyList<AdPlacementData> GetAllAdPlacements() => throw new NotImplementedException();
-            public ColorPaletteData? GetColorPalette(byte id) => throw new NotImplementedException();
-            public IReadOnlyList<ColorPaletteData> GetAllColorPalettes() => throw new NotImplementedException();
-            public CurrencyData? GetCurrency(int id) => throw new NotImplementedException();
-            public IReadOnlyList<CurrencyData> GetAllCurrencys() => throw new NotImplementedException();
-            public ItemData? GetItem(int id) => throw new NotImplementedException();
-            public IReadOnlyList<ItemData> GetAllItems() => throw new NotImplementedException();
-            public RewardGroupData? GetRewardGroup(int id) => throw new NotImplementedException();
-            public IReadOnlyList<RewardGroupData> GetAllRewardGroups() => throw new NotImplementedException();
-            public RewardItemData? GetRewardItem(int id) => throw new NotImplementedException();
-            public IReadOnlyList<RewardItemData> GetAllRewardItems() => throw new NotImplementedException();
-            public RewardSourceData? GetRewardSource(int id) => throw new NotImplementedException();
-            public IReadOnlyList<RewardSourceData> GetAllRewardSources() => throw new NotImplementedException();
-            public IapProductData? GetIapProduct(int id) => throw new NotImplementedException();
-            public IReadOnlyList<IapProductData> GetAllIapProducts() => throw new NotImplementedException();
-            public ChapterData? GetChapter(int chapter_id) => throw new NotImplementedException();
-            public IReadOnlyList<ChapterData> GetAllChapters() => throw new NotImplementedException();
-            public StageData? GetStage(int stage_id) => throw new NotImplementedException();
-            public IReadOnlyList<StageData> GetAllStages() => throw new NotImplementedException();
-
+            public override AvatarData? GetAvatar(int avatar_id) => _avatars.GetValueOrDefault(avatar_id);
+            public override IReadOnlyList<AvatarData> GetAllAvatars() => new List<AvatarData>(_avatars.Values);
         }
 
         [Fact]

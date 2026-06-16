@@ -24,6 +24,10 @@ Consumed by:
 | `Iap/` | IAP verification and product status DTOs |
 | `Inventory/` | Signal Sort booster inventory DTOs |
 | `Player/` | Player profile and progress DTOs |
+| `Cosmetic/` | Cosmetic catalog, unlock, and active-equip DTOs |
+| `Attendance/` | Daily attendance status + claim DTOs |
+| `Achievement/` | Achievement list + claim DTOs |
+| `DailyChallenge/` | Daily challenge today/clear/ranking/streak DTOs |
 
 ## Rules
 - `netstandard2.1` only; no C# 10+ features, no nullable reference types at project level (use `#nullable enable` per file).

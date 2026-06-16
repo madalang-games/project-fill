@@ -10,4 +10,10 @@ public class StageData
     public int StageOrder { get; set; }
     public int Difficulty { get; set; }
     public int RewardGroupId { get; set; }
+    public int Types { get; set; }
+    public string LaneKinds { get; set; } = "";
+    public string LockUnlock { get; set; } = "";
+    public int OverloadType { get; set; }
+    public string RelayOrder { get; set; } = "";
+    public string Board { get; set; } = "";
 }

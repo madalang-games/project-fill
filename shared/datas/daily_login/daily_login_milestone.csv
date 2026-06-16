@@ -1,0 +1,7 @@
+id,threshold_days,reward_group_id,cosmetic_condition_id
+CS,CS,CS,CS
+int32,int32,int32,string(32)
+PK,NN,FK:reward/reward_group,
+1,30,4101,day_30
+2,60,4102,
+3,100,4103,day_100

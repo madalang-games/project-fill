@@ -17,4 +17,10 @@ public static class EventLogIds
     public const int AdDoubleRewardGranted = 6103;
 
     public const int IapPurchaseCompleted = 7001;
+
+    public const int CosmeticUnlocked = 8001;
+    public const int CosmeticEquipped = 8002;
+    public const int AttendanceClaimed = 8101;
+    public const int AchievementClaimed = 8201;
+    public const int ChallengeCleared = 8301;
 }

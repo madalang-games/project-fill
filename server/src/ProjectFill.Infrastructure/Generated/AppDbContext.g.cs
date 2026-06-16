@@ -22,6 +22,13 @@ public sealed partial class AppDbContext : DbContext
     internal DbSet<CurrencyLogsRow> _CurrencyLogs => Set<CurrencyLogsRow>();
     internal DbSet<IapPurchasesRow> _IapPurchases => Set<IapPurchasesRow>();
     internal DbSet<UserIapPurchaseCountsRow> _UserIapPurchaseCounts => Set<UserIapPurchaseCountsRow>();
+    internal DbSet<UserCosmeticsRow> _UserCosmetics => Set<UserCosmeticsRow>();
+    internal DbSet<UserActiveCosmeticsRow> _UserActiveCosmetics => Set<UserActiveCosmeticsRow>();
+    internal DbSet<UserLoginAttendanceRow> _UserLoginAttendance => Set<UserLoginAttendanceRow>();
+    internal DbSet<UserAchievementsRow> _UserAchievements => Set<UserAchievementsRow>();
+    internal DbSet<DailyChallengesRow> _DailyChallenges => Set<DailyChallengesRow>();
+    internal DbSet<UserDailyChallengeRecordsRow> _UserDailyChallengeRecords => Set<UserDailyChallengeRecordsRow>();
+    internal DbSet<UserChallengeStreaksRow> _UserChallengeStreaks => Set<UserChallengeStreaksRow>();
 
     public PlayersDb Players { get; }
     public SessionsDb Sessions { get; }
@@ -36,6 +43,13 @@ public sealed partial class AppDbContext : DbContext
     public CurrencyLogsDb CurrencyLogs { get; }
     public IapPurchasesDb IapPurchases { get; }
     public UserIapPurchaseCountsDb UserIapPurchaseCounts { get; }
+    public UserCosmeticsDb UserCosmetics { get; }
+    public UserActiveCosmeticsDb UserActiveCosmetics { get; }
+    public UserLoginAttendanceDb UserLoginAttendance { get; }
+    public UserAchievementsDb UserAchievements { get; }
+    public DailyChallengesDb DailyChallenges { get; }
+    public UserDailyChallengeRecordsDb UserDailyChallengeRecords { get; }
+    public UserChallengeStreaksDb UserChallengeStreaks { get; }
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
@@ -52,6 +66,13 @@ public sealed partial class AppDbContext : DbContext
         CurrencyLogs = new CurrencyLogsDb(this);
         IapPurchases = new IapPurchasesDb(this);
         UserIapPurchaseCounts = new UserIapPurchaseCountsDb(this);
+        UserCosmetics = new UserCosmeticsDb(this);
+        UserActiveCosmetics = new UserActiveCosmeticsDb(this);
+        UserLoginAttendance = new UserLoginAttendanceDb(this);
+        UserAchievements = new UserAchievementsDb(this);
+        DailyChallenges = new DailyChallengesDb(this);
+        UserDailyChallengeRecords = new UserDailyChallengeRecordsDb(this);
+        UserChallengeStreaks = new UserChallengeStreaksDb(this);
     }
 
     public Task SaveAsync(CancellationToken ct = default) => SaveChangesAsync(ct);
@@ -72,5 +93,12 @@ public sealed partial class AppDbContext : DbContext
         mb.ApplyConfiguration(new CurrencyLogsDbConfiguration());
         mb.ApplyConfiguration(new IapPurchasesDbConfiguration());
         mb.ApplyConfiguration(new UserIapPurchaseCountsDbConfiguration());
+        mb.ApplyConfiguration(new UserCosmeticsDbConfiguration());
+        mb.ApplyConfiguration(new UserActiveCosmeticsDbConfiguration());
+        mb.ApplyConfiguration(new UserLoginAttendanceDbConfiguration());
+        mb.ApplyConfiguration(new UserAchievementsDbConfiguration());
+        mb.ApplyConfiguration(new DailyChallengesDbConfiguration());
+        mb.ApplyConfiguration(new UserDailyChallengeRecordsDbConfiguration());
+        mb.ApplyConfiguration(new UserChallengeStreaksDbConfiguration());
     }
 }
