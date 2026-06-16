@@ -41,7 +41,6 @@ id,resource_key,sprite_path,category,comment
 84,ui_gold_icon,Assets/Resources/Sprites/Icons/ui_gold_icon.png,UI,Gold coin icon
 85,ui_lock_icon,Assets/Sprites/UI/Icons/ui_lock_icon.png,UI,Lock icon for locked stage nodes
 86,ui_flag_icon,Assets/Sprites/UI/Icons/ui_flag_icon.png,UI,Flag icon
-87,ui_avatar_default,Assets/Sprites/UI/Avatar/avatar_free_01.png,UI,Default avatar placeholder
 88,ui_settings_icon,Assets/Sprites/UI/Icons/ui_settings_icon.png,UI,Settings icon
 91,ui_toggle_on,Assets/Sprites/UI/Icons/ui_toggle_on.png,UI,Toggle switch on sprite
 104,ui_iap_no_ads,Assets/Resources/Sprites/UI/ui_iap_no_ads.png,UI,No Ads product icon

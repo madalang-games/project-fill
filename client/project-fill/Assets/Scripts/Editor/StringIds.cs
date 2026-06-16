@@ -12,6 +12,9 @@ namespace Game.Editor
         // boot
         public const string BootLoading = "boot.loading";
         public const string BootNewGuestSession = "boot.new_guest_session";
+        public const string BootForceUpdateTitle = "boot.force_update.title";
+        public const string BootForceUpdateBody = "boot.force_update.body";
+        public const string BootForceUpdateBtn = "boot.force_update.btn";
 
         // common
         public const string CommonBtnCancel = "common.btn_cancel";
@@ -64,12 +67,11 @@ namespace Game.Editor
         public const string PopupAccountConflictCloudLabel = "popup.account_conflict.cloud_label";
         public const string PopupAccountConflictStageFmt = "popup.account_conflict.stage_fmt";
         public const string PopupAccountConflictGoldFmt = "popup.account_conflict.gold_fmt";
-        public const string PopupAccountConflictStarsFmt = "popup.account_conflict.stars_fmt";
+        public const string PopupAccountConflictClearedFmt = "popup.account_conflict.cleared_fmt";
         public const string PopupAccountConflictItemsFmt = "popup.account_conflict.items_fmt";
         public const string PopupAccountConflictBtnKeepLocal = "popup.account_conflict.btn_keep_local";
         public const string PopupAccountConflictBtnKeepCloud = "popup.account_conflict.btn_keep_cloud";
         public const string PopupStageInfoTitle = "popup.stage_info.title";
-        public const string PopupStageInfoBestStars = "popup.stage_info.best_stars";
         public const string PopupStageInfoBestMoves = "popup.stage_info.best_moves";
         public const string PopupStageInfoNoRecord = "popup.stage_info.no_record";
         public const string PopupStageInfoOwnedItems = "popup.stage_info.owned_items";
@@ -124,6 +126,9 @@ namespace Game.Editor
         public const string PopupChallengeParticipantsFmt = "popup.challenge.participants_fmt";
         public const string PopupChallengeMyRankFmt = "popup.challenge.my_rank_fmt";
         public const string PopupChallengeMovesFmt = "popup.challenge.moves_fmt";
+        public const string PopupAccountBtnCopyPid = "popup.account.btn_copy_pid";
+        public const string PopupAccountBtnPrivacy = "popup.account.btn_privacy";
+        public const string PopupAccountBtnTerms = "popup.account.btn_terms";
 
         // toast
         public const string ToastAccountAlreadyActive = "toast.account_already_active";
@@ -159,9 +164,10 @@ namespace Game.Editor
         public const string ToastIapAlreadyOwned = "toast.iap_already_owned";
         public const string ToastIapLimitReached = "toast.iap_limit_reached";
         public const string ToastAchievementUnlockedFmt = "toast.achievement_unlocked_fmt";
+        public const string ToastPidCopied = "toast.pid_copied";
 
         // lobby
-        public const string LobbyRankingStarsTitle = "lobby.ranking.stars_title";
+        public const string LobbyRankingStagesTitle = "lobby.ranking.stages_title";
         public const string LobbyRankingStageTitle = "lobby.ranking.stage_title";
         public const string LobbyRankingMyRankEmpty = "lobby.ranking.my_rank_empty";
         public const string LobbyRankingMyRankFormat = "lobby.ranking.my_rank_format";
@@ -169,12 +175,13 @@ namespace Game.Editor
         public const string LobbyRankingNoData = "lobby.ranking.no_data";
         public const string LobbyRankingDefaultTitle = "lobby.ranking.default_title";
         public const string LobbyRankingUnavailable = "lobby.ranking.unavailable";
-        public const string LobbyRankingTabStars = "lobby.ranking.tab_stars";
+        public const string LobbyRankingTabStages = "lobby.ranking.tab_stages";
         public const string LobbyRankingTabMaxStage = "lobby.ranking.tab_max_stage";
 
         // ingame
         public const string IngameMovesLabel = "ingame.moves_label";
         public const string IngameSignalsLabel = "ingame.signals_label";
+        public const string IngameBestLabel = "ingame.best_label";
 
         // nav
         public const string NavHome = "nav.home";
@@ -196,7 +203,6 @@ namespace Game.Editor
         public const string TutMoveChip = "tut.move_chip";
         public const string TutMovesExplain = "tut.moves_explain";
         public const string TutSignalPanelExplain = "tut.signal_panel_explain";
-        public const string TutStarExplain = "tut.star_explain";
         public const string TutFreeSort = "tut.free_sort";
         public const string TutLockedLaneWhat = "tut.locked_lane_what";
         public const string TutFrozenChipWhat = "tut.frozen_chip_what";

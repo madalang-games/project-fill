@@ -180,4 +180,12 @@ public sealed class PlayersDb
     public IQueryable<(PlayersRow Player, UserChallengeStreaksRow UserChallengeStreak)> JoinWithUserChallengeStreaks()
         => Query().Join(_db._UserChallengeStreaks, l => l.UserId, r => r.UserId,
             (l, r) => ValueTuple.Create(l, r));
+
+    public IQueryable<(PlayersRow Player, UserStageProgressRow UserStageProgress)> JoinWithUserStageProgress()
+        => Query().Join(_db._UserStageProgress, l => l.UserId, r => r.UserId,
+            (l, r) => ValueTuple.Create(l, r));
+
+    public IQueryable<(PlayersRow Player, UserWeeklyRankingRow UserWeeklyRanking)> JoinWithUserWeeklyRanking()
+        => Query().Join(_db._UserWeeklyRanking, l => l.UserId, r => r.UserId,
+            (l, r) => ValueTuple.Create(l, r));
 }

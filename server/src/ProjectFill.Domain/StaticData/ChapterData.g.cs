@@ -9,4 +9,5 @@ public class ChapterData
     public int DisplayOrder { get; set; }
     public int UnlockChapterId { get; set; }
     public int BgThemeId { get; set; }
+    public int ChestRewardGroupId { get; set; }
 }

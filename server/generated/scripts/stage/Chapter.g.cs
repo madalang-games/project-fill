@@ -13,6 +13,7 @@ namespace ProjectFill.Generated.Data
         public int display_order { get; set; }
         public int unlock_chapter_id { get; set; }
         public int bg_theme_id { get; set; }
+        public int chest_reward_group_id { get; set; }
     }
 
     public static class ChapterLoader
@@ -38,6 +39,7 @@ namespace ProjectFill.Generated.Data
                     display_order = idx.TryGetValue("display_order", out var i1) && i1 < cols.Length && !string.IsNullOrEmpty(cols[i1]) ? int.Parse(cols[i1]) : default,
                     unlock_chapter_id = idx.TryGetValue("unlock_chapter_id", out var i2) && i2 < cols.Length && !string.IsNullOrEmpty(cols[i2]) ? int.Parse(cols[i2]) : default,
                     bg_theme_id = idx.TryGetValue("bg_theme_id", out var i3) && i3 < cols.Length && !string.IsNullOrEmpty(cols[i3]) ? int.Parse(cols[i3]) : default,
+                    chest_reward_group_id = idx.TryGetValue("chest_reward_group_id", out var i4) && i4 < cols.Length && !string.IsNullOrEmpty(cols[i4]) ? int.Parse(cols[i4]) : default,
                 });
             }
             return result;

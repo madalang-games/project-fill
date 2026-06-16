@@ -29,6 +29,8 @@ public sealed partial class AppDbContext : DbContext
     internal DbSet<DailyChallengesRow> _DailyChallenges => Set<DailyChallengesRow>();
     internal DbSet<UserDailyChallengeRecordsRow> _UserDailyChallengeRecords => Set<UserDailyChallengeRecordsRow>();
     internal DbSet<UserChallengeStreaksRow> _UserChallengeStreaks => Set<UserChallengeStreaksRow>();
+    internal DbSet<UserStageProgressRow> _UserStageProgress => Set<UserStageProgressRow>();
+    internal DbSet<UserWeeklyRankingRow> _UserWeeklyRanking => Set<UserWeeklyRankingRow>();
 
     public PlayersDb Players { get; }
     public SessionsDb Sessions { get; }
@@ -50,6 +52,8 @@ public sealed partial class AppDbContext : DbContext
     public DailyChallengesDb DailyChallenges { get; }
     public UserDailyChallengeRecordsDb UserDailyChallengeRecords { get; }
     public UserChallengeStreaksDb UserChallengeStreaks { get; }
+    public UserStageProgressDb UserStageProgress { get; }
+    public UserWeeklyRankingDb UserWeeklyRanking { get; }
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
@@ -73,6 +77,8 @@ public sealed partial class AppDbContext : DbContext
         DailyChallenges = new DailyChallengesDb(this);
         UserDailyChallengeRecords = new UserDailyChallengeRecordsDb(this);
         UserChallengeStreaks = new UserChallengeStreaksDb(this);
+        UserStageProgress = new UserStageProgressDb(this);
+        UserWeeklyRanking = new UserWeeklyRankingDb(this);
     }
 
     public Task SaveAsync(CancellationToken ct = default) => SaveChangesAsync(ct);
@@ -100,5 +106,7 @@ public sealed partial class AppDbContext : DbContext
         mb.ApplyConfiguration(new DailyChallengesDbConfiguration());
         mb.ApplyConfiguration(new UserDailyChallengeRecordsDbConfiguration());
         mb.ApplyConfiguration(new UserChallengeStreaksDbConfiguration());
+        mb.ApplyConfiguration(new UserStageProgressDbConfiguration());
+        mb.ApplyConfiguration(new UserWeeklyRankingDbConfiguration());
     }
 }

@@ -37,7 +37,9 @@ Fix: Add `"conflict": "ignore"` to the table in `schema.json`; gen:orm generates
 ## Ranking Tables
 | table | role |
 |-------|------|
-| `user_ranking_totals` | Global ranking aggregates for Redis rebuild |
+| `user_ranking_totals` | Global ranking aggregates (total_cleared_stages, max_cleared_stage_id) for Redis rebuild |
+| `user_stage_progress` | Per-player per-stage clear state + best/latest moves; source for stage-moves ranking |
+| `user_weekly_ranking` | Per-player weekly cleared-stage count; resets Monday 00:00 UTC |
 
 ## Currency Audit Table
 | table | role |

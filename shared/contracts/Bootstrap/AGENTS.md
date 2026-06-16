@@ -3,7 +3,7 @@
 ## Files
 | file | role |
 |------|------|
-| `BootstrapResponses.cs` | Response DTO for server bootstrap configurations |
+| `BootstrapResponses.cs` | `BootstrapConfigResponse` (force-update + schema/meta hash + maintenance), `DataBundleResponse` / `DataBundleFile` (OTA CSV patch bundle) |
 
 ## Rules
 - Target netstandard2.1; plain properties only.

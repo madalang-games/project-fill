@@ -24,6 +24,7 @@ Consumed by:
 | `Iap/` | IAP verification and product status DTOs |
 | `Inventory/` | Signal Sort booster inventory DTOs |
 | `Player/` | Player profile and progress DTOs |
+| `Stage/` | Signal Sort campaign stage-clear request/response DTOs |
 | `Cosmetic/` | Cosmetic catalog, unlock, and active-equip DTOs |
 | `Attendance/` | Daily attendance status + claim DTOs |
 | `Achievement/` | Achievement list + claim DTOs |

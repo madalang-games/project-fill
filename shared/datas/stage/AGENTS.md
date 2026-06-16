@@ -12,6 +12,7 @@
 | `Chapter.chapter_id` | column | Stable chapter id |
 | `Chapter.unlock_chapter_id` | column | Previous chapter required for unlock; blank for first chapter |
 | `Chapter.bg_theme_id` | column | Visual theme id for Signal Sort stage map |
+| `Chapter.chest_reward_group_id` | column | FK to `reward/reward_group.csv`; milestone chest granted when all stages in chapter first-cleared |
 | `Stage.stage_id` | column | Stable stage id |
 | `Stage.reward_group_id` | column | FK to `reward/reward_group.csv` |
 | `Stage.types` | column | Signal Type count = number of sets |

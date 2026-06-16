@@ -114,17 +114,17 @@
       "name": "user_ranking_totals",
       "comment": "Per-player global ranking aggregates rebuilt from user_stage_progress if Redis is lost.",
       "columns": [
-        { "name": "user_id",                 "type": "int64",    "pk": true, "null": false, "fk": "players.user_id" },
-        { "name": "total_earned_stars",      "type": "int32",    "null": false, "default": 0 },
-        { "name": "total_stars_achieved_at", "type": "datetime", "null": true },
-        { "name": "max_cleared_stage_id",    "type": "int32",    "null": false, "default": 0 },
-        { "name": "max_stage_achieved_at",   "type": "datetime", "null": true },
-        { "name": "win_streak",              "type": "int32",    "null": false, "default": 0 },
-        { "name": "max_win_streak",          "type": "int32",    "null": false, "default": 0 },
-        { "name": "updated_at",              "type": "datetime", "null": false }
+        { "name": "user_id",                "type": "int64",    "pk": true, "null": false, "fk": "players.user_id" },
+        { "name": "total_cleared_stages",   "type": "int32",    "null": false, "default": 0 },
+        { "name": "total_cleared_at",       "type": "datetime", "null": true },
+        { "name": "max_cleared_stage_id",   "type": "int32",    "null": false, "default": 0 },
+        { "name": "max_stage_achieved_at",  "type": "datetime", "null": true },
+        { "name": "win_streak",             "type": "int32",    "null": false, "default": 0 },
+        { "name": "max_win_streak",         "type": "int32",    "null": false, "default": 0 },
+        { "name": "updated_at",             "type": "datetime", "null": false }
       ],
       "indexes": [
-        { "name": "idx_user_ranking_totals_stars", "columns": ["total_earned_stars", "total_stars_achieved_at"], "unique": false },
+        { "name": "idx_user_ranking_totals_cleared_stages", "columns": ["total_cleared_stages", "total_cleared_at"], "unique": false },
         { "name": "idx_user_ranking_totals_max_stage", "columns": ["max_cleared_stage_id", "max_stage_achieved_at"], "unique": false }
       ]
     },
@@ -302,6 +302,36 @@
         { "name": "best_streak",     "type": "int32",      "null": false, "default": 0 },
         { "name": "last_clear_date", "type": "string(10)", "null": true },
         { "name": "updated_at",      "type": "datetime",   "null": false }
+      ]
+    },
+    {
+      "name": "user_stage_progress",
+      "comment": "Per-player per-stage Signal Sort campaign progress. Source of truth for clear state, best/latest moves, and stage-moves ranking.",
+      "columns": [
+        { "name": "user_id",          "type": "int64",    "pk": true, "null": false, "fk": "players.user_id" },
+        { "name": "stage_id",         "type": "int32",    "pk": true, "null": false },
+        { "name": "stage_clear",      "type": "bool",     "null": false, "default": false },
+        { "name": "best_moves_used",  "type": "int32",    "null": false, "default": 0 },
+        { "name": "latest_moves_used","type": "int32",    "null": false, "default": 0 },
+        { "name": "first_cleared_at", "type": "datetime", "null": true },
+        { "name": "updated_at",       "type": "datetime", "null": false }
+      ],
+      "indexes": [
+        { "name": "idx_user_stage_progress_stage_moves", "columns": ["stage_id", "best_moves_used"], "unique": false }
+      ]
+    },
+    {
+      "name": "user_weekly_ranking",
+      "comment": "Per-player weekly cleared-stage aggregate. Resets each Monday 00:00 UTC via week_start_date rollover.",
+      "columns": [
+        { "name": "user_id",             "type": "int64",      "pk": true, "null": false, "fk": "players.user_id" },
+        { "name": "week_start_date",     "type": "string(10)", "null": false },
+        { "name": "weekly_cleared_count","type": "int32",      "null": false, "default": 0 },
+        { "name": "weekly_cleared_at",   "type": "datetime",   "null": true },
+        { "name": "updated_at",          "type": "datetime",   "null": false }
+      ],
+      "indexes": [
+        { "name": "idx_user_weekly_ranking_rank", "columns": ["week_start_date", "weekly_cleared_count", "weekly_cleared_at"], "unique": false }
       ]
     }
   ]

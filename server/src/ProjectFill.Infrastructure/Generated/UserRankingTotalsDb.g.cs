@@ -13,8 +13,8 @@ namespace ProjectFill.Infrastructure.Generated;
 public sealed class UserRankingTotalsRow
 {
     public long UserId { get; set; }
-    public int TotalEarnedStars { get; set; }
-    public DateTimeOffset? TotalStarsAchievedAt { get; set; }
+    public int TotalClearedStages { get; set; }
+    public DateTimeOffset? TotalClearedAt { get; set; }
     public int MaxClearedStageId { get; set; }
     public DateTimeOffset? MaxStageAchievedAt { get; set; }
     public int WinStreak { get; set; }
@@ -33,12 +33,12 @@ internal sealed class UserRankingTotalsDbConfiguration : IEntityTypeConfiguratio
         builder.Property(e => e.UserId)
             .HasColumnName(UserRankingTotalsDb.Schema.UserId)
             .IsRequired();
-        builder.Property(e => e.TotalEarnedStars)
-            .HasColumnName(UserRankingTotalsDb.Schema.TotalEarnedStars)
+        builder.Property(e => e.TotalClearedStages)
+            .HasColumnName(UserRankingTotalsDb.Schema.TotalClearedStages)
             .HasDefaultValue(0)
             .IsRequired();
-        builder.Property(e => e.TotalStarsAchievedAt)
-            .HasColumnName(UserRankingTotalsDb.Schema.TotalStarsAchievedAt)
+        builder.Property(e => e.TotalClearedAt)
+            .HasColumnName(UserRankingTotalsDb.Schema.TotalClearedAt)
             .HasColumnType("datetime(6)");
         builder.Property(e => e.MaxClearedStageId)
             .HasColumnName(UserRankingTotalsDb.Schema.MaxClearedStageId)
@@ -60,7 +60,7 @@ internal sealed class UserRankingTotalsDbConfiguration : IEntityTypeConfiguratio
             .HasColumnType("datetime(6)")
             .IsRequired();
 
-        builder.HasIndex(e => new { e.TotalEarnedStars, e.TotalStarsAchievedAt }).HasDatabaseName("idx_user_ranking_totals_stars");
+        builder.HasIndex(e => new { e.TotalClearedStages, e.TotalClearedAt }).HasDatabaseName("idx_user_ranking_totals_cleared_stages");
         builder.HasIndex(e => new { e.MaxClearedStageId, e.MaxStageAchievedAt }).HasDatabaseName("idx_user_ranking_totals_max_stage");
 
         builder.HasOne(e => e.Player)
@@ -76,8 +76,8 @@ public sealed class UserRankingTotalsDb
     {
         public const string Table = "user_ranking_totals";
         public const string UserId = "user_id";
-        public const string TotalEarnedStars = "total_earned_stars";
-        public const string TotalStarsAchievedAt = "total_stars_achieved_at";
+        public const string TotalClearedStages = "total_cleared_stages";
+        public const string TotalClearedAt = "total_cleared_at";
         public const string MaxClearedStageId = "max_cleared_stage_id";
         public const string MaxStageAchievedAt = "max_stage_achieved_at";
         public const string WinStreak = "win_streak";

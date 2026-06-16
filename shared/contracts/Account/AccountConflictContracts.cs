@@ -8,7 +8,7 @@ namespace ProjectFill.Contracts.Account
     {
         public int MaxStageId { get; set; }
         public long Gold { get; set; }
-        public int TotalStars { get; set; }
+        public int TotalClearedStages { get; set; }
         public int TotalItems { get; set; }
     }
 

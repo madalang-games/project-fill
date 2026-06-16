@@ -13,5 +13,6 @@ namespace ProjectFill.Data.Generated
         public int display_order;
         public int unlock_chapter_id;
         public int bg_theme_id;
+        public int chest_reward_group_id;
     }
 }

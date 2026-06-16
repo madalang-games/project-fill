@@ -179,6 +179,7 @@ public partial class StaticDataService
                 DisplayOrder = r.display_order,
                 UnlockChapterId = r.unlock_chapter_id,
                 BgThemeId = r.bg_theme_id,
+                ChestRewardGroupId = r.chest_reward_group_id,
             });
         _stages = StageLoader.LoadAll(System.IO.Path.Combine(stagePath, "stage.csv"))
             .ToDictionary(r => r.stage_id, r => new StageData
