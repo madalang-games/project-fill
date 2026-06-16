@@ -1,0 +1,16 @@
+{
+  "prefabName": "SpecDemoPopup",
+  "viewComponent": "",
+  "backdrop": { "name": "Backdrop", "color": "DIM" },
+  "panelName": "Panel",
+  "panelColor": "UI_BG_MID",
+  "panelSize": [900, 520],
+  "elements": [
+    { "type": "ribbonTitle", "name": "TitleText", "text": "Confirm", "stringId": "common.btn_confirm" },
+    { "type": "text", "name": "BodyText", "rect": [0, 120, 800, 80], "fontSize": 20, "color": "UI_TEXT", "text": "Are you sure?", "category": "Normal" },
+    { "type": "button", "name": "CancelButton", "pos": [-200, -180], "size": [320, 90], "color": "UI_BG_DEEP", "text": "Cancel", "stringId": "common.btn_cancel" },
+    { "type": "button", "name": "ConfirmButton", "pos": [200, -180], "size": [320, 90], "color": "UI_CTA", "text": "Confirm", "stringId": "common.btn_confirm" },
+    { "type": "closeButton", "pos": [395, 225] }
+  ],
+  "bindings": []
+}

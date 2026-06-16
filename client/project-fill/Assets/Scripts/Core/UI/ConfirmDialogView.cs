@@ -14,6 +14,7 @@ namespace Game.Core.UI
         [SerializeField] private Button   _cancelButton;
         [SerializeField] private Button   _confirmButton;
         [SerializeField] private Button   _backdropButton;
+        [SerializeField] private Button   _closeButton;
         [SerializeField] private Image    _confirmButtonImage;
         [SerializeField] private RectTransform _rewardCellContainer;
         [SerializeField] private GameObject    _rewardItemCellPrefab;
@@ -44,6 +45,7 @@ namespace Game.Core.UI
             _confirmButton.onClick.AddListener(OnConfirm);
             _cancelButton.onClick.AddListener(OnCancel);
             if (_backdropButton != null) _backdropButton.onClick.AddListener(OnCancel);
+            if (_closeButton != null) _closeButton.onClick.AddListener(OnCancel);
 
             // Render Reward Cells if container is available
             if (_rewardCellContainer != null)

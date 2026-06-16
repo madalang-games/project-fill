@@ -53,9 +53,11 @@ Namespace: `Game.Core.UI`
 | `UINumberChange._formatString` | SerializeField | Printf-style format; default `"{0}"`; set `"{0:N0}"` for gold |
 | `UIStarPop.PlayStarSequence(GameObject[],int)` | coroutine | All stars shown (empty); earned Fill children pop left-to-right independently; EaseOutBack fill + bell-curve PunchScale on star GO; stagger=0.25s |
 | `UIScreenShake.Shake(ShakeLevel)` | method | Medium or Heavy; resets to origin on complete |
+| `ConfirmDialogView._closeButton` | SerializeField | Square top-right ✕ button; calls OnCancel (same as _backdropButton) |
 | `ConfirmDialogView.Init(title,body,confirmLabel,onConfirm,onCancel,cancelLabel,danger)` | method | Required before showing |
 | `ToastView.Show(string,ToastType)` | method | Replaces existing toast |
 | `LoadingOverlayView.Show(string?)` | method | Optional message text |
+| `RewardPopupView._closeButton` | SerializeField | Square top-right ✕ button; calls Close() same as _okButton |
 | `RewardPopupView.Init(IReadOnlyList<RewardItem>)` | method | Required before showing; calls RewardItemCellView.Init() per cell |
 | `NetworkErrorView.Show(Action)` | method | onRetry callback; increments failure counter |
 | `ChapterUnlockOverlayView.Play(int,Action)` | method | chapterNumber + onComplete callback |

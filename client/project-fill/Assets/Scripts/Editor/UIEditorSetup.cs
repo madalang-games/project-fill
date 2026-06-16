@@ -12,16 +12,19 @@ using TMPro;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
+using Game.Localization;
 using static Game.Editor.StringIds;
+using static Game.Editor.UIColorPalette;
 
 namespace Game.Editor
 {
     /// <summary>
     /// Tools/UI Setup — one-shot editor scripts.
-    /// Generates base UI prefabs under Assets/UI/Prefabs/Base/ using premium casual/puzzle styling.
+    /// Generates base UI prefabs under Assets/UI/Prefabs/Base/ using project-fill Dark Neon Puzzle styling.
     /// Safe to re-run; outputs are overwritten without affecting scenes or final variants.
+    /// Color palette is defined in UIColorPalette.cs.
     /// </summary>
-    public static class UIEditorSetup
+    public static partial class UIEditorSetup
     {
         // Directory configurations
         private const string PrefabRoot      = "Assets/Resources/Prefabs/UI"; // Destination for UIManager Popups (Final Variants)
@@ -30,19 +33,22 @@ namespace Game.Editor
         private const string BaseScenesPath  = "Assets/UI/Prefabs/Base/Scenes";
         private const string PrefabFinal     = "Assets/UI/Prefabs/Final";     // Destination for Scene Canvases (Final Variants)
 
-        // Premium Candy / Casual Style Color Palette
-        static Color UI_BG_DEEP  => Hex("2A1635"); // Deep grape purple (cozy & high-end frame outline)
-        static Color UI_BG_MID   => Hex("4D235D"); // Warm plum purple (main body panel fill)
-        static Color UI_PRIMARY  => Hex("FF4D79"); // Vibrant strawberry pink (tabs and secondary buttons)
-        static Color UI_CTA      => Hex("FFC700"); // Sunny amber yellow (primary buttons that pop)
-        static Color UI_SUCCESS  => Hex("2ED573"); // Lime mint green (success states and play CTA)
-        static Color UI_DANGER   => Hex("FF4757"); // Coral alert red (danger and close elements)
-        static Color UI_TEXT     => Hex("FFFFFF"); // Crisp white text
-        static Color UI_BORDER   => Hex("FF9F00"); // Orange-yellow accent highlights
-        static Color DIM         => new Color(0.08f, 0.07f, 0.15f, 0.50f); // Immersive, soft 50% opacity dark navy backdrop
-
         // True when current root was loaded via LoadPrefabContents — Save/SaveScenePrefab use this to choose cleanup
         private static bool _prefabWasLoaded;
+
+        // EN font from FontLocalizationConfig; cached after first load; null if config not yet generated.
+        private static TMP_FontAsset _editorDefaultFont;
+        private static bool _editorFontLoaded;
+
+        static TMP_FontAsset GetEditorDefaultFont()
+        {
+            if (_editorFontLoaded) return _editorDefaultFont;
+            _editorFontLoaded = true;
+            var config = AssetDatabase.LoadAssetAtPath<FontLocalizationConfig>(
+                "Assets/Resources/Localization/FontLocalizationConfig.asset");
+            if (config != null) _editorDefaultFont = config.GetFont(Language.EN);
+            return _editorDefaultFont;
+        }
 
         public enum TextCategory
         {
@@ -177,7 +183,7 @@ namespace Game.Editor
             var (canvas, _bootLoaded) = LoadOrCreateCanvas("Boot");
             var content = Child(canvas, "Content");
             Stretch(content);
-            TMP(content, "LogoText", Center(0, 200, 600, 120), 48, UI_TEXT, "SIGNAL SORT", AppTitle, TextCategory.Header);
+            TMP(content, "LogoText", Center(0, 200, 600, 120), 48, UI_TEXT, "FILL", AppTitle, TextCategory.Header);
 
             // Animated loader indicator representing spinner
             var loaderGo = Child(content, "LoaderIcon");
@@ -808,8 +814,9 @@ namespace Game.Editor
             hlg.spacing = 15;
             hlg.childControlWidth = hlg.childControlHeight = false;
 
-            var cancel = Btn(panel, "CancelButton",  new Vector2(-200, -250), new Vector2(320, 90), UI_BG_DEEP, "Cancel", CommonBtnCancel);
-            var confirm= Btn(panel, "ConfirmButton", new Vector2( 200, -250), new Vector2(320, 90), UI_PRIMARY, "Confirm", CommonBtnConfirm);
+            var cancel = Btn(panel, "CancelButton",  new Vector2(-200, -250), new Vector2(320, 90), UI_BG_DEEP, "Cancel",  CommonBtnCancel);
+            var confirm= Btn(panel, "ConfirmButton", new Vector2( 200, -250), new Vector2(320, 90), UI_CTA,     "Confirm", CommonBtnConfirm);
+            var closeBtn = CloseBtnAt(panel, new Vector2(395, 295));
 
             var rewardItemCellPrefab = AssetDatabase.LoadAssetAtPath<GameObject>($"{BaseCommonPath}/RewardItemCell.prefab");
 
@@ -821,6 +828,7 @@ namespace Game.Editor
             so.FindProperty("_cancelButton").objectReferenceValue      = cancel.GetComponent<Button>();
             so.FindProperty("_confirmButton").objectReferenceValue     = confirm.GetComponent<Button>();
             so.FindProperty("_backdropButton").objectReferenceValue    = backdrop.GetComponent<Button>();
+            so.FindProperty("_closeButton").objectReferenceValue       = closeBtn;
             so.FindProperty("_confirmButtonImage").objectReferenceValue = confirm.transform.Find("Visual").GetComponent<Image>();
             so.FindProperty("_rewardCellContainer").objectReferenceValue = RT(rewardContainer);
             so.FindProperty("_rewardItemCellPrefab").objectReferenceValue = rewardItemCellPrefab;
@@ -886,7 +894,7 @@ namespace Game.Editor
             var panel = Panel(root, "Panel", new Vector2(800, 420), UI_BG_MID);
             var title = RibbonTitle(panel, "TitleText", "Network Error", PopupNetworkErrorTitle);
             var msg   = TMP(panel, "MessageText", Center(0, -10, 680, 150), 20, UI_TEXT, "Check your network connection.", ErrorNetworkCheck, TextCategory.Normal);
-            var retry = Btn(panel, "RetryButton", new Vector2(0, -140), new Vector2(320, 90), UI_PRIMARY, "Retry", CommonBtnRetry);
+            var retry = Btn(panel, "RetryButton", new Vector2(0, -140), new Vector2(320, 90), UI_CTA, "Retry", CommonBtnRetry);
 
             var so = new SerializedObject(root.GetComponent<NetworkErrorView>());
             so.FindProperty("_messageText").objectReferenceValue = msg;
@@ -941,6 +949,11 @@ namespace Game.Editor
             var root = FullScreen("RewardPopupView");
             Img(root, DIM); Comp<RewardPopupView>(root); Comp<UIPanelAppear>(root); Comp<CanvasGroup>(root);
 
+            // Backdrop: visual dim only — close is via explicit CloseButton below
+            var backdrop = Child(root, "Backdrop");
+            Stretch(backdrop);
+            Img(backdrop, DIM);
+
             var panel = Panel(root, "Panel", new Vector2(720, 780), UI_BG_MID);
             var title = RibbonTitle(panel, "TitleText", "Reward!", PopupRewardTitle);
 
@@ -954,12 +967,14 @@ namespace Game.Editor
             glg.constraintCount  = 2;
             glg.childAlignment   = TextAnchor.UpperCenter;
 
-            var ok = Btn(panel, "OkButton", new Vector2(0, -280), new Vector2(300, 90), UI_PRIMARY, "OK", CommonBtnOk);
+            var ok = Btn(panel, "OkButton", new Vector2(0, -280), new Vector2(300, 90), UI_CTA, "OK", CommonBtnOk);
+            var closeBtn = CloseBtnAt(panel, new Vector2(305, 355));
 
             var so = new SerializedObject(root.GetComponent<RewardPopupView>());
             so.FindProperty("_itemContainer").objectReferenceValue = items.transform;
             so.FindProperty("_itemRowPrefab").objectReferenceValue = cellPrefab;
             so.FindProperty("_okButton").objectReferenceValue      = ok.GetComponent<Button>();
+            so.FindProperty("_closeButton").objectReferenceValue   = closeBtn;
             so.ApplyModifiedProperties();
 
             Save(root, "RewardPopupView");
@@ -973,7 +988,7 @@ namespace Game.Editor
             var panel   = Panel(root, "Panel", new Vector2(900, 520), UI_BG_MID);
             var title = RibbonTitle(panel, "TitleText", "Session Expired", PopupReloginTitle);
             
-            var relogin = Btn(panel, "ReLoginButton",         new Vector2(0,  10), new Vector2(500, 90), UI_PRIMARY, "Re-login",          PopupReloginBtnRelogin);
+            var relogin = Btn(panel, "ReLoginButton",         new Vector2(0,  10), new Vector2(500, 90), UI_CTA,     "Re-login",          PopupReloginBtnRelogin);
             var guest   = Btn(panel, "ContinueAsGuestButton", new Vector2(0, -110), new Vector2(500, 80), UI_BG_DEEP, "Continue as Guest", PopupReloginBtnGuest);
 
             var so = new SerializedObject(root.GetComponent<ReLoginView>());
@@ -989,8 +1004,10 @@ namespace Game.Editor
             var root = FullScreen("StageInfoPopupView");
             Img(root, DIM); Comp<StageInfoPopupView>(root); Comp<UIPanelAppear>(root); Comp<CanvasGroup>(root);
 
-            var backdrop = Btn(root, "Backdrop", Vector2.zero, new Vector2(1080, 1920), new Color(0, 0, 0, 0), "", shadowAlpha: 200f / 255f);
+            // Backdrop: visual dim only — close is via explicit CloseButton below
+            var backdrop = Child(root, "Backdrop");
             Stretch(backdrop);
+            Img(backdrop, DIM);
 
             var panel = Panel(root, "Panel", new Vector2(700, 760), UI_BG_MID);
             var title = RibbonTitle(panel, "StageTitleText", "Stage 1", PopupStageInfoTitle);
@@ -1010,12 +1027,15 @@ namespace Game.Editor
 
             var play = Btn(panel, "PlayButton", new Vector2(0, -285), new Vector2(400, 80), UI_CTA, "Play", CommonBtnPlay);
 
+            // Explicit square close button — top-right of panel (convention: all popups must have one)
+            var closeBtn = CloseBtnAt(panel, new Vector2(280, 310));
+
             var so = new SerializedObject(root.GetComponent<StageInfoPopupView>());
             so.FindProperty("_stageTitle").objectReferenceValue       = title;
             so.FindProperty("_bestRecord").objectReferenceValue       = best;
             so.FindProperty("_ribbonImage").objectReferenceValue      = ribbonImg;
             so.FindProperty("_playButton").objectReferenceValue       = play.GetComponent<Button>();
-            so.FindProperty("_backdropButton").objectReferenceValue   = backdrop.GetComponent<Button>();
+            so.FindProperty("_backdropButton").objectReferenceValue   = closeBtn;
             var starsArr = so.FindProperty("_bestStarFills");
             starsArr.arraySize = 3;
             starsArr.GetArrayElementAtIndex(0).objectReferenceValue = s0.transform.Find("Fill").gameObject;
@@ -1046,10 +1066,10 @@ namespace Game.Editor
             var panel = Panel(root, "Panel", new Vector2(900, 900), UI_BG_MID);
             RibbonTitle(panel, "TitleText", "Stage Clear!", PopupResultTitle);
 
-            var retry = Btn(panel, "RetryButton", new Vector2(-270, -330), new Vector2(230, 90), UI_BG_DEEP, "Retry", CommonBtnRetry);
-            var next  = Btn(panel, "NextButton",  new Vector2(   0, -330), new Vector2(230, 90), UI_PRIMARY,  "Next",  CommonBtnNext);
-            var map   = Btn(panel, "MapButton",   new Vector2( 270, -330), new Vector2(230, 90), UI_BG_DEEP,  "Map",   CommonBtnMap);
-            var doubleReward = Btn(panel, "DoubleRewardButton", new Vector2(0, -250), new Vector2(380, 85), UI_CTA, "Double Reward", PopupResultDoubleReward);
+            var retry = Btn(panel, "RetryButton", new Vector2(-270, -330), new Vector2(230, 90), UI_PRIMARY, "Retry",        CommonBtnRetry);
+            var next  = Btn(panel, "NextButton",  new Vector2(   0, -330), new Vector2(230, 90), UI_CTA,     "Next",         CommonBtnNext);
+            var map   = Btn(panel, "MapButton",   new Vector2( 270, -330), new Vector2(230, 90), UI_BG_DEEP, "Map",          CommonBtnMap);
+            var doubleReward = Btn(panel, "DoubleRewardButton", new Vector2(0, -250), new Vector2(380, 85), UI_PRIMARY, "Double Reward", PopupResultDoubleReward);
 
             Save(root, "ResultOverlayView");
         }
@@ -1062,7 +1082,7 @@ namespace Game.Editor
             var panel = Panel(root, "Panel", new Vector2(700, 780), UI_BG_MID);
             RibbonTitle(panel, "TitleText", "Just a bit more!", PopupFailTitle);
 
-            var forfBtn = Btn(panel, "ForfeitButton",  new Vector2(0, -285), new Vector2(280, 95), UI_BG_DEEP, "Give Up",  PopupFailBtnForfeit);
+            var forfBtn = Btn(panel, "ForfeitButton",  new Vector2(0, -285), new Vector2(280, 96), UI_DANGER, "Give Up", PopupFailBtnForfeit);
 
             Save(root, "FailOverlayView");
         }
@@ -1072,19 +1092,26 @@ namespace Game.Editor
             var root = FullScreen("PausePopupView");
             Img(root, DIM); Comp<PausePopupView>(root); Comp<UIPanelAppear>(root); Comp<CanvasGroup>(root);
 
+            // Backdrop: visual dim only — close is via explicit CloseButton below
+            var backdrop = Child(root, "Backdrop");
+            Stretch(backdrop);
+            Img(backdrop, DIM);
+
             var panel = Panel(root, "Panel", new Vector2(600, 600), UI_BG_MID);
             var title = RibbonTitle(panel, "TitleText", "Paused", PopupPauseTitle);
 
-            var resume  = Btn(panel, "ResumeButton",      new Vector2(0,  120), new Vector2(480, 90), UI_PRIMARY, "Resume",       PopupPauseBtnResume);
-            var restart = Btn(panel, "RestartButton",     new Vector2(0,   10), new Vector2(480, 90), UI_BG_DEEP, "Restart",      PopupPauseBtnRestart);
-            var settings= Btn(panel, "SettingsButton",    new Vector2(0, -100), new Vector2(480, 90), UI_BG_DEEP, "Settings",     CommonSettings);
-            var select  = Btn(panel, "StageSelectButton", new Vector2(0, -210), new Vector2(480, 90), UI_BG_DEEP, "Stage Select", PopupPauseBtnStageSelect);
+            var resume  = Btn(panel, "ResumeButton",      new Vector2(0,  120), new Vector2(480, 96), UI_CTA,     "Resume",       PopupPauseBtnResume);
+            var restart = Btn(panel, "RestartButton",     new Vector2(0,   10), new Vector2(480, 96), UI_DANGER,  "Restart",      PopupPauseBtnRestart);
+            var settings= Btn(panel, "SettingsButton",    new Vector2(0, -100), new Vector2(480, 96), UI_BG_DEEP, "Settings",     CommonSettings);
+            var select  = Btn(panel, "StageSelectButton", new Vector2(0, -210), new Vector2(480, 96), UI_BG_DEEP, "Stage Select", PopupPauseBtnStageSelect);
+            var closeBtn = CloseBtnAt(panel, new Vector2(250, 258));
 
             var so = new SerializedObject(root.GetComponent<PausePopupView>());
             so.FindProperty("_resumeButton").objectReferenceValue      = resume.GetComponent<Button>();
             so.FindProperty("_restartButton").objectReferenceValue     = restart.GetComponent<Button>();
             so.FindProperty("_settingsButton").objectReferenceValue    = settings.GetComponent<Button>();
             so.FindProperty("_stageSelectButton").objectReferenceValue = select.GetComponent<Button>();
+            so.FindProperty("_closeButton").objectReferenceValue       = closeBtn;
             so.ApplyModifiedProperties();
 
             Save(root, "PausePopupView");
@@ -1095,13 +1122,16 @@ namespace Game.Editor
             var root = FullScreen("SettingsPanelView");
             Img(root, DIM); Comp<SettingsPanelView>(root); Comp<UIPanelAppear>(root); Comp<CanvasGroup>(root);
 
-            var backdrop = Btn(root, "Backdrop", Vector2.zero, new Vector2(1080, 1920), new Color(0,0,0,0), "", shadowAlpha: 200f / 255f);
+            // Backdrop: visual dim only — close is via explicit CloseButton below
+            var backdrop = Child(root, "Backdrop");
             Stretch(backdrop);
+            Img(backdrop, DIM);
 
             // Bottom-sheet: taller panel so dropdown popup opens within screen bounds
             var border = Child(root, "Border");
             BottomStrip(border, 1050);
-            Img(border, Hex("2B003B"));
+            Img(border, UI_BG_DEEP);
+            PixelShadow(border);
 
             var panel = Child(border, "InnerPanel");
             BottomStrip(panel, 1030);
@@ -1117,6 +1147,9 @@ namespace Game.Editor
             var langDropdown = LanguageDropdownRow(panel, "LanguageRow", new Vector2(0, -45), "Language", PopupSettingsLanguage);
             var verTxt = TMP(panel, "VersionText", Center(0, -175, 600, 50), 16, UI_TEXT, "v1.0.0", null, TextCategory.Normal);
 
+            // Explicit square close button — top-right of bottom-sheet (convention: all popups must have one)
+            var closeBtn = CloseBtnAt(panel, new Vector2(460, 460));
+
             var so = new SerializedObject(root.GetComponent<SettingsPanelView>());
             so.FindProperty("_bgmToggle").objectReferenceValue         = bgmRow.transform.Find("Toggle").GetComponent<Toggle>();
             so.FindProperty("_sfxToggle").objectReferenceValue         = sfxRow.transform.Find("Toggle").GetComponent<Toggle>();
@@ -1125,7 +1158,7 @@ namespace Game.Editor
             so.FindProperty("_screenShakeToggle").objectReferenceValue = shakeRow.GetComponentInChildren<Toggle>();
             so.FindProperty("_hapticToggle").objectReferenceValue      = hapticRow.GetComponentInChildren<Toggle>();
             so.FindProperty("_langDropdown").objectReferenceValue      = langDropdown;
-            so.FindProperty("_backdropButton").objectReferenceValue    = backdrop.GetComponent<Button>();
+            so.FindProperty("_backdropButton").objectReferenceValue    = closeBtn;
             so.FindProperty("_versionText").objectReferenceValue       = verTxt;
             so.ApplyModifiedProperties();
 
@@ -1136,6 +1169,10 @@ namespace Game.Editor
         {
             var root = FullScreen("AccountPopupView");
             Img(root, DIM); Comp<AccountPopupView>(root); Comp<UIPanelAppear>(root); Comp<CanvasGroup>(root);
+
+            var backdrop = Child(root, "Backdrop");
+            Stretch(backdrop);
+            Img(backdrop, DIM);
 
             var panel = Panel(root, "Panel", new Vector2(850, 1200), UI_BG_MID);
             var uidTxt = RibbonTitle(panel, "UserIdText", "Guest", CommonGuest);
@@ -1271,9 +1308,9 @@ namespace Game.Editor
             lockGo.SetActive(false);
 
             // 3. Platform Account Buttons
-            var linkBtn = Btn(panel, "LinkAccountButton",   new Vector2(0, -340), new Vector2(600, 85), UI_PRIMARY, "Link Account",   PopupAccountBtnLink);
-            var swBtn   = Btn(panel, "SwitchAccountButton", new Vector2(0, -340), new Vector2(600, 85), UI_PRIMARY, "Switch Account", PopupAccountBtnSwitch);
-            var clsBtn  = Btn(panel, "CloseButton",         new Vector2(0, -450), new Vector2(260, 75), UI_BG_DEEP, "Close",          CommonBtnClose);
+            var linkBtn = Btn(panel, "LinkAccountButton",   new Vector2(0, -340), new Vector2(600, 96), UI_CTA,     "Link Account",   PopupAccountBtnLink);
+            var swBtn   = Btn(panel, "SwitchAccountButton", new Vector2(0, -340), new Vector2(600, 96), UI_CTA,     "Switch Account", PopupAccountBtnSwitch);
+            var closeBtn = CloseBtnAt(panel, new Vector2(377, 552));
 
             // 4. Map Avatar Sprites
             var resMap = LoadDynamicResourceMap();
@@ -1365,7 +1402,7 @@ namespace Game.Editor
             so.FindProperty("_userIdText").objectReferenceValue          = uidTxt;
             so.FindProperty("_linkAccountButton").objectReferenceValue   = linkBtn.GetComponent<Button>();
             so.FindProperty("_switchAccountButton").objectReferenceValue = swBtn.GetComponent<Button>();
-            so.FindProperty("_closeButton").objectReferenceValue         = clsBtn.GetComponent<Button>();
+            so.FindProperty("_closeButton").objectReferenceValue         = closeBtn;
 
             so.FindProperty("_displayNameInput").objectReferenceValue    = inputField;
             so.FindProperty("_saveNicknameButton").objectReferenceValue   = saveBtn.GetComponent<Button>();
@@ -1780,17 +1817,58 @@ namespace Game.Editor
             return go;
         }
 
-        static GameObject Panel(GameObject parent, string name, Vector2 size, Color color)
+        // Pixel art drop shadow: stretch-stretch on parent, offset right+8 bottom+8.
+        // Call on any Panel/Button/Container GO; shadow renders behind (SetAsFirstSibling).
+        static GameObject PixelShadow(GameObject parent, Color? color = null)
         {
-            var border = Child(parent, name); Fixed(border, Vector2.zero, size + new Vector2(24f, 24f));
-            Img(border, Hex("2B003B")); // Thick dark border outline shadow
-            
-            var panel = Child(border, "InnerPanel"); Stretch(panel);
-            var rt = RT(panel);
-            rt.offsetMin = new Vector2(12f, 12f);
-            rt.offsetMax = new Vector2(-12f, -12f);
-            Img(panel, color);
-            return panel;
+            var shadow = Child(parent, "Shadow");
+            var rt = RT(shadow);
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+            rt.offsetMin = new Vector2(8f, -8f);
+            rt.offsetMax = new Vector2(8f, -8f);
+            Img(shadow, color ?? UI_SHADOW);
+            shadow.transform.SetAsFirstSibling();
+            return shadow;
+        }
+
+        // Square explicit close button (min 96px). Wire returned Button to View close handler.
+        static Button CloseBtnAt(GameObject parent, Vector2 anchoredPos, int size = 96)
+        {
+            var go = Child(parent, "CloseButton");
+            Fixed(go, anchoredPos, new Vector2(size, size));
+            PixelShadow(go);
+            var visual = Child(go, "Visual");
+            Stretch(visual);
+            var img = Img(visual, UI_BG_DEEP);
+            var btn = Comp<Button>(go);
+            btn.targetGraphic = img;
+            Comp<UIButtonAnimator>(go);
+            TMP(visual, "Label", Center(0, 0, size, size), 32, UI_TEXT, "✕", null, TextCategory.Button);
+            return btn;
+        }
+
+        // Panel: 3-layer pixel art structure — Shadow (bottom) → Border outline → Content fill.
+        // size = content area. Outer = size + 16 (8px border each side).
+        // outline: null defaults to UI_BORDER (electric violet, contrasts dark backgrounds).
+        static GameObject Panel(GameObject parent, string name, Vector2 size, Color color, Color? outline = null)
+        {
+            var root = Child(parent, name);
+            Fixed(root, Vector2.zero, size + new Vector2(16f, 16f)); // 8px border each side
+
+            PixelShadow(root);                              // index 0 — lowest layer
+
+            var border = Child(root, "Border");
+            Stretch(border);
+            Img(border, outline ?? UI_BORDER);              // index 1 — contrasting outline frame
+
+            var content = Child(root, "Content");
+            Stretch(content);
+            var contentRt = RT(content);
+            contentRt.offsetMin = new Vector2(8f, 8f);
+            contentRt.offsetMax = new Vector2(-8f, -8f);
+            Img(content, color);                            // index 2 — panel fill
+            return content;
         }
 
         static TMP_Text RibbonTitle(GameObject panel, string name, string text, string stringId = null)
@@ -1800,14 +1878,14 @@ namespace Game.Editor
             float panelH = panelRt.sizeDelta.y;
 
             // If anchors are stretched, sizeDelta contains margins rather than absolute size.
-            // In this case, read the parent border's size which is fixed in pixels.
+            // Read the parent PanelRoot size (which is content + 16px total border).
             if (panelRt.anchorMin == Vector2.zero && panelRt.anchorMax == Vector2.one)
             {
                 var parentRt = panel.transform.parent.GetComponent<RectTransform>();
                 if (parentRt != null)
                 {
-                    panelW = parentRt.sizeDelta.x - 24f; // subtract border margins
-                    panelH = parentRt.sizeDelta.y - 24f;
+                    panelW = parentRt.sizeDelta.x - 16f; // 8px border each side = 16 total
+                    panelH = parentRt.sizeDelta.y - 16f;
                 }
             }
 
@@ -1815,31 +1893,25 @@ namespace Game.Editor
             if (panelW <= 0f) panelW = 800f;
             if (panelH <= 0f) panelH = 500f;
 
-            // Ribbon base banner (uses UI_CTA)
+            // Ribbon base banner (UI_CTA) at top of panel
             var ribbon = Child(panel, name + "_Ribbon");
             Fixed(ribbon, new Vector2(0f, panelH * 0.5f), new Vector2(panelW * 0.85f, 100f));
             Img(ribbon, UI_CTA);
-            
-            // Shadow under the ribbon banner
-            var ribbonShadow = Child(ribbon, "Shadow");
-            Fixed(ribbonShadow, new Vector2(0f, -6f), new Vector2(panelW * 0.85f, 100f));
-            Img(ribbonShadow, Hex("2B003B"));
-            ribbonShadow.transform.SetAsFirstSibling();
-            
-            var tmp = TMP(ribbon, "Text", new Rect(0, 0, panelW * 0.8f, 80f), 28, UI_TEXT, text, stringId, TextCategory.Header);
+            PixelShadow(ribbon);
+
+            var tmp = TMP(ribbon, "Text", new Rect(0, 0, panelW * 0.8f, 80f), 36, UI_TEXT, text, stringId, TextCategory.Header);
             return tmp;
         }
 
-        // Button with label child
+        // Button with label child. Enforces 96px minimum on both dimensions.
         static GameObject Btn(GameObject parent, string name, Vector2 pos, Vector2 size, Color color, string label, string labelStringId = null, float shadowAlpha = 1f)
         {
+            size = new Vector2(Mathf.Max(size.x, 96f), Mathf.Max(size.y, 96f));
             var go = Child(parent, name); Fixed(go, pos, size);
-            
-            // Shadow underlay for 3D look
-            var shadowGo = Child(go, "Shadow");
-            Fixed(shadowGo, new Vector2(0, -8f), size);
-            var shadowColor = Hex("2B003B"); shadowColor.a = shadowAlpha;
-            Img(shadowGo, shadowColor);
+
+            // Pixel art drop shadow: stretch on button bounds, offset right+8 bottom+8
+            var shadowColor = UI_SHADOW; shadowColor.a = shadowAlpha;
+            PixelShadow(go, shadowColor);
             
             // Visual top layer
             var visualGo = Child(go, "Visual");
@@ -1848,17 +1920,24 @@ namespace Game.Editor
             
             if (!go.TryGetComponent<Button>(out var btn)) btn = Comp<Button>(go);
             btn.targetGraphic = img;
-            Comp<UIButtonAnimator>(go);
-            
-            // Check if button is square
+            var buttonAnim = Comp<UIButtonAnimator>(go);
+            if (color == UI_CTA)
+            {
+                var soAnim = new SerializedObject(buttonAnim);
+                soAnim.FindProperty("_isCTA").boolValue = true;
+                soAnim.ApplyModifiedProperties();
+            }
+
+            // Square buttons: stretch-stretch Icon with GlowSweep idle animation.
             bool isSquare = Mathf.Approximately(size.x, size.y);
             if (isSquare)
             {
                 var iconGo = Child(visualGo, "Icon");
-                Fixed(iconGo, Vector2.zero, size * 0.75f);
-                Img(iconGo, Color.white);
+                Stretch(iconGo);
+                var iconImg = Img(iconGo, Color.white);
+                iconImg.preserveAspect = true;
                 var animator = Comp<UIIconIdleAnimator>(iconGo);
-                animator.Configure(UIIconIdleAnimator.AnimationType.Float, 2f, 5f);
+                animator.Configure(UIIconIdleAnimator.AnimationType.GlowSweep, 2.2f, 12f);
             }
             else if (!string.IsNullOrEmpty(label))
             {
@@ -1877,13 +1956,7 @@ namespace Game.Editor
             var le = Comp<LayoutElement>(go);
             le.flexibleWidth  = 1;
             le.preferredHeight = 100;
-            
-            // Shadow underlay for 3D look
-            var shadowGo = Child(go, "Shadow");
-            var shadowRt = RT(shadowGo);
-            shadowRt.anchorMin = Vector2.zero; shadowRt.anchorMax = Vector2.one;
-            shadowRt.offsetMin = new Vector2(0, -8f); shadowRt.offsetMax = new Vector2(0, -8f);
-            Img(shadowGo, Hex("2B003B"));
+            PixelShadow(go);
             
             // Visual top layer
             var visualGo = Child(go, "Visual");
@@ -1918,26 +1991,35 @@ namespace Game.Editor
             Fixed(go, new Vector2(rect.x, rect.y), new Vector2(rect.width, rect.height));
             var tmp = go.GetComponent<TextMeshProUGUI>();
             if (tmp == null) tmp = Comp<TextMeshProUGUI>(go);
-            
-            // Auto Font Sizing configuration
-            tmp.enableAutoSizing = true;
-            switch (category)
+
+            // Apply EN font from FontLocalizationConfig as editor default; LocalizedText handles runtime switching.
+            var editorFont = GetEditorDefaultFont();
+            if (editorFont != null) tmp.font = editorFont;
+
+            // AutoFontSize: applied only for size >= 28. Below 28 uses fixed size.
+            if (size < 28)
             {
-                case TextCategory.Header:
-                    tmp.fontSizeMin = 48f;
-                    tmp.fontSizeMax = 72f;
-                    break;
-                case TextCategory.Button:
-                    tmp.fontSizeMin = 40f;
-                    tmp.fontSizeMax = 56f;
-                    break;
-                case TextCategory.Normal:
-                default:
-                    tmp.fontSizeMin = 32f;
-                    tmp.fontSizeMax = 44f;
-                    break;
+                tmp.enableAutoSizing = false;
+                tmp.fontSize = size;
             }
-            tmp.fontSize  = tmp.fontSizeMax;
+            else
+            {
+                tmp.enableAutoSizing = true;
+                switch (category)
+                {
+                    case TextCategory.Header:
+                        tmp.fontSizeMin = 48f; tmp.fontSizeMax = 72f;
+                        break;
+                    case TextCategory.Button:
+                        tmp.fontSizeMin = 36f; tmp.fontSizeMax = 56f;
+                        break;
+                    case TextCategory.Normal:
+                    default:
+                        tmp.fontSizeMin = 28f; tmp.fontSizeMax = 36f;
+                        break;
+                }
+                tmp.fontSize = tmp.fontSizeMax;
+            }
             tmp.color     = color;
             tmp.text      = StripEmojis(text);
             tmp.alignment = TextAlignmentOptions.Center;
@@ -2218,11 +2300,7 @@ namespace Game.Editor
             le.flexibleWidth = 1;
             le.preferredHeight = 160;
 
-            var shadowGo = Child(go, "Shadow");
-            var shadowRt = RT(shadowGo);
-            shadowRt.anchorMin = Vector2.zero; shadowRt.anchorMax = Vector2.one;
-            shadowRt.offsetMin = new Vector2(0, -8f); shadowRt.offsetMax = new Vector2(0, -8f);
-            Img(shadowGo, Hex("2B003B"));
+            PixelShadow(go);
 
             var visualGo = Child(go, "Visual");
             Stretch(visualGo);
@@ -2294,7 +2372,11 @@ namespace Game.Editor
             MkDir($"{BaseScenesPath}/{sceneName}");
             string path = $"{BaseScenesPath}/{sceneName}/{sceneName}Canvas_Base.prefab";
             if (AssetDatabase.LoadAssetAtPath<GameObject>(path) != null)
-                return (PrefabUtility.LoadPrefabContents(path), true);
+            {
+                var loaded = PrefabUtility.LoadPrefabContents(path);
+                ApplyCanvasScaler(loaded);
+                return (loaded, true);
+            }
             return (CreateTempCanvas("Canvas_Scene"), false);
         }
 
@@ -2364,18 +2446,24 @@ namespace Game.Editor
             return slashIndex > 0 ? assetPath.Substring(0, slashIndex) : "Assets";
         }
 
+        // Enforces canonical CanvasScaler settings. Called on both new and loaded canvases.
+        static void ApplyCanvasScaler(GameObject go)
+        {
+            var scaler = Comp<CanvasScaler>(go);
+            scaler.uiScaleMode            = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution    = new Vector2(1080, 1920);
+            scaler.screenMatchMode        = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+            scaler.matchWidthOrHeight     = 0.5f;
+            scaler.referencePixelsPerUnit = 100f;
+        }
+
         static GameObject CreateTempCanvas(string canvasName)
         {
             var go = new GameObject(canvasName);
             var canvas = Comp<Canvas>(go);
             canvas.renderMode   = RenderMode.ScreenSpaceOverlay;
             canvas.sortingOrder = 0;
-            var scaler = Comp<CanvasScaler>(go);
-            scaler.uiScaleMode         = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1080, 1920);
-            scaler.screenMatchMode     = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-            scaler.matchWidthOrHeight  = 0.5f;
-            scaler.referencePixelsPerUnit = 100f;
+            ApplyCanvasScaler(go);
             Comp<GraphicRaycaster>(go);
             return go;
         }
@@ -2627,10 +2715,7 @@ namespace Game.Editor
         static void CreateAccountRestartPopup()
         {
             var root = FullScreen("AccountRestartPopupView");
-            Comp<AccountRestartPopupView>(root); Comp<UIPanelAppear>(root); Comp<CanvasGroup>(root);
-
-            var backdrop = Btn(root, "Backdrop", Vector2.zero, new Vector2(1080, 1920), DIM, "", shadowAlpha: 200f / 255f);
-            Stretch(backdrop);
+            Img(root, DIM); Comp<AccountRestartPopupView>(root); Comp<UIPanelAppear>(root); Comp<CanvasGroup>(root);
 
             var panel = Panel(root, "Panel", new Vector2(700, 500), UI_BG_MID);
             var title = RibbonTitle(panel, "TitleText", "Game Restart Required", PopupAccountRestartTitle);
@@ -2640,7 +2725,7 @@ namespace Game.Editor
             var bodyCsf = Comp<ContentSizeFitter>(body.gameObject);
             bodyCsf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-            var confirmBtn = Btn(panel, "ConfirmButton", new Vector2(0, -140), new Vector2(500, 85), UI_PRIMARY, "Restart", PopupAccountRestartConfirm);
+            var confirmBtn = Btn(panel, "ConfirmButton", new Vector2(0, -140), new Vector2(500, 96), UI_DANGER, "Restart", PopupAccountRestartConfirm);
 
             var so = new SerializedObject(root.GetComponent<AccountRestartPopupView>());
             so.FindProperty("_titleText").objectReferenceValue   = title;
@@ -2667,7 +2752,7 @@ namespace Game.Editor
 
             // Local save panel (left)
             var localPanel = Panel(panel, "LocalPanel", new Vector2(380, 550), UI_BG_DEEP);
-            Fixed(localPanel.transform.parent.gameObject, new Vector2(-215, 80), new Vector2(380 + 24, 550 + 24));
+            Fixed(localPanel.transform.parent.gameObject, new Vector2(-215, 80), new Vector2(380 + 16, 550 + 16));
 
             var localLabel      = TMP(localPanel, "LocalLabel",      Center(0, 240, 340, 60),  22, UI_TEXT, "Current Data",  PopupAccountConflictLocalLabel, TextCategory.Header);
             var localStageText  = TMP(localPanel, "LocalStageText",  Center(0, 150, 340, 55),  18, UI_TEXT, "Stage 0",       PopupAccountConflictStageFmt,   TextCategory.Normal);
@@ -2678,7 +2763,7 @@ namespace Game.Editor
 
             // Cloud save panel (right)
             var cloudPanel = Panel(panel, "CloudPanel", new Vector2(380, 550), UI_BG_DEEP);
-            Fixed(cloudPanel.transform.parent.gameObject, new Vector2(215, 80), new Vector2(380 + 24, 550 + 24));
+            Fixed(cloudPanel.transform.parent.gameObject, new Vector2(215, 80), new Vector2(380 + 16, 550 + 16));
 
             var cloudLabel      = TMP(cloudPanel, "CloudLabel",      Center(0, 240, 340, 60),  22, UI_TEXT, "Google Account Data", PopupAccountConflictCloudLabel,        TextCategory.Header);
             var cloudStageText  = TMP(cloudPanel, "CloudStageText",  Center(0, 150, 340, 55),  18, UI_TEXT, "Stage 0",             PopupAccountConflictStageFmt,          TextCategory.Normal);
@@ -2688,6 +2773,7 @@ namespace Game.Editor
             var keepCloudBtn    = Btn(cloudPanel, "KeepCloudButton", new Vector2(0, -190), new Vector2(340, 75), UI_PRIMARY, "Use Google Data", PopupAccountConflictBtnKeepCloud);
 
             var cancelBtn = Btn(panel, "CancelButton", new Vector2(0, -470), new Vector2(300, 70), UI_BG_DEEP, "Cancel", CommonBtnCancel);
+            var closeBtn = CloseBtnAt(panel, new Vector2(395, 510));
 
             var so = new SerializedObject(root.GetComponent<AccountConflictPopupView>());
             so.FindProperty("_titleText").objectReferenceValue      = title;
@@ -2705,6 +2791,8 @@ namespace Game.Editor
             so.FindProperty("_cloudItemsText").objectReferenceValue = cloudItemsText;
             so.FindProperty("_keepCloudButton").objectReferenceValue = keepCloudBtn.GetComponent<Button>();
             so.FindProperty("_cancelButton").objectReferenceValue   = cancelBtn.GetComponent<Button>();
+            so.FindProperty("_backdropButton").objectReferenceValue = backdrop.GetComponent<Button>();
+            so.FindProperty("_closeButton").objectReferenceValue    = closeBtn;
             so.ApplyModifiedProperties();
 
             Save(root, "AccountConflictPopupView");
@@ -2771,12 +2859,9 @@ namespace Game.Editor
             rootLe.minWidth  = rootLe.preferredWidth  = 940f;
 
             // Shadow underlay — excluded from HLG flow via ignoreLayout
-            var shadow = Child(root, "Shadow");
-            Fixed(shadow, new Vector2(0, -6), new Vector2(940, 44));
-            Img(shadow, Hex("0D0512"));
+            var shadow = PixelShadow(root, Hex("0D0512"));
             var shadowLe = Comp<LayoutElement>(shadow);
             shadowLe.ignoreLayout = true;
-            shadow.transform.SetAsFirstSibling();
 
             // HorizontalLayoutGroup directly on root
             // (Shadow uses ignoreLayout so HLG only sees dividers + label)
@@ -2833,10 +2918,7 @@ namespace Game.Editor
             le.minHeight = le.preferredHeight = 56;
             le.minWidth = le.preferredWidth = 940;
 
-            // Ribbon Shadow (Underlay for 3D pixel feel at fixed -8 Y-offset)
-            var shadow = Child(ribbon, "Shadow");
-            Fixed(shadow, new Vector2(0, -8), new Vector2(940, 56));
-            Img(shadow, Hex("0D0512")); // Dark drop shadow
+            PixelShadow(ribbon, Hex("0D0512"));
 
             // Ribbon Body Image
             var mainBody = Child(ribbon, "Visual");
@@ -2871,10 +2953,8 @@ namespace Game.Editor
             le.minHeight = le.preferredHeight = 280;
             le.minWidth = le.preferredWidth = 940;
 
-            // 1. Card Shadow (Underlay for 3D pixel style at fixed -8 Y-offset)
-            var shadow = Child(card, "Shadow");
-            Fixed(shadow, new Vector2(0, -8), new Vector2(940, 280));
-            Img(shadow, Hex("0C0712"));
+            // 1. Card Shadow (pixel art convention — stretch, offset right+8 bottom+8)
+            PixelShadow(card, Hex("0C0712"));
 
             // 2. Card Visual (Body container)
             var visual = Child(card, "Visual");

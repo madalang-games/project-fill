@@ -9,17 +9,31 @@
 | `IconAutomator.cs` | `IconAutomator` | [MenuItem] icon DPI generator — resizes source icon and applies to all Android/iOS DPI slots |
 | `GoogleMobileAdsGradleManifestPostprocessor.cs` | `GoogleMobileAdsGradleManifestPostprocessor` | Android Gradle postprocessor for GMA plugin conflicts |
 | `BuildCleanupPostProcessor.cs` | `BuildCleanupPostProcessor` | IPostprocessBuildWithReport; deletes large unwanted artifacts (`_BackUpThisFolder...`, `_BurstDebugInformation...`) after successful build |
-| `UIEditorSetup.cs` | `UIEditorSetup` | [MenuItem] one-shot prefab/scene builders; attaches LocalizedText with stringId from StringIds.cs; auto-creates missing Final variants |
+| `UIColorPalette.cs` | `UIColorPalette` | **project-fill UI palette** — Dark Neon Puzzle; 10 color constants (UI_BG_DEEP/MID, UI_PRIMARY/CTA/SUCCESS/DANGER/TEXT/BORDER, DIM, UI_SHADOW); imported into UIEditorSetup via `using static`; UI-only (InGame colors → CSV → generated data) |
+| `UIEditorSetup.cs` | `UIEditorSetup` | [MenuItem] one-shot prefab/scene builders; attaches LocalizedText with stringId from StringIds.cs; auto-creates missing Final variants. Now `partial` (shares private helpers with `UISpecInterpreter.cs`) |
+| `UISpecInterpreter.cs` | `UIEditorSetup` (partial) + `UISpec`/`UISpecElement`/`UISpecBinding` | **PROTOTYPE** declarative UI: JSON spec in `UISpecs/` → prefab via existing helpers. One menu builds all specs (adding a popup = adding a JSON file). Flat `panel>children` only; reuses Save + Final-variant path |
 | `StageNodeEditorSetup.cs` | `StageNodeEditorSetup` | [MenuItem] StageNodeView prefab builder |
 | `FontLocalizationConfigGenerator.cs` | `FontLocalizationConfigGenerator` | [MenuItem] reads tools/subset_tool/config.json → creates FontLocalizationConfig.asset with per-language fonts; sets TMP fallback |
 | `StringIds.cs` | `StringIds` | **AUTO-GENERATED** by `gen:info` from `client_string.csv`; key constants; used by UIEditorSetup via `using static` |
 | `StringCsvPostprocessor.cs` | `StringCsvPostprocessor` | AssetPostprocessor; watches `Data/string/client_string.csv` reimport → calls `LocalizedText.RefreshAllInEditor()`; menu: `Tools/Localization/Refresh Editor Text Preview` |
 | `UnityStageFileWatcher.cs` | `UnityStageFileWatcher` | [InitializeOnLoad] watches changes to shared `stage.csv` and auto-runs generation scripts |
 | `AdMobEditorSetup.cs` | `AdMobEditorSetup` | [InitializeOnLoad] automatically ensures GOOGLE_MOBILE_ADS scripting define symbol is set for Android, iOS, and Standalone |
+| `DebugSocketScale.cs` | `DebugSocketScale` | [MenuItem "Tools/UI Setup/Debug Sockets and Cells"] editor-only socket/cell scale debug helper |
 
 ## Symbols
 | symbol | kind | note |
 |--------|------|------|
+| `UIColorPalette` | class | `internal static`; import with `using static Game.Editor.UIColorPalette` in UIEditorSetup |
+| `UIColorPalette.UI_BG_DEEP` | prop | `#0B0B1E` deep midnight navy (backdrop, dismiss buttons) |
+| `UIColorPalette.UI_BG_MID` | prop | `#181836` dark indigo panel fill |
+| `UIColorPalette.UI_PRIMARY` | prop | `#4CC9F0` electric cyan (secondary positive buttons, tabs) |
+| `UIColorPalette.UI_CTA` | prop | `#F72585` hot neon magenta (single primary action per screen) |
+| `UIColorPalette.UI_SUCCESS` | prop | `#06D6A0` neon teal (success, play) |
+| `UIColorPalette.UI_DANGER` | prop | `#EF233C` neon red (destructive/irreversible actions) |
+| `UIColorPalette.UI_TEXT` | prop | `#E8E8FF` ice white (all text) |
+| `UIColorPalette.UI_BORDER` | prop | `#7B2FBE` electric violet (default Panel outline) |
+| `UIColorPalette.DIM` | prop | `rgba(0.02,0.02,0.08,0.80)` near-black overlay (non-interactive backdrops) |
+| `UIColorPalette.UI_SHADOW` | prop | `rgba(0.01,0.01,0.04,0.90)` pixel art drop shadow |
 | `UIImageResourceExtractor.Open()` | method | [MenuItem "Tools/UI/Image Resource Extractor"] opens the extraction window |
 | `BuildScript.BuildAndroidRelease()` | method | Batch entry: Play Store AAB; applies High stripping, IL2CPP OptimizeSize, and release minify before build |
 | `BuildScript.ApplyAndroidReleaseSizeSettings()` | method | Sets Android Release build type and size knobs for batch builds |
@@ -27,14 +41,23 @@
 | `PlayerPrefsResetMenu.ResetPrefs()` | method | [MenuItem "Tools/Reset PlayerPrefs"] deletes all PlayerPrefs |
 | `IconAutomator.ShowWindow()` | method | [MenuItem "Tools/Icon Automator"] opens icon automation window |
 | `UIEditorSetup.CreateAllPrefabs()` | method | [MenuItem "Tools/UI Setup/1"] creates all popup/overlay prefabs |
+| `UIEditorSetup.BuildAllFromSpecs()` | method | [MenuItem "Tools/UI Setup/Specs/Build All From Specs"] builds every `UISpecs/*.json`. PROTOTYPE — proves data-driven popup definition; `_`-prefixed JSON skipped |
+| `UIEditorSetup.ResolveColor(s)` | method | spec color string → `UIColorPalette` static property (reflection), else `Hex()` one-off |
+| `UIEditorSetup.ApplyCanvasScaler(go)` | method | Enforces canonical CanvasScaler on any canvas GO: ScaleWithScreenSize, 1080×1920, MatchWidthOrHeight=0.5, referencePixelsPerUnit=100. Called by both `LoadOrCreateCanvas` (load path) and `CreateTempCanvas` (create path). |
+| `UIEditorSetup.GetEditorDefaultFont()` | method | Loads EN TMP_FontAsset from FontLocalizationConfig.asset; cached after first call; null if config not yet generated. Called by `TMP()` to apply editor-time font. |
+| `UIEditorSetup.Panel(parent, name, size, color, outline?)` | method | 3-layer pixel panel: returns `Content` GO (the fill layer). Creates PanelRoot (no image, size+16 to include 8px border padding each side) → Shadow (child 0, stretch, right+8 bottom+8) → Border (child 1, stretch, outline color) → Content (child 2, 8px inset, fill color). Default outline = `UI_BORDER`. |
+| `UIEditorSetup.PixelShadow(parent, color?)` | method | Pixel art drop shadow: stretch-stretch on parent, offsetMin/Max=(8,-8) → right+8 bottom+8; always SetAsFirstSibling; auto-called by Panel/Btn/BtnHlg/RibbonTitle |
+| `UIEditorSetup.CloseBtnAt(parent, pos, size?)` | method | Square explicit close button (default **96px**); has PixelShadow + UIButtonAnimator + "✕" label; wire returned Button to View._backdropButton or _closeButton |
+| `UIEditorSetup.Btn(parent, name, pos, size, color, label, ...)` | method | Pixel art button; size clamped to minimum 96×96 before layout; has PixelShadow + Visual layer |
 | `UIEditorSetup.TryMapImageSprite()` | method | Helper to map sprite directly onto Image component target |
 | `UIEditorSetup.BtnNavTab()` | method | Nav bar tab button — icon (color-tinted) above label; `_homeHighlight` etc. wire to `Visual/Icon` Image |
 | `UIEditorSetup.ItemToggleRow()` | method | Toggle row with item icon on left; Label TMP is a child of Toggle GO (GetComponentInChildren finds it) |
 | `UIEditorSetup.MapStarAndIconSprites()` | method | Re-maps star_empty/star_filled/lock icon on Common prefabs without recreating them |
-| `UIEditorSetup.CreateRewardPopup()` | method | Also creates `RewardItemCell.prefab` inline (background+Icon+Quantity badge+RewardItemCellView); wires `_itemRowPrefab` on RewardPopupView |
+| `UIEditorSetup.CreateRewardPopup()` | method | Also creates `RewardItemCell.prefab` inline (background+Icon+Quantity badge+RewardItemCellView); wires `_itemRowPrefab` and `_closeButton` on RewardPopupView; adds visual-only Backdrop child |
 | `UIEditorSetup.CreateItemTooltip()` | method | Creates `ItemTooltipView.prefab` skeleton in Base/Common; missing Resources/Prefabs/UI variant is created automatically |
 | `UIEditorSetup.CreateVariantIfMissing()` | method | Creates Final prefab variants from Base prefabs; skips when target variant already exists |
 | `UIEditorSetup.MapHierarchyImageSprite()` | method | Maps a sprite key from resMap to an Image at `childPath` inside a loaded prefab |
+| `UIEditorSetup.TMP(parent, name, rect, size, color, text, stringId, category)` | method | Creates TMP_Text with LocalizedText + UITextStyle; AutoFontSize applied when size ≥ 28 (see font size rules) |
 | `FontLocalizationConfigGenerator.Generate()` | method | [MenuItem "Tools/Localization/Generate Font Config"] creates FontLocalizationConfig.asset from config.json |
 | `StringIds` | class | All client_string.csv key constants; import with `using static Game.Editor.StringIds` |
 | `UnityStageFileWatcher` | class | Active file system watcher for local hot-reloads |
@@ -43,6 +66,56 @@
 ## Rules
 - Editor-only folder — auto-excluded from player builds
 - DO NOT add game logic or runtime dependencies here
+- **UI Color Convention**: All UIEditorSetup color usage MUST reference `UIColorPalette` constants — never hardcode palette colors inline. Inline `Hex()` is allowed only for one-off contextual colors (e.g. product card specific overrides).
+- **Panel 3-layer structure**: `Panel()` returns `Content` (the top fill layer). Hierarchy under PanelRoot: `[0] Shadow` (stretch, offset right+8 bottom+8) → `[1] Border` (stretch, outline color, 8px thick) → `[2] Content` (stretch with 8px inset, fill color). PanelRoot itself has NO Image component. Shadow must be first sibling so UGUI renders it lowest.
+- **Panel size**: Pass the desired visible content size to `Panel()`; it auto-adds 16px (8px border each side) to the root RectTransform. When manually overriding a panel's Fixed() size externally, add `+16` not `+24`.
+- **Shadow Convention (pixel art)**: Panel/Button/TitleRibbon/Container MUST use `PixelShadow()` — stretch-stretch anchoring, offsetMin/Max=(8,-8). Never use `Fixed()` for shadows. `BtnHlg`, `Btn`, `Panel`, `RibbonTitle` helpers call this automatically.
+- **Button minimum size**: All buttons must be at least **96×96px**. `Btn()` clamps `size = Max(size, 96)` before layout. `CloseBtnAt()` defaults to 96.
+- **Explicit Close Button**: Every popup and bottom-sheet MUST include a visible square `CloseButton` via `CloseBtnAt()`. Transparent backdrop-only dismiss is NOT sufficient. Place at top-right of panel or top-right of bottom-sheet. Wire to View's close handler field.
+- **Responsive Layout**: Use `Stretch()` for elements that must follow parent size. Use `Fixed()` only for fixed-size content. SafeAreaHandler required on all scene canvases.
+- **Text convention**: Every `TMP()` call MUST attach `LocalizedText` (stringId) + `UITextStyle`. Pass `TextCategory` to control AutoFontSize:
+  - `Header` → AutoFontSize 48–72px
+  - `Button` → AutoFontSize 36–56px
+  - `Normal` → AutoFontSize 28–36px
+  - **size < 28**: NO AutoFontSize — use fixed font size only
+- **Button color semantics**:
+  | color | semantic | examples |
+  |-------|----------|---------|
+  | `UI_CTA` | Single primary action per screen (irreversible or most important) | Confirm, Retry, OK, Next, Link Account |
+  | `UI_PRIMARY` | Secondary positive / alternative CTA | Double Reward, Retry (result screen secondary) |
+  | `UI_DANGER` | Destructive / irreversible negative action | Forfeit, Restart (PausePopup), Account Restart Confirm |
+  | `UI_BG_DEEP` | Dismiss / cancel / navigation | Map (result screen), back/close buttons used as secondary |
+- **Canvas Scaler**: Every scene canvas MUST use `ApplyCanvasScaler()` — `ScaleWithScreenSize`, reference `1080×1920`, `MatchWidthOrHeight=0.5`, `referencePixelsPerUnit=100`. Applied automatically by `LoadOrCreateCanvas()` on both create and reload. NEVER set CanvasScaler fields manually in scene builders.
+- **Font convention**: `TMP()` applies the EN font from `FontLocalizationConfig.asset` at editor-build time via `GetEditorDefaultFont()`. Do NOT hardcode `tmp.font` elsewhere. `LocalizedText` handles runtime language switching; `Tools/Localization/Refresh Editor Text Preview` refreshes the preview. Run `FontLocalizationConfigGenerator.Generate()` before `CreateAllPrefabs()` on a fresh project.
+- **Popup mandatory components**: All popup prefab roots MUST have `UIPanelAppear` + `CanvasGroup`. `UIManager.ShowPopup<T>()` requires both for appear animation and alpha fading. Missing either = silent failure (popup shows instantly, CanvasGroup alpha won't fade).
+- **Text raycastTarget**: `TMP()` always sets `tmp.raycastTarget = false`. NEVER override to `true` — text blocking raycast prevents scroll and button interaction on elements beneath.
+- **Backdrop rules**:
+  - **Visual-only backdrop** (default for all popups): `Child(root, "Backdrop") + Stretch + Img(DIM)`. `raycastTarget=true` to block pass-through to layers below. Close via explicit `CloseButton` only. Use when: popup has a visible Cancel/Close/Resume button.
+  - **Interactive backdrop** (cancel affordance): `Btn(root, "Backdrop", ...)` wired to the same handler as the Cancel button. Use ONLY when: (a) the popup has a two-action choice (Confirm/Cancel) AND (b) an explicit Cancel button is already visible — backdrop tap = secondary cancel shortcut. Never the sole dismiss mechanism.
+  - **No backdrop** (forced-action modal): No backdrop child at all. Use for: network error, re-login, any state where the user MUST take an action to proceed.
+- **Z-order / Sort Order**:
+  - Canvas Sort Order: `0`=Scene, `10`=UIManager Popup stack, `20`=Overlay, `30`=Toast, `100`=Loading/critical. (Defined in `Core/AGENTS.md` — do not override without coordinating UIManager.)
+  - Within a prefab hierarchy, sibling order = paint order (first=lowest, last=highest). Rules: Shadow → `SetAsFirstSibling`; CloseButton → `SetAsLastSibling` (must hit-test above panel content); scene Header → `SetAsLastSibling` within canvas (above TabContent).
+  - Use `Canvas` component with `overrideSorting=true` only for elements that must temporarily escape parent sort order (e.g., dropdown templates). Not for normal UI layers.
+- **Square button Icon**: When `Btn()` detects a square button (`size.x == size.y`), it creates a `Visual/Icon` child with `Stretch-Stretch` anchoring and `Image.preserveAspect=true`. Default idle animation: `UIIconIdleAnimator.GlowSweep(speed=2.2, amount=12)`. Set the sprite manually after creation or via `dynamic_resource.csv` + `LoadDynamicResourceMap()`. Never set `Icon` to `Fixed()` — it must follow the Visual layer size.
+- **`_isCTA` auto-set**: `Btn()` with `color == UI_CTA` auto-sets `UIButtonAnimator._isCTA = true` via `SerializedObject`, enabling `CTAIdle` breathing animation (scale 1.0→1.04 sine, 2.5s period). Do not set `_isCTA` manually in prefab builders — let `Btn()` control it.
+- **LayoutGroup vs Fixed() guidance**:
+  | Pattern | When to use |
+  |---------|-------------|
+  | `Fixed(go, pos, size)` | Known size at build time; absolute position; isolated element |
+  | `Stretch(go)` | Layer fills parent: Shadow, Border, Content, full-screen overlays, backdrops |
+  | `HorizontalLayoutGroup` | N siblings in a row with equal/weighted distribution (nav bar, button row) |
+  | `VerticalLayoutGroup` | N siblings stacked vertically with spacing (settings rows, option lists) |
+  | `GridLayoutGroup` | N × M grid of uniform cells (avatar grid, reward items) |
+  | `LayoutElement` | Child inside LayoutGroup that needs custom preferred size or weight |
+  NEVER place a `Fixed()` element as a direct child of a LayoutGroup — it bypasses layout and causes undefined behavior.
+- **ContentSizeFitter guidance**:
+  | Axis | Use when |
+  |------|---------|
+  | `horizontalFit = PreferredSize` | Single-line label with dynamic text length (gold count, username, tag pill) — add to the label GO only |
+  | `verticalFit = PreferredSize` | Multi-line body text that word-wraps and needs to push parent height (error body, confirm body) |
+  | Both axes | Isolated tooltip or pill with no LayoutGroup ancestor |
+  NEVER set both axes on a child inside a LayoutGroup — causes layout rebuild loop. NEVER add ContentSizeFitter to a container that has a LayoutGroup component.
 - **UI Setup Icon & Layout Override Preservation**: 
   - **Preserve Sprites**: When setting sprites on UI Image components (e.g. Header Avatar/Settings), check if `image.sprite == null` first to preserve manual modifications.
   - **Reuse Existing Objects**: Avoid destroying and recreating objects (e.g., `InstantiatePrefab` or `DestroyImmediate` followed by `Child`) in hierarchy builders. Reusing existing GameObjects using `Transform.Find` keeps the `fileID` structure intact, preventing the final Variant's overrides (e.g., Active states, color, and RectTransform overrides) from breaking.

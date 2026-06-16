@@ -21,6 +21,7 @@ namespace Game.Core.UI
         [SerializeField] private Transform  _itemContainer;
         [SerializeField] private GameObject _itemRowPrefab;
         [SerializeField] private Button     _okButton;
+        [SerializeField] private Button     _closeButton;
 
         private const float ItemDelay    = 0.15f;
         private const float ItemDuration = 0.25f;
@@ -29,6 +30,7 @@ namespace Game.Core.UI
         private void Awake()
         {
             _okButton.onClick.AddListener(Close);
+            if (_closeButton != null) _closeButton.onClick.AddListener(Close);
         }
 
         public void Init(IReadOnlyList<RewardItem> rewards)
