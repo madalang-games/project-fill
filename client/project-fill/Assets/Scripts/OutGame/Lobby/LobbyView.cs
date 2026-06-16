@@ -13,6 +13,7 @@ namespace Game.OutGame.Lobby
         [SerializeField] private GameObject           _homeTabRoot;
         [SerializeField] private GameObject           _shopTabRoot;
         [SerializeField] private GameObject           _rankingTabRoot;
+        [SerializeField] private GameObject           _achievementTabRoot;
         [SerializeField] private RankingTabView       _rankingTabView;
         [SerializeField] private SceneBackgroundView  _sceneBackground;
 
@@ -20,6 +21,8 @@ namespace Game.OutGame.Lobby
         {
             _navBar.OnTabChanged += ShowTab;
         }
+
+        private static bool _attendanceShownThisSession;
 
         private void Start()
         {
@@ -31,6 +34,19 @@ namespace Game.OutGame.Lobby
             {
                 Services.Tutorial.TutorialManager.Instance.CheckLobbyTriggers();
             }
+            TryShowDailyAttendance();
+        }
+
+        // Auto-open the attendance popup once per session on first home entry when today's reward is unclaimed.
+        private void TryShowDailyAttendance()
+        {
+            if (_attendanceShownThisSession || AttendanceApiService.Instance == null) return;
+            _attendanceShownThisSession = true;
+            AttendanceApiService.Instance.FetchStatus(status =>
+            {
+                if (!status.ClaimedToday)
+                    Game.Core.UIManager.Instance?.ShowPopup<AttendancePopupView>();
+            }, _ => { });
         }
 
         private void RefreshGold()
@@ -50,6 +66,7 @@ namespace Game.OutGame.Lobby
             _homeTabRoot?.SetActive(tab == LobbyTab.Home);
             _shopTabRoot?.SetActive(tab == LobbyTab.Shop);
             _rankingTabRoot?.SetActive(tab == LobbyTab.Ranking);
+            _achievementTabRoot?.SetActive(tab == LobbyTab.Achievement);
             _sceneBackground?.PanTo((int)tab);
         }
 
@@ -72,6 +89,13 @@ namespace Game.OutGame.Lobby
         {
             _navBar?.SelectTab(LobbyTab.Shop);
             ShowTab(LobbyTab.Shop);
+        }
+
+        public void GoToRankingChallenge()
+        {
+            _navBar?.SelectTab(LobbyTab.Ranking);
+            ShowTab(LobbyTab.Ranking);
+            _rankingTabView?.SelectChallenge();
         }
     }
 }

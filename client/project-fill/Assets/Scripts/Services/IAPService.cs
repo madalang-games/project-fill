@@ -68,7 +68,7 @@ namespace Game.Services
 
         public IapProduct GetProduct(int infoId)
         {
-            return _products.Find(p => p.id == infoId);
+            return _products.Find(p => p.info_id == infoId);
         }
 
         public IapProduct GetProductByStoreId(string storeProductId)

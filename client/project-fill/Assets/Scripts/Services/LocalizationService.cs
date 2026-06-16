@@ -96,11 +96,12 @@ namespace Game.Services
             if (lines.Length < 2) return new Dictionary<string, string>();
 
             var headers = ParseLine(lines[0]);
-            int langCol = -1, enCol = -1;
+            int langCol = -1, enCol = -1, keyCol = 0;
             for (int i = 0; i < headers.Length; i++)
             {
-                if (headers[i] == langCode) langCol = i;
-                if (headers[i] == "EN")     enCol   = i;
+                if (headers[i] == langCode)     langCol = i;
+                if (headers[i] == "EN")         enCol   = i;
+                if (headers[i].EndsWith("_key")) keyCol = i;
             }
             if (langCol == -1) langCol = enCol;
 
@@ -109,7 +110,7 @@ namespace Game.Services
             {
                 var cols = ParseLine(lines[r]);
                 if (cols.Length == 0) continue;
-                var key = cols[0].Trim();
+                var key = keyCol < cols.Length ? cols[keyCol].Trim() : "";
                 if (string.IsNullOrEmpty(key)) continue;
                 var val = langCol >= 0 && langCol < cols.Length ? cols[langCol].Trim() : "";
                 if (string.IsNullOrEmpty(val) && enCol >= 0 && enCol < cols.Length)

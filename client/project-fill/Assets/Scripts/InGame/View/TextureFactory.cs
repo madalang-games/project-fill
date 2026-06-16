@@ -147,56 +147,127 @@ namespace Game.InGame.View
         // scene background and for Blind-lane chip backs. Colours baked in.
         public static Sprite Circuit(int size = 256, Color? baseColor = null, Color? lineColor = null)
         {
-            var bc = baseColor ?? new Color(0.07f, 0.08f, 0.12f);
-            var lc = lineColor ?? new Color(0.16f, 0.55f, 0.62f);
+            var bc = baseColor ?? new Color(0.07f, 0.08f, 0.12f); // Dark PCB base
+            var lc = lineColor ?? new Color(0.16f, 0.55f, 0.62f); // Traces / neon lines
             string key = $"circ_{size}_{bc}_{lc}";
             return Get(key, () =>
             {
                 var tex = NewTex(size);
                 var rng = new System.Random(12345);
+                
+                // 1. Fill base
                 for (int y = 0; y < size; y++)
                 for (int x = 0; x < size; x++)
                     tex.SetPixel(x, y, bc);
 
+                // 2. Faint grid
                 int grid = Mathf.Max(16, size / 8);
-                var faint = Color.Lerp(bc, lc, 0.18f);
+                var faint = Color.Lerp(bc, lc, 0.12f);
                 for (int x = 0; x < size; x += grid)
                     for (int y = 0; y < size; y++) tex.SetPixel(x, y, faint);
                 for (int y = 0; y < size; y += grid)
                     for (int x = 0; x < size; x++) tex.SetPixel(x, y, faint);
 
-                // a few brighter traces + nodes
-                for (int i = 0; i < size / 24; i++)
+                // 3. Thick power/ground buses on the sides
+                var railColor = Color.Lerp(bc, lc, 0.25f);
+                for (int y = 0; y < size; y++)
                 {
-                    int gx = rng.Next(size / grid) * grid;
-                    int gy = rng.Next(size / grid) * grid;
-                    int len = (rng.Next(2, 5)) * grid;
+                    tex.SetPixel(8, y, railColor);
+                    tex.SetPixel(9, y, railColor);
+                    tex.SetPixel(size - 9, y, railColor);
+                    tex.SetPixel(size - 10, y, railColor);
+                }
+
+                // 4. SMD component footprints (resistors/capacitors)
+                var bodyCol = new Color(0.25f, 0.22f, 0.2f);
+                var termCol = new Color(0.7f, 0.7f, 0.72f);
+                for (int i = 0; i < 8; i++)
+                {
+                    int cx = rng.Next(20, size - 20);
+                    int cy = rng.Next(20, size - 20);
                     bool horiz = rng.Next(2) == 0;
-                    var trace = Color.Lerp(bc, lc, 0.6f);
+                    
+                    // Draw footprint rectangle: body 6x4, terminals 2x4 at ends
+                    int w = horiz ? 10 : 6;
+                    int h = horiz ? 6 : 10;
+                    for (int dy = -h/2; dy <= h/2; dy++)
+                    for (int dx = -w/2; dx <= w/2; dx++)
+                    {
+                        int px = cx + dx;
+                        int py = cy + dy;
+                        if (px >= 0 && px < size && py >= 0 && py < size)
+                        {
+                            bool isTerminal = horiz ? (System.Math.Abs(dx) >= w/2 - 1) : (System.Math.Abs(dy) >= h/2 - 1);
+                            tex.SetPixel(px, py, isTerminal ? termCol : bodyCol);
+                        }
+                    }
+                }
+
+                // 5. Richer circuit traces with 45-degree segments and dual parallel lines
+                var trace = Color.Lerp(bc, lc, 0.55f);
+                for (int i = 0; i < size / 20; i++)
+                {
+                    int x = rng.Next(2, size / grid - 2) * grid;
+                    int y = rng.Next(2, size / grid - 2) * grid;
+                    int len = rng.Next(2, 4) * grid;
+                    int dir = rng.Next(4); // 0: Right, 1: Up, 2: 45deg Right-Up, 3: 45deg Right-Down
+                    
+                    // Draw traces (sometimes parallel for dual signal paths)
+                    bool parallel = rng.Next(3) == 0;
+                    int offset = parallel ? 4 : 0;
+                    
                     for (int t = 0; t < len; t++)
                     {
-                        int px = horiz ? Mathf.Min(gx + t, size - 1) : gx;
-                        int py = horiz ? gy : Mathf.Min(gy + t, size - 1);
-                        tex.SetPixel(px, py, trace);
-                        if (horiz && py + 1 < size) tex.SetPixel(px, py + 1, trace);
-                        if (!horiz && px + 1 < size) tex.SetPixel(px + 1, py, trace);
+                        int px1 = x, py1 = y;
+                        int px2 = x + offset, py2 = y + offset;
+                        
+                        if (dir == 0) { px1 += t; px2 += t; }
+                        else if (dir == 1) { py1 += t; py2 += t; }
+                        else if (dir == 2) { px1 += t; py1 += t; px2 += t; py2 += t; }
+                        else if (dir == 3) { px1 += t; py1 -= t; px2 += t; py2 -= t; }
+                        
+                        DrawPixelThick(tex, px1, py1, trace, size);
+                        if (parallel) DrawPixelThick(tex, px2, py2, trace, size);
                     }
-                    DrawNode(tex, gx, gy, 3, lc);
+                    
+                    // Draw solder pads at ends
+                    DrawSolderPad(tex, x, y, lc, size);
+                    int ex = x, ey = y;
+                    if (dir == 0) ex += len - 1;
+                    else if (dir == 1) ey += len - 1;
+                    else if (dir == 2) { ex += len - 1; ey += len - 1; }
+                    else if (dir == 3) { ex += len - 1; ey -= len - 1; }
+                    DrawSolderPad(tex, ex, ey, lc, size);
                 }
+                
                 tex.Apply();
                 return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f);
             });
         }
 
-        private static void DrawNode(Texture2D tex, int cx, int cy, int rad, Color col)
+        private static void DrawPixelThick(Texture2D tex, int x, int y, Color col, int size)
         {
+            for (int dy = 0; dy <= 1; dy++)
+            for (int dx = 0; dx <= 1; dx++)
+            {
+                int px = x + dx, py = y + dy;
+                if (px >= 0 && py >= 0 && px < size && py < size)
+                    tex.SetPixel(px, py, col);
+            }
+        }
+
+        private static void DrawSolderPad(Texture2D tex, int cx, int cy, Color col, int size)
+        {
+            // Draw a circular ring with a center hole (solder pad)
+            int rad = 4;
             for (int dy = -rad; dy <= rad; dy++)
             for (int dx = -rad; dx <= rad; dx++)
             {
-                if (dx * dx + dy * dy > rad * rad) continue;
+                float d = dx * dx + dy * dy;
+                if (d > rad * rad || d < 1.5f) continue; // circle outline, leave center empty (hole)
                 int px = cx + dx, py = cy + dy;
-                if (px < 0 || py < 0 || px >= tex.width || py >= tex.height) continue;
-                tex.SetPixel(px, py, col);
+                if (px >= 0 && py >= 0 && px < size && py < size)
+                    tex.SetPixel(px, py, col);
             }
         }
     }

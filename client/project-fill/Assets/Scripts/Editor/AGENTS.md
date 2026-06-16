@@ -40,7 +40,17 @@
 | `BuildCleanupPostProcessor.OnPostprocessBuild()` | method | Post-build cleanup entry point; scans and deletes unwanted folders |
 | `PlayerPrefsResetMenu.ResetPrefs()` | method | [MenuItem "Tools/Reset PlayerPrefs"] deletes all PlayerPrefs |
 | `IconAutomator.ShowWindow()` | method | [MenuItem "Tools/Icon Automator"] opens icon automation window |
-| `UIEditorSetup.CreateAllPrefabs()` | method | [MenuItem "Tools/UI Setup/1"] creates all popup/overlay prefabs |
+| `UIEditorSetup.CreateAllPrefabs()` | method | [MenuItem "Tools/UI Setup/1"] creates all popup/overlay prefabs (incl. OutGame: cosmetic/avatar/attendance/achievement/challenge) |
+| `UIEditorSetup.CreateAttendancePopup()` | method | [MenuItem ".../AttendancePopup"] 7 day-card attendance popup |
+| `UIEditorSetup.CreateCosmeticPreviewPopup()` | method | [MenuItem ".../CosmeticPreviewPopup"] cosmetic preview/buy popup |
+| `UIEditorSetup.CreateAvatarPreviewPopup()` | method | [MenuItem ".../AvatarPreviewPopup"] avatar preview + equip/buy popup |
+| `UIEditorSetup.BuildCosmeticCell()` | method | [MenuItem ".../CosmeticItemCell"] cosmetic grid cell prefab (referenced by CosmeticSectionView, built in SetupLobby) |
+| `UIEditorSetup.BuildAvatarCard()` | method | Avatar card prefab (Visual/Icon + SelectedHighlight + LockOverlay + StateText); referenced by AvatarSectionView, built in SetupLobby |
+| `UIEditorSetup.PopulateAvatarSprites(prop,resMap)` | method | Fills an `_avatarSprites` SerializedProperty from avatar.csv; shared by Shop avatar section + AccountPopup |
+| `UIEditorSetup.CreateAchievementToast()` | method | [MenuItem ".../AchievementToast"] slide-down tier-badge toast |
+| `UIEditorSetup.BuildAchievementCell()` | method | Achievement list cell prefab; referenced by AchievementTabView, built in SetupLobby |
+| `UIEditorSetup.CreateDailyChallengePopup()` | method | [MenuItem ".../DailyChallengePopup"] challenge info popup |
+| `UIEditorSetup.SetupLobby()` | method | builds 4 bottom-nav tabs (Shop/Home/Ranking/Achievement), Shop cosmetic + avatar sections, Ranking Challenge tab, and the Achievement tab (migrated from AchievementListPopupView) |
 | `UIEditorSetup.BuildAllFromSpecs()` | method | [MenuItem "Tools/UI Setup/Specs/Build All From Specs"] builds every `UISpecs/*.json`. PROTOTYPE — proves data-driven popup definition; `_`-prefixed JSON skipped |
 | `UIEditorSetup.ResolveColor(s)` | method | spec color string → `UIColorPalette` static property (reflection), else `Hex()` one-off |
 | `UIEditorSetup.ApplyCanvasScaler(go)` | method | Enforces canonical CanvasScaler on any canvas GO: ScaleWithScreenSize, 1080×1920, MatchWidthOrHeight=0.5, referencePixelsPerUnit=100. Called by both `LoadOrCreateCanvas` (load path) and `CreateTempCanvas` (create path). |
@@ -57,7 +67,8 @@
 | `UIEditorSetup.CreateItemTooltip()` | method | Creates `ItemTooltipView.prefab` skeleton in Base/Common; missing Resources/Prefabs/UI variant is created automatically |
 | `UIEditorSetup.CreateVariantIfMissing()` | method | Creates Final prefab variants from Base prefabs; skips when target variant already exists |
 | `UIEditorSetup.MapHierarchyImageSprite()` | method | Maps a sprite key from resMap to an Image at `childPath` inside a loaded prefab |
-| `UIEditorSetup.TMP(parent, name, rect, size, color, text, stringId, category)` | method | Creates TMP_Text with LocalizedText + UITextStyle; AutoFontSize applied when size ≥ 28 (see font size rules) |
+| `UIEditorSetup.TMP(parent, name, rect, size, color, text, stringId, category)` | method | Creates TMP_Text with LocalizedText + UITextStyle; sizing via `ApplyAutoFontSize(tmp, category)` (see font size rules). `size` arg is legacy/unused for sizing — `category` drives the max |
+| `UIEditorSetup.ApplyAutoFontSize(tmp, category)` | method | Single enforcement point of the readability convention: `enableAutoSizing=true`, `fontSizeMin=32`, `fontSizeMax` by category (Header 72 / Button 56 / Normal 40), `fontSize=max`. MANDATORY for every TMP incl. hand-built. `TMP_InputField` is the sole exception (inline fixed min=max=32). No text may have autosize off or any size <32 |
 | `FontLocalizationConfigGenerator.Generate()` | method | [MenuItem "Tools/Localization/Generate Font Config"] creates FontLocalizationConfig.asset from config.json |
 | `StringIds` | class | All client_string.csv key constants; import with `using static Game.Editor.StringIds` |
 | `UnityStageFileWatcher` | class | Active file system watcher for local hot-reloads |
@@ -73,11 +84,12 @@
 - **Button minimum size**: All buttons must be at least **96×96px**. `Btn()` clamps `size = Max(size, 96)` before layout. `CloseBtnAt()` defaults to 96.
 - **Explicit Close Button**: Every popup and bottom-sheet MUST include a visible square `CloseButton` via `CloseBtnAt()`. Transparent backdrop-only dismiss is NOT sufficient. Place at top-right of panel or top-right of bottom-sheet. Wire to View's close handler field.
 - **Responsive Layout**: Use `Stretch()` for elements that must follow parent size. Use `Fixed()` only for fixed-size content. SafeAreaHandler required on all scene canvases.
-- **Text convention**: Every `TMP()` call MUST attach `LocalizedText` (stringId) + `UITextStyle`. Pass `TextCategory` to control AutoFontSize:
-  - `Header` → AutoFontSize 48–72px
-  - `Button` → AutoFontSize 36–56px
-  - `Normal` → AutoFontSize 28–36px
-  - **size < 28**: NO AutoFontSize — use fixed font size only
+- **Text convention (readability)**: Every `TMP()` call MUST attach `LocalizedText` (stringId) + `UITextStyle`. AutoFontSize is **MANDATORY** and font size is **NEVER below 32px**. All sizing goes through `ApplyAutoFontSize(tmp, category)`:
+  - `enableAutoSizing = true` — ALWAYS on; no text (incl. hand-built `Comp<TextMeshProUGUI>`) may have it off
+  - `fontSizeMin = 32` — hard readability floor
+  - `fontSizeMax` by `TextCategory`: **Header 72** (titles render large), **Button 56**, **Normal 40**. `fontSize` starts at max and autosize shrinks to fit down to 32
+  - **Hand-built TMP** MUST call `ApplyAutoFontSize(tmp, category)` — never a bare `fontSize`/`fontSizeMin`/`fontSizeMax`. Use `Header` for prominent titles, `Normal` for body/labels
+  - **`TMP_InputField`** text + placeholder: sole exception — inline fixed `min=max=32` (autosize on, no resize range so the caret/scroll isn't disturbed)
 - **Button color semantics**:
   | color | semantic | examples |
   |-------|----------|---------|
@@ -121,3 +133,8 @@
   - **Reuse Existing Objects**: Avoid destroying and recreating objects (e.g., `InstantiatePrefab` or `DestroyImmediate` followed by `Child`) in hierarchy builders. Reusing existing GameObjects using `Transform.Find` keeps the `fileID` structure intact, preventing the final Variant's overrides (e.g., Active states, color, and RectTransform overrides) from breaking.
   - **Save Flushing**: Always call `AssetDatabase.SaveAssets()` after editing and saving prefabs via `PrefabUtility.SaveAsPrefabAsset` to ensure that Unity saves and remaps Variant overrides correctly on disk.
   - **Single Prefab Menu Items**: All individual UI prefab builder menu items must be defined under `Tools/UI Setup/Prefabs/...`, sorted alphabetically, and their priority indices assigned consecutively. Each builder must print a success log containing `[UIEditorSetup] Saved Base Popup → {path}` on completion.
+- **Final Variant Override Preservation (idempotent builders)**: Builders edit the **Base** prefab only; the **Final variant** (`Final/Scenes/.../*_Base.prefab`, `Resources/Prefabs/UI/*.prefab`) holds the user's inspector overrides (e.g. `BoardView.Skin` sprite). Prefab Variant inheritance absorbs Base changes while keeping overrides, and `CreateVariantIfMissing` skips an existing variant — so a re-run preserves overrides **as long as fileIDs stay stable**. Two anti-patterns reset overrides and are BANNED in any builder:
+  - NEVER `AssetDatabase.DeleteAsset(finalVariantPath)` to "force clean regen" — it drops every override on the variant.
+  - NEVER wholesale-destroy a loaded prefab's children (`for (i = childCount-1 ...) DestroyImmediate(GetChild(i))`) — recreating them churns fileIDs and orphans child-level variant overrides.
+  - NEVER `PrefabUtility.RevertPrefabInstance` a prefab instance placed in a scene (`*.unity`) — it wipes every per-instance override (e.g. `BoardView.Skin` assigned on the InGameCanvas instance in `InGame.unity`). Prefab/variant inheritance already propagates Base structure changes to the instance automatically, so the revert is unnecessary as well as destructive. Re-wire references directly on the existing instance instead.
+  Instead rely on the Find-or-create helpers (`Child()`, `Comp<>`, `Img()`) which reuse existing GameObjects/components by name and keep fileIDs intact (this is what `SetupBoot`/`SetupLobby` do). Targeted removal of a specific obsolete **named** child via `Transform.Find` is allowed (legacy cleanup).

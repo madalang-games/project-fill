@@ -69,18 +69,20 @@ namespace Game.OutGame.Lobby
             }
 
             // 2. Event Badges (Left Area - EventLayoutGroup)
-            // Daily Attendance Event Placeholder
+            // Daily Attendance badge → opens attendance popup
             SpawnBadge(
                 parent: _eventLayoutGroup,
                 iconKey: "ui_flag_icon",
-                labelKey: "nav.ranking", // "Rank" or use generic EVENT label
-                onClick: () =>
-                {
-                    Game.Core.UIManager.Instance?.ShowToast(
-                        LocalizationService.Instance.Get("shop.coming_soon"),
-                        Core.UI.ToastType.Warning
-                    );
-                }
+                labelKey: "home.badge.attendance",
+                onClick: () => Game.Core.UIManager.Instance?.ShowPopup<AttendancePopupView>()
+            );
+
+            // Daily Challenge badge → opens challenge info popup
+            SpawnBadge(
+                parent: _eventLayoutGroup,
+                iconKey: "nav_ranking",
+                labelKey: "home.badge.challenge",
+                onClick: () => Game.Core.UIManager.Instance?.ShowPopup<DailyChallengePopupView>()
             );
         }
 

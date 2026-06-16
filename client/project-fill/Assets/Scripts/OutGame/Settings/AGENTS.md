@@ -6,7 +6,7 @@ Namespace: `Game.OutGame.Settings`
 | file | class | role |
 |------|-------|------|
 | `SettingsPanelView.cs` | `SettingsPanelView` | Bottom-sheet popup: BGM/SFX/ScreenShake/Haptic toggles, language dropdown, version text |
-| `AccountPopupView.cs` | `AccountPopupView` | Avatar/userID; guest → Link Account; OAuth → Switch Account |
+| `AccountPopupView.cs` | `AccountPopupView` | Nickname + userID; guest → Link Account; OAuth → Switch Account. Avatar selection moved to Shop avatar section; achievements moved to lobby Achievement tab. Retains `_avatarSprites` + `GetAvatarSprite` (HeaderView/TutorialOverlay read equipped avatar sprite from this prefab) |
 | `AccountRestartPopupView.cs` | `AccountRestartPopupView` | Inform popup: game restart required; single confirm → FadeToScene("Boot") |
 | `AccountConflictPopupView.cs` | `AccountConflictPopupView` | Shows local vs cloud SaveSnapshot; user picks keep-local or use-cloud |
 
@@ -23,7 +23,7 @@ Namespace: `Game.OutGame.Settings`
 | `AccountPopupView.OnLinkAccount()` | method | Guest only; Google Sign-In → `AuthService.LinkGoogle` → conflict popup or close |
 | `AccountPopupView.OnSwitchAccount()` | method | OAuth only; confirm dialog → Google Sign-In → `AuthService.LoginGoogle`; PID mismatch triggers restart via `CompleteSession` |
 | `AccountPopupView.ResolveConflict(token,selection)` | method | Calls `AuthService.ResolveConflict`; restart handled by `CompleteSession` |
-| `AccountPopupView.SetTabVisuals()` | method | Applies Primary color to current tab and Secondary color to inactive tab via `Button.targetGraphic` |
+| `AccountPopupView.GetAvatarSprite(int)` | method | Resolves equipped avatar sprite from `_avatarSprites`; consumed by `Lobby.HeaderView` + `Core.UI.TutorialOverlay` |
 | `AccountRestartPopupView.Init(onConfirm)` | method | Sets localized strings; confirm button fires `onConfirm` then closes popup |
 | `AccountConflictPopupView._backdropButton` | SerializeField | Interactive backdrop Btn; calls Close() — wired in UIEditorSetup |
 | `AccountConflictPopupView._closeButton` | SerializeField | Square top-right ✕ button; calls Close() |

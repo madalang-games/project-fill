@@ -10,7 +10,7 @@ Namespace: `Game.Services`
 ## Files
 | file | class | role |
 |------|-------|------|
-| `StageDataService.cs` | `StageDataService` | DDOL singleton; loads Stage CSV via CsvLoader; GetStage(id), GetAll(), MaxStageId() |
+| `StageDataService.cs` | `StageDataService` | DDOL singleton (lazy-instantiated if not in scene, e.g. InGame entered without Boot); loads Stage CSV via CsvLoader; GetStage(id), GetAll(), MaxStageId() |
 | `DynamicResourceService.cs` | `DynamicResourceService` | DDOL singleton; loads dynamic_resource CSV; GetSprite(resourceKey) via Resources.Load (Resources-path entries only) |
 | `CurrencyDataService.cs` | `CurrencyDataService` | DDOL singleton; loads currency CSV; GetByRewardType(string) |
 | `PlayerProgressService.cs` | `PlayerProgressService` | DDOL singleton; gold balance, per-stage stars/unlock, booster inventories |
@@ -29,6 +29,10 @@ Namespace: `Game.Services`
 | `TutorialApiService.cs` | `TutorialApiService` | Server-backed tutorial progress fetch + complete API client |
 | `ErrorResponseJson.cs` | `ErrorResponseJson` | Serializable helper for server error code extraction |
 | `PlayerApiService.cs` | `PlayerApiService` | DDOL singleton; `GET /api/player/progress` fetch; deserializes to `PlayerProgressResponse` |
+| `CosmeticApiService.cs` | `CosmeticApiService` | DDOL singleton; `/api/cosmetics` list/unlock/active client; syncs gold on unlock |
+| `AttendanceApiService.cs` | `AttendanceApiService` | DDOL singleton; `/api/attendance` status + claim client; syncs gold on claim |
+| `AchievementApiService.cs` | `AchievementApiService` | DDOL singleton; `/api/achievements` list + claim client; syncs gold on claim |
+| `DailyChallengeApiService.cs` | `DailyChallengeApiService` | DDOL singleton; `/api/daily-challenge` today/clear/ranking/streak client; syncs gold on clear |
 | `NetworkRetryOptions.cs` | `NetworkRetryOptions` | Options class for HTTP retries with exponential backoff, jitter, loading overlay, and toast messages |
 | `SoundManager.cs` | `SoundManager` | DDOL singleton; BGM + SFX playback; SfxCatalog-based PlaySfx(SfxId) with pitch/cooldown; volume + mute in PlayerPrefs |
 

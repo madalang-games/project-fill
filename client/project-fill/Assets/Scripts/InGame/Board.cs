@@ -47,10 +47,30 @@ namespace Game.InGame
         {
             if (!CanMoveTo(from, to)) return null;
             SaveSnapshot();
-            var chip = _lanes[from].Pop();
-            _lanes[to].Push(chip);
+            // A-R08: pour the contiguous same-type top run onto the destination one chip at a time
+            // (the top chip peels first and lands lowest, the next stacks above it), capped by the
+            // destination capacity. The whole pour counts as a single move.
+            int count = MovableCount(from, to);
+            for (int i = 0; i < count; i++) _lanes[to].Push(_lanes[from].Pop());
             MoveCount++;
             return ResolveCompletions();
+        }
+
+        // How many chips Move(from,to) would relocate: contiguous same-type run from the source
+        // top, capped by destination free capacity. 0 = illegal move. Drives batch flight FX.
+        public int MovableCount(int from, int to)
+        {
+            if (!CanMoveTo(from, to)) return 0;
+            var src  = _lanes[from];
+            var type = src.TopChip!.Value.Type;
+            int free = SlotLane.Capacity - _lanes[to].Count;
+            int n = 0;
+            for (int i = src.Count - 1; i >= 0 && n < free; i--)
+            {
+                if (src.Chips[i].Type != type) break;
+                n++;
+            }
+            return n;
         }
 
         // Absorb any complete lanes, honoring Relay order + Locked-lane unlocks. Cascades.

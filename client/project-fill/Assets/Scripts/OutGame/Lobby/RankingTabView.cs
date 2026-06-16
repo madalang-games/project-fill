@@ -2,6 +2,8 @@ using Game.Services;
 using Game.Utils;
 using TMPro;
 using System.Collections.Generic;
+using System.Linq;
+using ProjectFill.Contracts.Ranking;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -11,6 +13,7 @@ namespace Game.OutGame.Lobby
     {
         [SerializeField] private Button _starsTabButton;
         [SerializeField] private Button _maxStageTabButton;
+        [SerializeField] private Button _challengeTabButton;
         [SerializeField] private TMP_Text _titleText;
         [SerializeField] private TMP_Text _myRankText;
         [SerializeField] private TMP_Text _entriesText;
@@ -49,9 +52,14 @@ namespace Game.OutGame.Lobby
                 _starsTabButton.onClick.AddListener(() => Select("stars"));
             if (_maxStageTabButton != null)
                 _maxStageTabButton.onClick.AddListener(() => Select("max-stage"));
+            if (_challengeTabButton != null)
+                _challengeTabButton.onClick.AddListener(() => Select("challenge"));
         }
 
         private void OnEnable() => Refresh();
+
+        /// <summary>Switch to the daily-challenge ranking sub-tab (called from DailyChallengePopupView).</summary>
+        public void SelectChallenge() => Select("challenge");
 
         public Sprite GetAvatarSprite(int avatarId)
         {
@@ -69,6 +77,7 @@ namespace Game.OutGame.Lobby
         public void Refresh()
         {
             UpdateTabButtonColors();
+            if (_rankingType == "challenge") { RefreshChallenge(); return; }
             var api = RankingApiService.Instance;
             if (api == null)
             {
@@ -175,6 +184,59 @@ namespace Game.OutGame.Lobby
             });
         }
 
+        private void RefreshChallenge()
+        {
+            var loc = LocalizationService.Instance;
+            var api = DailyChallengeApiService.Instance;
+            if (api == null) { SetUnavailable(); return; }
+
+            if (_titleText != null) _titleText.text = loc.Get("ranking.tab.challenge");
+            if (_myRankText != null) _myRankText.text = loc.Get("lobby.ranking.my_rank_empty");
+            if (_entriesText != null) _entriesText.text = loc.Get("lobby.ranking.loading");
+
+            api.FetchRanking(0, PageLimit, resp =>
+            {
+                if (resp.Entries.Count == 0)
+                {
+                    if (_entriesText != null) _entriesText.text = loc.Get("lobby.ranking.no_data");
+                    if (_virtualizedScrollRect != null) _virtualizedScrollRect.gameObject.SetActive(false);
+                    if (_myRankPin != null) _myRankPin.gameObject.SetActive(false);
+                    return;
+                }
+
+                var mapped = resp.Entries
+                    .Select(e => new RankingEntryDto { Rank = e.Rank, UserId = e.UserId, DisplayName = e.DisplayName, AvatarId = e.AvatarId, Score = e.MovesUsed })
+                    .ToList();
+
+                if (_virtualizedScrollRect != null)
+                {
+                    if (_entriesText != null) _entriesText.gameObject.SetActive(false);
+                    _virtualizedScrollRect.gameObject.SetActive(true);
+                    _virtualizedScrollRect.Init(mapped.Count, (idx, go) =>
+                    {
+                        if (idx < 0 || idx >= mapped.Count) return;
+                        var view = go.GetComponent<RankingItemView>();
+                        if (view != null) view.Bind(mapped[idx], GetAvatarSprite(mapped[idx].AvatarId), null);
+                    });
+                }
+
+                var me = resp.Entries.FirstOrDefault(e => e.IsMe);
+                if (me != null && _myRankPin != null)
+                {
+                    _myRankPin.gameObject.SetActive(true);
+                    var meDto = new RankingEntryDto { Rank = me.Rank, UserId = me.UserId, DisplayName = me.DisplayName, AvatarId = me.AvatarId, Score = me.MovesUsed };
+                    _myRankPin.Bind(meDto, GetAvatarSprite(me.AvatarId), null);
+                    _myRankPin.SetHighlight(true);
+                    if (_myRankText != null)
+                        _myRankText.text = string.Format(loc.Get("lobby.ranking.my_rank_format"), me.Rank, me.MovesUsed);
+                }
+                else if (_myRankPin != null)
+                {
+                    _myRankPin.gameObject.SetActive(false);
+                }
+            }, _ => SetUnavailable());
+        }
+
         private void Select(string rankingType)
         {
             if (_rankingType == rankingType)
@@ -190,6 +252,8 @@ namespace Game.OutGame.Lobby
                 _starsTabButton.targetGraphic.color = _rankingType == "stars" ? _activeTabColor : _inactiveTabColor;
             if (_maxStageTabButton != null && _maxStageTabButton.targetGraphic != null)
                 _maxStageTabButton.targetGraphic.color = _rankingType == "max-stage" ? _activeTabColor : _inactiveTabColor;
+            if (_challengeTabButton != null && _challengeTabButton.targetGraphic != null)
+                _challengeTabButton.targetGraphic.color = _rankingType == "challenge" ? _activeTabColor : _inactiveTabColor;
         }
 
         private void SetUnavailable()

@@ -32,6 +32,7 @@ namespace Game.Editor
         private const string BaseCommonPath  = "Assets/UI/Prefabs/Base/Common";
         private const string BaseScenesPath  = "Assets/UI/Prefabs/Base/Scenes";
         private const string PrefabFinal     = "Assets/UI/Prefabs/Final";     // Destination for Scene Canvases (Final Variants)
+        private const string PrefabsGamePath = "Assets/Resources/Prefabs/Game"; // Runtime-instantiated gameplay prefabs (Chip/Lane/SignalNode)
 
         // True when current root was loaded via LoadPrefabContents — Save/SaveScenePrefab use this to choose cleanup
         private static bool _prefabWasLoaded;
@@ -87,6 +88,20 @@ namespace Game.Editor
             CreateProductCardPrefab();
             CreateShopCategoryHeader();
             CreateItemTooltip();
+            CreateStuckPopup();
+            CreateClearPopup();
+
+            // OutGame systems popups (cosmetic/avatar sections + cells built inside SetupLobby)
+            CreateCosmeticPreviewPopup();
+            CreateAvatarPreviewPopup();
+            CreateAttendancePopup();
+            CreateAchievementToast();
+            CreateDailyChallengePopup();
+
+            // Signal Sort gameplay prefabs — must exist before SetupInGame wires them
+            CreateInGameChip();
+            CreateInGameLane();
+            CreateInGameSignalNode();
 
             // Generate Scenes as well
             SetupBoot();
@@ -133,8 +148,23 @@ namespace Game.Editor
         [MenuItem("Tools/UI Setup/Prefabs/IAPProductCard",  false, 117)]
         static void CreateIAPProductCardSingle() { EnsureDirs(); CreateProductCardPrefab(); AssetDatabase.Refresh(); }
 
+        [MenuItem("Tools/UI Setup/Prefabs/ClearPopup",       false, 135)]
+        static void CreateClearPopupSingle()     { EnsureDirs(); CreateClearPopup();    AssetDatabase.Refresh(); }
+
         [MenuItem("Tools/UI Setup/Prefabs/InGameCanvas",     false, 118)]
         static void CreateInGameCanvasSingle()   { EnsureDirs(); SetupInGame();          AssetDatabase.Refresh(); }
+
+        [MenuItem("Tools/UI Setup/Prefabs/InGameChip",       false, 136)]
+        static void CreateInGameChipSingle()     { EnsureDirs(); CreateInGameChip();      AssetDatabase.Refresh(); }
+
+        [MenuItem("Tools/UI Setup/Prefabs/InGameLane",       false, 137)]
+        static void CreateInGameLaneSingle()     { EnsureDirs(); CreateInGameLane();      AssetDatabase.Refresh(); }
+
+        [MenuItem("Tools/UI Setup/Prefabs/InGameSignalNode", false, 138)]
+        static void CreateInGameSignalNodeSingle() { EnsureDirs(); CreateInGameSignalNode(); AssetDatabase.Refresh(); }
+
+        [MenuItem("Tools/UI Setup/Prefabs/StuckPopup",       false, 139)]
+        static void CreateStuckPopupSingle()     { EnsureDirs(); CreateStuckPopup();    AssetDatabase.Refresh(); }
 
         [MenuItem("Tools/UI Setup/Prefabs/ItemTooltip",      false, 120)]
         static void CreateItemTooltipSingle()     { EnsureDirs(); CreateItemTooltip();     AssetDatabase.Refresh(); }
@@ -177,6 +207,24 @@ namespace Game.Editor
 
         [MenuItem("Tools/UI Setup/Prefabs/TutorialOverlay",  false, 133)]
         static void CreateTutorialOverlaySingle() { EnsureDirs(); CreateTutorialOverlay(); AssetDatabase.Refresh(); }
+
+        [MenuItem("Tools/UI Setup/Prefabs/AvatarPreviewPopup", false, 140)]
+        static void CreateAvatarPreviewPopupSingle() { EnsureDirs(); CreateAvatarPreviewPopup(); AssetDatabase.Refresh(); }
+
+        [MenuItem("Tools/UI Setup/Prefabs/AchievementToast", false, 141)]
+        static void CreateAchievementToastSingle() { EnsureDirs(); CreateAchievementToast(); AssetDatabase.Refresh(); }
+
+        [MenuItem("Tools/UI Setup/Prefabs/AttendancePopup", false, 142)]
+        static void CreateAttendancePopupSingle() { EnsureDirs(); CreateAttendancePopup(); AssetDatabase.Refresh(); }
+
+        [MenuItem("Tools/UI Setup/Prefabs/CosmeticItemCell", false, 143)]
+        static void CreateCosmeticItemCellSingle() { EnsureDirs(); BuildCosmeticCell(); AssetDatabase.Refresh(); }
+
+        [MenuItem("Tools/UI Setup/Prefabs/CosmeticPreviewPopup", false, 144)]
+        static void CreateCosmeticPreviewPopupSingle() { EnsureDirs(); CreateCosmeticPreviewPopup(); AssetDatabase.Refresh(); }
+
+        [MenuItem("Tools/UI Setup/Prefabs/DailyChallengePopup", false, 145)]
+        static void CreateDailyChallengePopupSingle() { EnsureDirs(); CreateDailyChallengePopup(); AssetDatabase.Refresh(); }
 
         static void SetupBoot()
         {
@@ -282,9 +330,11 @@ namespace Game.Editor
             var shopBtn    = BtnNavTab(navBar, "ShopButton",    UI_BG_MID, "Shop", NavShop);
             var homeBtn    = BtnNavTab(navBar, "HomeButton",    UI_BG_MID, "Home", NavHome);
             var rankBtn    = BtnNavTab(navBar, "RankingButton", UI_BG_MID, "Rank", NavRanking);
+            var achBtn     = BtnNavTab(navBar, "AchievementButton", UI_BG_MID, "Award", "popup.achievement.title");
             if (resMap.TryGetValue("nav_shop",    out string nsp)) { var s = AssetDatabase.LoadAssetAtPath<Sprite>(nsp); if (s != null) { var i = shopBtn.transform.Find("Visual/Icon")?.GetComponent<Image>(); if (i != null) i.sprite = s; } }
             if (resMap.TryGetValue("nav_home",    out string nhp)) { var s = AssetDatabase.LoadAssetAtPath<Sprite>(nhp); if (s != null) { var i = homeBtn.transform.Find("Visual/Icon")?.GetComponent<Image>(); if (i != null) i.sprite = s; } }
             if (resMap.TryGetValue("nav_ranking", out string nrp)) { var s = AssetDatabase.LoadAssetAtPath<Sprite>(nrp); if (s != null) { var i = rankBtn.transform.Find("Visual/Icon")?.GetComponent<Image>(); if (i != null) i.sprite = s; } }
+            if (resMap.TryGetValue("nav_achievement", out string nap)) { var s = AssetDatabase.LoadAssetAtPath<Sprite>(nap); if (s != null) { var i = achBtn.transform.Find("Visual/Icon")?.GetComponent<Image>(); if (i != null) i.sprite = s; } }
 
             // Tab content area — Canvas direct child so top padding is in screen space (aligns with Header)
             var tabContent = Child(canvas, "TabContent");
@@ -487,15 +537,93 @@ namespace Game.Editor
             var ribbonBundles = shopContentGo.transform.Find("RibbonBundles");
             if (ribbonBundles != null) Object.DestroyImmediate(ribbonBundles.gameObject);
 
+            // ── Cosmetic section (appended below IAP; ShopTabView keeps it last sibling) ──
+            var cosmeticCell = BuildCosmeticCell();
+            var cosmeticSection = Child(shopContentGo, "CosmeticSection");
+            var csRt = RT(cosmeticSection); csRt.sizeDelta = new Vector2(0, 780);
+            var csLe = Comp<LayoutElement>(cosmeticSection); csLe.preferredHeight = 780; csLe.flexibleWidth = 1;
+            var csView = Comp<CosmeticSectionView>(cosmeticSection);
+
+            TMP(cosmeticSection, "SectionTitle", Center(0, 350, 600, 60), 26, UI_CTA, "Cosmetics", "shop.cosmetic.section_title", TextCategory.Header);
+
+            var catTabs = Child(cosmeticSection, "CategoryTabs");
+            var ctRt = RT(catTabs);
+            ctRt.anchorMin = new Vector2(0.5f, 1f); ctRt.anchorMax = new Vector2(0.5f, 1f); ctRt.pivot = new Vector2(0.5f, 1f);
+            ctRt.anchoredPosition = new Vector2(0, -90); ctRt.sizeDelta = new Vector2(720, 80);
+            var ctHlg = Comp<HorizontalLayoutGroup>(catTabs);
+            ctHlg.spacing = 10; ctHlg.childAlignment = TextAnchor.MiddleCenter;
+            ctHlg.childControlWidth = true; ctHlg.childControlHeight = true;
+            ctHlg.childForceExpandWidth = true; ctHlg.childForceExpandHeight = true;
+            var chipTab = BtnHlg(catTabs, "ChipTab", UI_CTA, "Chip", "shop.cosmetic.tab_chip");
+            var laneTab = BtnHlg(catTabs, "LaneTab", UI_BG_MID, "Lane", "shop.cosmetic.tab_lane");
+            var boardTab = BtnHlg(catTabs, "BoardTab", UI_BG_MID, "Board", "shop.cosmetic.tab_board");
+
+            var grid = Child(cosmeticSection, "Grid");
+            var gRt = RT(grid);
+            gRt.anchorMin = new Vector2(0, 0); gRt.anchorMax = new Vector2(1, 1);
+            gRt.offsetMin = new Vector2(20, 20); gRt.offsetMax = new Vector2(-20, -190);
+            var glg = Comp<GridLayoutGroup>(grid);
+            glg.cellSize = new Vector2(210, 240); glg.spacing = new Vector2(14, 14);
+            glg.constraint = GridLayoutGroup.Constraint.FixedColumnCount; glg.constraintCount = 4;
+            glg.childAlignment = TextAnchor.UpperCenter;
+
+            var soCs = new SerializedObject(csView);
+            soCs.FindProperty("_chipTabButton").objectReferenceValue = chipTab.GetComponent<Button>();
+            soCs.FindProperty("_laneTabButton").objectReferenceValue = laneTab.GetComponent<Button>();
+            soCs.FindProperty("_boardTabButton").objectReferenceValue = boardTab.GetComponent<Button>();
+            soCs.FindProperty("_gridContainer").objectReferenceValue = gRt;
+            soCs.FindProperty("_cellPrefab").objectReferenceValue = cosmeticCell;
+            soCs.ApplyModifiedProperties();
+
+            // ── Avatar section (appended below the cosmetic section; ShopTabView keeps it last sibling) ──
+            var avatarCard = BuildAvatarCard();
+            var avatarSection = Child(shopContentGo, "AvatarSection");
+            var asRt = RT(avatarSection); asRt.sizeDelta = new Vector2(0, 380);
+            var asLe = Comp<LayoutElement>(avatarSection); asLe.preferredHeight = 380; asLe.flexibleWidth = 1;
+            var avView = Comp<AvatarSectionView>(avatarSection);
+
+            TMP(avatarSection, "SectionTitle", Center(0, 150, 600, 60), 26, UI_CTA, "Avatars", PopupAccountLabelSelectAvatar, TextCategory.Header);
+
+            // Horizontal scroll carousel of avatar cards
+            var avScrollGo = Child(avatarSection, "AvatarScroll");
+            var avScrollRt = RT(avScrollGo);
+            avScrollRt.anchorMin = new Vector2(0, 0); avScrollRt.anchorMax = new Vector2(1, 1);
+            avScrollRt.offsetMin = new Vector2(20, 20); avScrollRt.offsetMax = new Vector2(-20, -110);
+            var avScroll = Comp<ScrollRect>(avScrollGo);
+            avScroll.horizontal = true; avScroll.vertical = false;
+            var avVp = Child(avScrollGo, "Viewport"); Stretch(avVp); Comp<RectMask2D>(avVp);
+            var avVpImg = Img(avVp, new Color(0, 0, 0, 0)); avVpImg.raycastTarget = true;
+            avScroll.viewport = RT(avVp);
+            var avContent = Child(avVp, "Content");
+            var avContentRt = RT(avContent);
+            avContentRt.anchorMin = new Vector2(0, 0); avContentRt.anchorMax = new Vector2(0, 1); avContentRt.pivot = new Vector2(0, 0.5f);
+            avContentRt.sizeDelta = new Vector2(0, 0);
+            avScroll.content = avContentRt;
+            var avHlg = Comp<HorizontalLayoutGroup>(avContent);
+            avHlg.spacing = 14; avHlg.childAlignment = TextAnchor.MiddleLeft;
+            avHlg.childControlWidth = false; avHlg.childControlHeight = false;
+            avHlg.childForceExpandWidth = false; avHlg.childForceExpandHeight = false;
+            avHlg.padding = new RectOffset(10, 10, 10, 10);
+            var avCsf = Comp<ContentSizeFitter>(avContent); avCsf.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            var soAv = new SerializedObject(avView);
+            soAv.FindProperty("_gridContainer").objectReferenceValue = avContentRt;
+            soAv.FindProperty("_cardPrefab").objectReferenceValue = avatarCard;
+            PopulateAvatarSprites(soAv.FindProperty("_avatarSprites"), resMap);
+            soAv.ApplyModifiedProperties();
+
             // Wire ShopTabView refs
             var soShop = new SerializedObject(shopView);
             soShop.FindProperty("_contentContainer").objectReferenceValue = shopContentRt;
+            soShop.FindProperty("_cosmeticSection").objectReferenceValue = csRt;
+            soShop.FindProperty("_avatarSection").objectReferenceValue = asRt;
             soShop.ApplyModifiedProperties();
 
             var rankingTab = Child(tabContent, "RankingTab"); Stretch(rankingTab); rankingTab.SetActive(false);
             var rankingView = Comp<RankingTabView>(rankingTab);
-            var starsTab = Btn(rankingTab, "StarsTabButton", new Vector2(-230, 700), new Vector2(300, 80), UI_PRIMARY, "Stars", LobbyRankingTabStars);
-            var maxStageTab = Btn(rankingTab, "MaxStageTabButton", new Vector2(230, 700), new Vector2(300, 80), UI_BG_MID, "Max Stage", LobbyRankingTabMaxStage);
+            var starsTab = Btn(rankingTab, "StarsTabButton", new Vector2(-280, 700), new Vector2(260, 80), UI_PRIMARY, "Stars", LobbyRankingTabStars);
+            var maxStageTab = Btn(rankingTab, "MaxStageTabButton", new Vector2(0, 700), new Vector2(260, 80), UI_BG_MID, "Max Stage", LobbyRankingTabMaxStage);
+            var challengeTab = Btn(rankingTab, "ChallengeTabButton", new Vector2(280, 700), new Vector2(260, 80), UI_BG_MID, "Challenge", "ranking.tab.challenge");
             
             var rankTitle = TMP(rankingTab, "TitleText", Center(0, 580, 760, 70), 30, UI_CTA, "Star Ranking", LobbyRankingStarsTitle, TextCategory.Header);
             var myRank = TMP(rankingTab, "MyRankText", Center(0, 490, 760, 80), 24, UI_TEXT, "My Rank: -", LobbyRankingMyRankEmpty, TextCategory.Normal);
@@ -606,6 +734,53 @@ namespace Game.Editor
             }
 
 
+            // ── AchievementTab (bottom-nav tab, right of Ranking) — migrated from AchievementListPopupView ──
+            var achievementCell = BuildAchievementCell();
+            var achievementTab = Child(tabContent, "AchievementTab"); Stretch(achievementTab); achievementTab.SetActive(false);
+            var achView = Comp<AchievementTabView>(achievementTab);
+
+            TMP(achievementTab, "TitleText", Center(0, 700, 760, 70), 30, UI_CTA, "Achievements", "popup.achievement.title", TextCategory.Header);
+
+            var achTabRow = Child(achievementTab, "TabRow");
+            var achTabRowRt = RT(achTabRow);
+            achTabRowRt.anchorMin = new Vector2(0.5f, 1f); achTabRowRt.anchorMax = new Vector2(0.5f, 1f); achTabRowRt.pivot = new Vector2(0.5f, 1f);
+            achTabRowRt.anchoredPosition = new Vector2(0, -80); achTabRowRt.sizeDelta = new Vector2(920, 80);
+            var achTabHlg = Comp<HorizontalLayoutGroup>(achTabRow);
+            achTabHlg.spacing = 8; achTabHlg.childAlignment = TextAnchor.MiddleCenter;
+            achTabHlg.childControlWidth = true; achTabHlg.childControlHeight = true;
+            achTabHlg.childForceExpandWidth = true; achTabHlg.childForceExpandHeight = true;
+            var prgTab = BtnHlg(achTabRow, "ProgressionTab", UI_CTA, "Progress", "achievement.tab.progression");
+            var sklTab = BtnHlg(achTabRow, "SkillTab", UI_BG_MID, "Skill", "achievement.tab.skill");
+            var dedTab = BtnHlg(achTabRow, "DedicationTab", UI_BG_MID, "Dedication", "achievement.tab.dedication");
+            var colTab = BtnHlg(achTabRow, "CollectionTab", UI_BG_MID, "Collection", "achievement.tab.collection");
+
+            var achScroll = Child(achievementTab, "ScrollView");
+            var achSrt = RT(achScroll);
+            achSrt.anchorMin = new Vector2(0.5f, 0f); achSrt.anchorMax = new Vector2(0.5f, 1f); achSrt.pivot = new Vector2(0.5f, 0.5f);
+            achSrt.sizeDelta = new Vector2(900, -260); achSrt.anchoredPosition = new Vector2(0, -100);
+            var achSr = Comp<ScrollRect>(achScroll); achSr.horizontal = false; achSr.vertical = true;
+            var achVp = Child(achScroll, "Viewport"); Stretch(achVp); Comp<RectMask2D>(achVp);
+            var achVpImg = Img(achVp, new Color(0, 0, 0, 0)); achVpImg.raycastTarget = true;
+            achSr.viewport = RT(achVp);
+            var achContent = Child(achVp, "Content");
+            var achCrt = RT(achContent); achCrt.anchorMin = new Vector2(0, 1); achCrt.anchorMax = new Vector2(1, 1); achCrt.pivot = new Vector2(0.5f, 1); achCrt.sizeDelta = new Vector2(0, 0);
+            achSr.content = achCrt;
+            var achVlg = Comp<VerticalLayoutGroup>(achContent); achVlg.spacing = 10; achVlg.padding = new RectOffset(20, 20, 20, 20);
+            achVlg.childAlignment = TextAnchor.UpperCenter; achVlg.childControlWidth = true; achVlg.childControlHeight = true;
+            achVlg.childForceExpandWidth = false; achVlg.childForceExpandHeight = false;
+            var achCsf = Comp<ContentSizeFitter>(achContent); achCsf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            var soAch = new SerializedObject(achView);
+            soAch.FindProperty("_progressionTab").objectReferenceValue = prgTab.GetComponent<Button>();
+            soAch.FindProperty("_skillTab").objectReferenceValue = sklTab.GetComponent<Button>();
+            soAch.FindProperty("_dedicationTab").objectReferenceValue = dedTab.GetComponent<Button>();
+            soAch.FindProperty("_collectionTab").objectReferenceValue = colTab.GetComponent<Button>();
+            soAch.FindProperty("_listContainer").objectReferenceValue = achCrt;
+            soAch.FindProperty("_cellPrefab").objectReferenceValue = achievementCell;
+            soAch.FindProperty("_activeTabColor").colorValue = UI_CTA;
+            soAch.FindProperty("_inactiveTabColor").colorValue = UI_BG_MID;
+            soAch.ApplyModifiedProperties();
+
             // Wire LobbyView refs
             var soLobby = new SerializedObject(canvas.GetComponent<LobbyView>());
             soLobby.FindProperty("_header").objectReferenceValue      = hv;
@@ -613,12 +788,14 @@ namespace Game.Editor
             soLobby.FindProperty("_homeTabRoot").objectReferenceValue = homeTab;
             soLobby.FindProperty("_shopTabRoot").objectReferenceValue = shopTab;
             soLobby.FindProperty("_rankingTabRoot").objectReferenceValue = rankingTab;
+            soLobby.FindProperty("_achievementTabRoot").objectReferenceValue = achievementTab;
             soLobby.FindProperty("_rankingTabView").objectReferenceValue = rankingView;
             soLobby.ApplyModifiedProperties();
 
             var soRanking = new SerializedObject(rankingView);
             soRanking.FindProperty("_starsTabButton").objectReferenceValue = starsTab.GetComponent<Button>();
             soRanking.FindProperty("_maxStageTabButton").objectReferenceValue = maxStageTab.GetComponent<Button>();
+            soRanking.FindProperty("_challengeTabButton").objectReferenceValue = challengeTab.GetComponent<Button>();
             soRanking.FindProperty("_titleText").objectReferenceValue = rankTitle;
             soRanking.FindProperty("_myRankText").objectReferenceValue = myRank;
             soRanking.FindProperty("_entriesText").objectReferenceValue = entries;
@@ -690,9 +867,11 @@ namespace Game.Editor
             soNav.FindProperty("_shopButton").objectReferenceValue       = shopBtn.GetComponent<Button>();
             soNav.FindProperty("_homeButton").objectReferenceValue       = homeBtn.GetComponent<Button>();
             soNav.FindProperty("_rankingButton").objectReferenceValue    = rankBtn.GetComponent<Button>();
+            soNav.FindProperty("_achievementButton").objectReferenceValue = achBtn.GetComponent<Button>();
             soNav.FindProperty("_shopHighlight").objectReferenceValue    = shopBtn.transform.Find("Visual/Icon").GetComponent<Image>();
             soNav.FindProperty("_homeHighlight").objectReferenceValue    = homeBtn.transform.Find("Visual/Icon").GetComponent<Image>();
             soNav.FindProperty("_rankingHighlight").objectReferenceValue = rankBtn.transform.Find("Visual/Icon").GetComponent<Image>();
+            soNav.FindProperty("_achievementHighlight").objectReferenceValue = achBtn.transform.Find("Visual/Icon").GetComponent<Image>();
             soNav.ApplyModifiedProperties();
 
             // Wire HeaderView
@@ -708,50 +887,331 @@ namespace Game.Editor
             SaveScenePrefab(canvas, "Lobby", _lobbyLoaded);
         }
 
+        // Signal Sort scene canvas: authored chrome (HUD / Signal Panel container / Lanes container /
+        // booster bar / flight layer) + BoardView binder. Lanes/chips/panel nodes are instantiated at
+        // runtime from the Game prefabs; stuck/clear popups route through UIManager.
         static void SetupInGame()
         {
+            // Reuse the existing Base prefab + children (Child()/Comp<> are Find-or-create) so the Final
+            // variant's inspector overrides (e.g. BoardView.Skin) survive regen. NEVER delete the Final
+            // variant or wholesale-destroy children here — that churns fileIDs and resets overrides.
             var (canvas, _inGameLoaded) = LoadOrCreateCanvas("InGame");
+
             Comp<UIScreenShake>(canvas);
-            var resMapInGame = LoadDynamicResourceMap();
+            var board = Comp<BoardView>(canvas);
 
-            // HUD — top 240px fixed area (generous for casual game feel)
-            var hud = Child(canvas, "HUD");
-            TopStrip(hud, 240);
-            Img(hud, new Color(0, 0, 0, 0)); // Transparent container
-            Comp<HUDView>(hud);
+            // SafeAreaRoot — fills Screen.safeArea
+            var safeRoot = Child(canvas, "SafeAreaRoot"); Stretch(safeRoot); Comp<SafeAreaHandler>(safeRoot);
 
-            // Pause button — top-left square button
-            var pauseBtn = Btn(hud, "PauseButton", new Vector2(-460, -90), new Vector2(100, 100), UI_PRIMARY, "");
+            // Background — procedural circuit applied at runtime when sprite is unset (belongs to canvas directly so it reaches physical screen edges)
+            var bg = Child(canvas, "Background"); Stretch(bg);
+            var bgImg = Img(bg, UI_BG_DEEP); bgImg.raycastTarget = false;
+            bg.transform.SetAsFirstSibling();
+            bg.SetActive(false);
+
+            // HUD — top strip: stage label + gimmick subtitle + move counter, plus dev controls (child of safeRoot)
+            var hud = Child(safeRoot, "HUD"); TopStrip(hud, 240);
+            Img(hud, UI_BG_MID);
+
+            // Positioning relative to center of the 240px HUD (vertical center is Y = -120 local)
+            var stageText = TMP(hud, "StageText", Center(-200, 0, 600, 100), 40, UI_TEXT, "Stage", null, TextCategory.Header);
+            stageText.alignment = TextAlignmentOptions.Left;
+            Comp<LocalizedText>(stageText.gameObject);
+            Comp<UITextStyle>(stageText.gameObject).ApplyStyle();
+
+            // Resources mapping
+            var resMap = LoadDynamicResourceMap();
+
+            // Pause button at top right (width 96x96, square design)
+            var pauseBtn = Btn(hud, "PauseButton", new Vector2(470, 0), new Vector2(96, 96), UI_BG_DEEP, "");
             var pauseIconImg = pauseBtn.transform.Find("Visual/Icon")?.GetComponent<Image>();
-            if (pauseIconImg != null && resMapInGame.TryGetValue("ui_pause_icon", out string pip))
+            if (pauseIconImg != null && resMap.TryGetValue("ui_pause_icon", out string pausePath))
             {
-                var spr = AssetDatabase.LoadAssetAtPath<Sprite>(pip);
+                var spr = AssetDatabase.LoadAssetAtPath<Sprite>(pausePath);
                 if (spr != null) { pauseIconImg.sprite = spr; pauseIconImg.preserveAspect = true; }
             }
 
-            // StageInfo — shows stage number; background colored by DifficultyStyle at runtime; SkullBadge for Hard
-            var stageInfo = Child(hud, "StageInfo");
-            Fixed(stageInfo, new Vector2(-290f, -90f), new Vector2(160f, 80f));
-            var stageInfoImg = Img(stageInfo, Color.clear);
+            // Dim overlay — soft-stuck nudge (alpha animated by BoardView) (child of safeRoot, padded to screen play area)
+            var dim = Child(safeRoot, "Dim"); PaddedStretch(dim, 240, 200);
+            var dimColor = DIM; dimColor.a = 0f;
+            var dimImg = Img(dim, dimColor); dimImg.raycastTarget = false;
 
-            var stageNumTxt = TMP(stageInfo, "StageNumberText", Center(0, 0, 140, 70), 28, UI_TEXT, "1", null, TextCategory.Header);
-            stageNumTxt.alignment = TextAlignmentOptions.Center;
+            // Booster bar — Undo / Shuffle / Add Lane (spec 3 boosters) (child of safeRoot)
+            var bar = Child(safeRoot, "BoosterBar"); BottomStrip(bar, 200);
+            Img(bar, UI_BG_MID);
 
-            // Skull badge nested inside (Hard only)
-            var hudSkull = Child(stageInfo, "SkullBadge");
-            Fixed(hudSkull, new Vector2(55f, 10f), new Vector2(30f, 30f));
-            var hudSkullImg = Img(hudSkull, Color.white);
-            hudSkull.SetActive(false);
+            var undoBtn    = Btn(bar, "UndoButton",    new Vector2(-320, 0), new Vector2(150, 150), UI_BG_DEEP,  "");
+            var shuffleBtn = Btn(bar, "ShuffleButton", new Vector2(0, 0),    new Vector2(150, 150), UI_PRIMARY,  "");
+            var addLaneBtn = Btn(bar, "AddLaneButton", new Vector2(320, 0),  new Vector2(150, 150), UI_SUCCESS,  "");
 
-            // BoardContainer (anchor for world-space board)
-            var board = Child(canvas, "BoardContainer"); Stretch(board);
+            var undoVisual = undoBtn.transform.Find("Visual").gameObject;
+            var undoLabelGo = Child(undoVisual, "Label");
+            {
+                var rt = RT(undoLabelGo);
+                rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one;
+                rt.offsetMin = new Vector2(5, 15); rt.offsetMax = new Vector2(-5, -105);
+            }
+            var undoLabel = Comp<TextMeshProUGUI>(undoLabelGo);
+            ApplyAutoFontSize(undoLabel, TextCategory.Normal);
+            undoLabel.color = UI_TEXT;
+            undoLabel.text = "× 0";
+            undoLabel.alignment = TextAlignmentOptions.Center;
+            Comp<LocalizedText>(undoLabelGo);
+            Comp<UITextStyle>(undoLabelGo).ApplyStyle();
 
-            // SafeAreaRoot
-            var safeRoot = Child(canvas, "SafeAreaRoot");
-            Stretch(safeRoot);
-            Comp<SafeAreaHandler>(safeRoot);
+            var shuffleVisual = shuffleBtn.transform.Find("Visual").gameObject;
+            var shuffleLabelGo = Child(shuffleVisual, "Label");
+            {
+                var rt = RT(shuffleLabelGo);
+                rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one;
+                rt.offsetMin = new Vector2(5, 15); rt.offsetMax = new Vector2(-5, -105);
+            }
+            var shuffleLabel = Comp<TextMeshProUGUI>(shuffleLabelGo);
+            ApplyAutoFontSize(shuffleLabel, TextCategory.Normal);
+            shuffleLabel.color = UI_TEXT;
+            shuffleLabel.text = "× 0";
+            shuffleLabel.alignment = TextAlignmentOptions.Center;
+            Comp<LocalizedText>(shuffleLabelGo);
+            Comp<UITextStyle>(shuffleLabelGo).ApplyStyle();
+
+            var addLaneVisual = addLaneBtn.transform.Find("Visual").gameObject;
+            var addLaneLabelGo = Child(addLaneVisual, "Label");
+            {
+                var rt = RT(addLaneLabelGo);
+                rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one;
+                rt.offsetMin = new Vector2(5, 15); rt.offsetMax = new Vector2(-5, -105);
+            }
+            var addLaneLabel = Comp<TextMeshProUGUI>(addLaneLabelGo);
+            ApplyAutoFontSize(addLaneLabel, TextCategory.Normal);
+            addLaneLabel.color = UI_TEXT;
+            addLaneLabel.text = "× 0";
+            addLaneLabel.alignment = TextAlignmentOptions.Center;
+            Comp<LocalizedText>(addLaneLabelGo);
+            Comp<UITextStyle>(addLaneLabelGo).ApplyStyle();
+
+            var undoIconImg = undoBtn.transform.Find("Visual/Icon")?.GetComponent<Image>();
+            if (undoIconImg != null)
+            {
+                var rt = undoIconImg.rectTransform;
+                rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one;
+                rt.offsetMin = new Vector2(15, 25); rt.offsetMax = new Vector2(-15, -5);
+                if (resMap.TryGetValue("item_undo", out string undoPath))
+                {
+                    var spr = AssetDatabase.LoadAssetAtPath<Sprite>(undoPath);
+                    if (spr != null) { undoIconImg.sprite = spr; undoIconImg.preserveAspect = true; }
+                }
+            }
+
+            var shuffleIconImg = shuffleBtn.transform.Find("Visual/Icon")?.GetComponent<Image>();
+            if (shuffleIconImg != null)
+            {
+                var rt = shuffleIconImg.rectTransform;
+                rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one;
+                rt.offsetMin = new Vector2(15, 25); rt.offsetMax = new Vector2(-15, -5);
+                if (resMap.TryGetValue("item_shuffle", out string shufflePath))
+                {
+                    var spr = AssetDatabase.LoadAssetAtPath<Sprite>(shufflePath);
+                    if (spr != null) { shuffleIconImg.sprite = spr; shuffleIconImg.preserveAspect = true; }
+                }
+            }
+
+            var addLaneIconImg = addLaneBtn.transform.Find("Visual/Icon")?.GetComponent<Image>();
+            if (addLaneIconImg != null)
+            {
+                var rt = addLaneIconImg.rectTransform;
+                rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one;
+                rt.offsetMin = new Vector2(15, 25); rt.offsetMax = new Vector2(-15, -5);
+                if (resMap.TryGetValue("item_add_lane", out string addLanePath))
+                {
+                    var spr = AssetDatabase.LoadAssetAtPath<Sprite>(addLanePath);
+                    if (spr != null) { addLaneIconImg.sprite = spr; addLaneIconImg.preserveAspect = true; }
+                }
+            }
+
+            // BoardWorldResizer component addition and wiring (uses dim for screen constraints)
+            var resizer = Comp<BoardWorldResizer>(canvas);
+            var soResizer = new SerializedObject(resizer);
+            soResizer.FindProperty("_gameArea").objectReferenceValue = RT(dim);
+            soResizer.FindProperty("_boardView").objectReferenceValue = board;
+            soResizer.ApplyModifiedProperties();
+
+            // Runtime gameplay prefabs (created by their own builders before this scene)
+            var chipPrefab = AssetDatabase.LoadAssetAtPath<GameObject>($"{PrefabsGamePath}/ChipView.prefab");
+            var lanePrefab = AssetDatabase.LoadAssetAtPath<GameObject>($"{PrefabsGamePath}/LaneView.prefab");
+            var nodePrefab = AssetDatabase.LoadAssetAtPath<GameObject>($"{PrefabsGamePath}/SignalNodeView.prefab");
+
+            var so = new SerializedObject(board);
+            so.FindProperty("_background").objectReferenceValue     = bgImg;
+            so.FindProperty("_lanesContainer").objectReferenceValue = null; // Resolved dynamically at runtime
+            so.FindProperty("_panelContainer").objectReferenceValue = null; // Resolved dynamically at runtime
+            so.FindProperty("_flightLayer").objectReferenceValue    = null; // Resolved dynamically at runtime
+            so.FindProperty("_dim").objectReferenceValue            = dimImg;
+            so.FindProperty("_stageText").objectReferenceValue      = stageText;
+            so.FindProperty("_undoBtn").objectReferenceValue        = undoBtn.GetComponent<Button>();
+            so.FindProperty("_shuffleBtn").objectReferenceValue     = shuffleBtn.GetComponent<Button>();
+            so.FindProperty("_addLaneBtn").objectReferenceValue     = addLaneBtn.GetComponent<Button>();
+            so.FindProperty("_addLaneLabel").objectReferenceValue   = addLaneLabel;
+            so.FindProperty("_pauseBtn").objectReferenceValue       = pauseBtn.GetComponent<Button>();
+            so.FindProperty("_lanePrefab").objectReferenceValue     = lanePrefab;
+            so.FindProperty("_chipPrefab").objectReferenceValue     = chipPrefab;
+            so.FindProperty("_nodePrefab").objectReferenceValue     = nodePrefab;
+            so.ApplyModifiedProperties();
 
             SaveScenePrefab(canvas, "InGame", _inGameLoaded);
+
+            // Configure scene camera & BoardWorldRoot in the active scene
+            string scenePath = "Assets/Scenes/InGame.unity";
+            if (File.Exists(scenePath))
+            {
+                var scene = UnityEditor.SceneManagement.EditorSceneManager.OpenScene(scenePath);
+                
+                // Configure Main Camera
+                var camGo = GameObject.Find("Main Camera") ?? new GameObject("Main Camera", typeof(Camera));
+                camGo.name = "Main Camera";
+                var cam = camGo.GetComponent<Camera>();
+                cam.orthographic = true;
+                cam.orthographicSize = 5f;
+                cam.clearFlags = CameraClearFlags.SolidColor;
+                cam.backgroundColor = new Color(0.06f, 0.07f, 0.11f, 1f); // Sleek dark neon
+                camGo.transform.position = new Vector3(0f, 0f, -10f);
+
+                // Configure BoardWorldRoot
+                var worldRoot = GameObject.Find("BoardWorldRoot") ?? new GameObject("BoardWorldRoot");
+                worldRoot.name = "BoardWorldRoot";
+                worldRoot.transform.position = Vector3.zero;
+
+                var panelGo = worldRoot.transform.Find("SignalPanel")?.gameObject;
+                if (panelGo == null)
+                {
+                    panelGo = new GameObject("SignalPanel");
+                    panelGo.transform.SetParent(worldRoot.transform, false);
+                }
+                var lanesGo = worldRoot.transform.Find("LanesContainer")?.gameObject;
+                if (lanesGo == null)
+                {
+                    lanesGo = new GameObject("LanesContainer");
+                    lanesGo.transform.SetParent(worldRoot.transform, false);
+                }
+                var flightGo = worldRoot.transform.Find("FlightLayer")?.gameObject;
+                if (flightGo == null)
+                {
+                    flightGo = new GameObject("FlightLayer");
+                    flightGo.transform.SetParent(worldRoot.transform, false);
+                }
+
+                var canvasGo = GameObject.Find("InGameCanvas_Base");
+                if (canvasGo != null && PrefabUtility.IsPartOfAnyPrefab(canvasGo))
+                {
+                    // NEVER RevertPrefabInstance here — it wipes every scene-instance override
+                    // (e.g. BoardView.Skin assigned in InGame.unity). Prefab/variant inheritance
+                    // already propagates Base structure changes to the instance automatically.
+                    var controllerGo = GameObject.Find("InGameController");
+                    if (controllerGo != null)
+                    {
+                        var controller = controllerGo.GetComponent<Game.InGame.Controller.InGameController>();
+                        if (controller != null)
+                        {
+                            var boardViewComponent = canvasGo.GetComponent<BoardView>();
+                            if (boardViewComponent != null)
+                            {
+                                var soController = new SerializedObject(controller);
+                                soController.FindProperty("_boardView").objectReferenceValue = boardViewComponent;
+                                soController.ApplyModifiedProperties();
+                                Debug.Log("[UIEditorSetup] Wired InGameController._boardView reference to InGameCanvas_Base BoardView.");
+                            }
+                        }
+                    }
+
+                    UnityEditor.SceneManagement.EditorSceneManager.SaveScene(scene);
+                    Debug.Log("[UIEditorSetup] Configured Main Camera & BoardWorldRoot in InGame scene (InGameCanvas_Base instance overrides preserved).");
+                }
+            }
+        }
+
+        // Anchored stretch within parent by normalized fractions (no offset).
+        static void AnchorRect(GameObject go, float xMin, float yMin, float xMax, float yMax)
+        {
+            var rt = RT(go);
+            rt.anchorMin = new Vector2(xMin, yMin);
+            rt.anchorMax = new Vector2(xMax, yMax);
+            rt.offsetMin = rt.offsetMax = Vector2.zero;
+        }
+
+        // ── Signal Sort gameplay prefabs (runtime-instantiated; thin GO + self-building view) ──
+
+        static void CreateInGameChip()       => SaveGamePrefab<ChipView>("ChipView");
+        static void CreateInGameLane()        => SaveGamePrefab<LaneView>("LaneView");
+        static void CreateInGameSignalNode()  => SaveGamePrefab<SignalNodeView>("SignalNodeView");
+
+        static void SaveGamePrefab<T>(string prefabName) where T : Component
+        {
+            MkDir(PrefabsGamePath);
+            string path = $"{PrefabsGamePath}/{prefabName}.prefab";
+            var go = new GameObject(prefabName);
+            go.AddComponent<T>();
+            PrefabUtility.SaveAsPrefabAsset(go, path);
+            Object.DestroyImmediate(go);
+            AssetDatabase.SaveAssets();
+            Debug.Log($"[UIEditorSetup] Saved Game Prefab → {path}");
+        }
+
+        // ── Signal Sort popups (UIManager-shown; Backdrop DIM = scrim convention) ──
+
+        static void CreateStuckPopup()
+        {
+            var root = FullScreen("StuckPopupView");
+            Comp<StuckPopupView>(root); Comp<UIPanelAppear>(root); Comp<CanvasGroup>(root);
+
+            var backdrop = Child(root, "Backdrop"); Stretch(backdrop);
+            Img(backdrop, DIM).raycastTarget = true;
+
+            var panel = Panel(root, "Panel", new Vector2(880, 760), UI_BG_MID);
+            var title = TMP(panel, "TitleText", Center(0, 300, 760, 90), 48, Hex("FFB733"), "SIGNAL BLOCKED", null, TextCategory.Header);
+            var body  = TMP(panel, "BodyText", Center(0, 205, 760, 70), 24, Hex("A6B0C9"), "더 이상 이동 가능한 신호 칩이 없습니다", null, TextCategory.Normal);
+
+            var addLaneRow = Child(panel, "AddLaneRow"); Fixed(addLaneRow, new Vector2(0, 70), new Vector2(740, 160));
+            Img(addLaneRow, Color.clear);
+            var addLaneBtn = Btn(addLaneRow, "AddLaneButton", new Vector2(0, 0), new Vector2(720, 150), UI_SUCCESS, "ADD LANE  (Ad)");
+
+            var shuffleBtn = Btn(panel, "ShuffleButton", new Vector2(0, -110), new Vector2(720, 150), UI_PRIMARY, "SHUFFLE  100");
+            var forfeitBtn = Btn(panel, "ForfeitButton", new Vector2(0, -280), new Vector2(560, 110), UI_DANGER,  "Forfeit Stage");
+
+            var so = new SerializedObject(root.GetComponent<StuckPopupView>());
+            so.FindProperty("_titleText").objectReferenceValue    = title;
+            so.FindProperty("_bodyText").objectReferenceValue     = body;
+            so.FindProperty("_addLaneRow").objectReferenceValue   = addLaneRow;
+            so.FindProperty("_addLaneButton").objectReferenceValue = addLaneBtn.GetComponent<Button>();
+            so.FindProperty("_shuffleButton").objectReferenceValue = shuffleBtn.GetComponent<Button>();
+            so.FindProperty("_forfeitButton").objectReferenceValue = forfeitBtn.GetComponent<Button>();
+            so.ApplyModifiedProperties();
+
+            Save(root, "StuckPopupView");
+        }
+
+        static void CreateClearPopup()
+        {
+            var root = FullScreen("ClearPopupView");
+            Comp<ClearPopupView>(root); Comp<UIPanelAppear>(root); Comp<CanvasGroup>(root);
+
+            var backdrop = Child(root, "Backdrop"); Stretch(backdrop);
+            Img(backdrop, DIM).raycastTarget = true;
+
+            var panel = Panel(root, "Panel", new Vector2(880, 680), UI_BG_MID);
+            TMP(panel, "TitleText", Center(0, 250, 760, 90), 48, UI_SUCCESS, "STAGE CLEAR", null, TextCategory.Header);
+            TMP(panel, "MovesCaption", Center(0, 150, 760, 50), 22, Hex("A6B0C9"), "MOVES", null, TextCategory.Normal);
+            var movesText = TMP(panel, "MovesText", Center(0, 80, 760, 90), 56, UI_TEXT, "0", null, TextCategory.Header);
+
+            var nextBtn  = Btn(panel, "NextButton",  new Vector2(0, -60),  new Vector2(720, 150), UI_CTA,     "Next Stage  >");
+            var lobbyBtn = Btn(panel, "LobbyButton", new Vector2(0, -230), new Vector2(560, 120), UI_BG_DEEP, "Lobby");
+
+            var so = new SerializedObject(root.GetComponent<ClearPopupView>());
+            so.FindProperty("_titleText").objectReferenceValue  = panel.transform.Find("TitleText").GetComponent<TMP_Text>();
+            so.FindProperty("_movesText").objectReferenceValue   = movesText;
+            so.FindProperty("_nextButton").objectReferenceValue  = nextBtn.GetComponent<Button>();
+            so.FindProperty("_lobbyButton").objectReferenceValue = lobbyBtn.GetComponent<Button>();
+            so.ApplyModifiedProperties();
+
+            Save(root, "ClearPopupView");
         }
 
 
@@ -926,10 +1386,7 @@ namespace Game.Editor
             qtyRt.anchoredPosition = new Vector2(-6, 8);
             qtyRt.sizeDelta        = new Vector2(80, 36);
             var qtyTmp = Comp<TextMeshProUGUI>(qtyGo);
-            qtyTmp.enableAutoSizing  = true;
-            qtyTmp.fontSizeMin       = 24f;
-            qtyTmp.fontSizeMax       = 36f;
-            qtyTmp.fontSize          = 30f;
+            ApplyAutoFontSize(qtyTmp, TextCategory.Normal);
             qtyTmp.color             = UI_CTA;
             qtyTmp.alignment         = TextAlignmentOptions.BottomRight;
             qtyTmp.text              = "× 1";
@@ -978,6 +1435,331 @@ namespace Game.Editor
             so.ApplyModifiedProperties();
 
             Save(root, "RewardPopupView");
+        }
+
+        // ── OutGame systems: Cosmetic / Attendance / Achievement / Daily-Challenge ──
+
+        static GameObject BuildCosmeticCell()
+        {
+            string path = $"{BaseCommonPath}/CosmeticItemCell.prefab";
+            bool loaded = AssetDatabase.LoadAssetAtPath<GameObject>(path) != null;
+            var cell = loaded ? PrefabUtility.LoadPrefabContents(path) : new GameObject("CosmeticItemCell");
+            RT(cell).sizeDelta = new Vector2(200, 230);
+            var bg = Img(cell, UI_BG_DEEP);
+            var btn = Comp<Button>(cell); btn.targetGraphic = bg;
+            Comp<UIButtonAnimator>(cell);
+
+            var preview = Child(cell, "Preview");
+            Fixed(preview, new Vector2(0, 25), new Vector2(150, 130));
+            var pImg = Img(preview, UI_BG_MID); pImg.preserveAspect = true;
+
+            TMP(cell, "NameText", Center(0, -70, 190, 44), 18, UI_TEXT, "Name", null, TextCategory.Normal);
+            TMP(cell, "StateText", Center(0, -105, 190, 40), 18, UI_CTA, "800", null, TextCategory.Normal);
+
+            PrefabUtility.SaveAsPrefabAsset(cell, path);
+            if (loaded) PrefabUtility.UnloadPrefabContents(cell); else Object.DestroyImmediate(cell);
+            CreateCommonVariantIfMissing("CosmeticItemCell");
+            AssetDatabase.SaveAssets();
+            Debug.Log($"[UIEditorSetup] Saved Base Popup → {path}");
+            // Reference the Final variant so user customization on it is what gets instantiated at runtime.
+            return AssetDatabase.LoadAssetAtPath<GameObject>($"{PrefabRoot}/CosmeticItemCell.prefab")
+                ?? AssetDatabase.LoadAssetAtPath<GameObject>(path);
+        }
+
+        static void CreateCosmeticPreviewPopup()
+        {
+            var root = FullScreen("CosmeticPreviewPopupView");
+            Img(root, DIM); Comp<CosmeticPreviewPopupView>(root); Comp<UIPanelAppear>(root); Comp<CanvasGroup>(root);
+            var backdrop = Child(root, "Backdrop"); Stretch(backdrop); Img(backdrop, DIM);
+
+            var panel = Panel(root, "Panel", new Vector2(720, 880), UI_BG_MID);
+            var nameText = RibbonTitle(panel, "NameText", "Cosmetic", null);
+
+            var preview = Child(panel, "Preview");
+            Fixed(preview, new Vector2(0, 170), new Vector2(360, 300));
+            var pImg = Img(preview, UI_BG_DEEP); pImg.preserveAspect = true;
+
+            var desc = TMP(panel, "DescText", Center(0, -60, 600, 120), 22, UI_TEXT, "Description", null, TextCategory.Normal);
+            var state = TMP(panel, "StateText", Center(0, -190, 600, 60), 24, UI_CTA, "800", null, TextCategory.Normal);
+
+            var action = Btn(panel, "ActionButton", new Vector2(0, -330), new Vector2(420, 96), UI_CTA, "Buy & Apply", "shop.cosmetic.btn_buy_apply");
+            var actionLabel = action.transform.Find("Visual/Label")?.GetComponent<TextMeshProUGUI>();
+            var closeBtn = CloseBtnAt(panel, new Vector2(330, 405));
+
+            var so = new SerializedObject(root.GetComponent<CosmeticPreviewPopupView>());
+            so.FindProperty("_previewImage").objectReferenceValue = pImg;
+            so.FindProperty("_nameText").objectReferenceValue = nameText;
+            so.FindProperty("_descText").objectReferenceValue = desc;
+            so.FindProperty("_stateText").objectReferenceValue = state;
+            so.FindProperty("_actionButton").objectReferenceValue = action.GetComponent<Button>();
+            so.FindProperty("_actionLabel").objectReferenceValue = actionLabel;
+            so.FindProperty("_closeButton").objectReferenceValue = closeBtn;
+            so.ApplyModifiedProperties();
+
+            Save(root, "CosmeticPreviewPopupView");
+        }
+
+        static void CreateAttendancePopup()
+        {
+            var root = FullScreen("AttendancePopupView");
+            Img(root, DIM); Comp<AttendancePopupView>(root); Comp<UIPanelAppear>(root); Comp<CanvasGroup>(root);
+            var backdrop = Child(root, "Backdrop"); Stretch(backdrop); Img(backdrop, DIM);
+
+            var panel = Panel(root, "Panel", new Vector2(980, 720), UI_BG_MID);
+            RibbonTitle(panel, "TitleText", "Daily Reward", "popup.attendance.title");
+
+            var dayContainer = Child(panel, "DayContainer");
+            Fixed(dayContainer, new Vector2(0, 60), new Vector2(920, 220));
+            var hlg = Comp<HorizontalLayoutGroup>(dayContainer);
+            hlg.spacing = 8; hlg.childAlignment = TextAnchor.MiddleCenter;
+            hlg.childControlWidth = false; hlg.childControlHeight = false;
+            hlg.childForceExpandWidth = false; hlg.childForceExpandHeight = false;
+
+            for (int i = 1; i <= 7; i++)
+            {
+                var card = Child(dayContainer, $"Day{i}");
+                RT(card).sizeDelta = new Vector2(120, 200);
+                var le = Comp<LayoutElement>(card); le.preferredWidth = 120; le.preferredHeight = 200;
+                Img(card, i == 7 ? UI_CTA : UI_BG_DEEP);
+
+                TMP(card, "DayLabel", Center(0, 70, 110, 40), 18, UI_TEXT, $"D{i}", null, TextCategory.Normal);
+
+                var pulse = Child(card, "PulseRing"); Stretch(pulse);
+                var pulseImg = Img(pulse, UI_PRIMARY); pulseImg.raycastTarget = false;
+                Comp<UIScalePulse>(pulse);
+                pulse.transform.SetAsFirstSibling();
+                pulse.SetActive(false);
+
+                var dim = Child(card, "Dim"); Stretch(dim);
+                var dimImg = Img(dim, DIM); dimImg.raycastTarget = false;
+                TMP(dim, "Check", Center(0, 0, 110, 110), 40, UI_SUCCESS, "✓", null, TextCategory.Header);
+                dim.SetActive(false);
+            }
+
+            var todayReward = TMP(panel, "TodayRewardText", Center(0, -120, 700, 60), 24, UI_CTA, "Today: 100", null, TextCategory.Normal);
+
+            var claim = Btn(panel, "ClaimButton", new Vector2(0, -250), new Vector2(420, 96), UI_CTA, "Claim", "popup.attendance.btn_claim");
+            var claimLabel = claim.transform.Find("Visual/Label")?.GetComponent<TextMeshProUGUI>();
+            var closeBtn = CloseBtnAt(panel, new Vector2(460, 325));
+
+            var so = new SerializedObject(root.GetComponent<AttendancePopupView>());
+            so.FindProperty("_dayContainer").objectReferenceValue = dayContainer.transform;
+            so.FindProperty("_todayRewardText").objectReferenceValue = todayReward;
+            so.FindProperty("_claimButton").objectReferenceValue = claim.GetComponent<Button>();
+            so.FindProperty("_claimLabel").objectReferenceValue = claimLabel;
+            so.FindProperty("_closeButton").objectReferenceValue = closeBtn;
+            so.ApplyModifiedProperties();
+
+            Save(root, "AttendancePopupView");
+        }
+
+        static GameObject BuildAchievementCell()
+        {
+            string path = $"{BaseCommonPath}/AchievementItemCell.prefab";
+            bool loaded = AssetDatabase.LoadAssetAtPath<GameObject>(path) != null;
+            var cell = loaded ? PrefabUtility.LoadPrefabContents(path) : new GameObject("AchievementItemCell");
+            RT(cell).sizeDelta = new Vector2(840, 150);
+            Img(cell, UI_BG_DEEP);
+            var le = Comp<LayoutElement>(cell); le.preferredHeight = 150; le.preferredWidth = 840;
+
+            var badge = Child(cell, "TierBadge");
+            Fixed(badge, new Vector2(-360, 30), new Vector2(80, 80));
+            Img(badge, UI_PRIMARY);
+
+            var nm = TMP(cell, "NameText", new Rect(40, 40, 480, 50), 22, UI_TEXT, "Name", null, TextCategory.Normal);
+            nm.alignment = TextAlignmentOptions.Left;
+            var desc = TMP(cell, "DescText", new Rect(40, -8, 480, 44), 18, UI_TEXT, "Desc", null, TextCategory.Normal);
+            desc.alignment = TextAlignmentOptions.Left;
+
+            var bar = Child(cell, "ProgressBar");
+            Fixed(bar, new Vector2(-40, -52), new Vector2(420, 24));
+            Img(bar, UI_BG_MID);
+            var fill = Child(bar, "Fill"); Stretch(fill);
+            var fillImg = Img(fill, UI_SUCCESS);
+            fillImg.type = Image.Type.Filled; fillImg.fillMethod = Image.FillMethod.Horizontal; fillImg.fillOrigin = (int)Image.OriginHorizontal.Left; fillImg.fillAmount = 0.5f;
+
+            TMP(cell, "ProgressText", new Rect(250, -52, 140, 36), 16, UI_TEXT, "0/10", null, TextCategory.Normal);
+
+            Btn(cell, "ClaimButton", new Vector2(330, 0), new Vector2(150, 96), UI_CTA, "Claim", "achievement.btn_claim");
+            var done = TMP(cell, "CompletedLabel", new Rect(330, 0, 150, 60), 18, UI_SUCCESS, "Done", "achievement.completed", TextCategory.Normal);
+            done.gameObject.SetActive(false);
+
+            PrefabUtility.SaveAsPrefabAsset(cell, path);
+            if (loaded) PrefabUtility.UnloadPrefabContents(cell); else Object.DestroyImmediate(cell);
+            CreateCommonVariantIfMissing("AchievementItemCell");
+            AssetDatabase.SaveAssets();
+            Debug.Log($"[UIEditorSetup] Saved Base Popup → {path}");
+            // Reference the Final variant so user customization on it is what gets instantiated at runtime.
+            return AssetDatabase.LoadAssetAtPath<GameObject>($"{PrefabRoot}/AchievementItemCell.prefab")
+                ?? AssetDatabase.LoadAssetAtPath<GameObject>(path);
+        }
+
+        // Populates an `_avatarSprites` SerializedProperty (List<{avatarId,resourceName,sprite}>) from avatar.csv.
+        // Shared by the Shop avatar section and the AccountPopup avatar sprite lookup.
+        static void PopulateAvatarSprites(SerializedProperty prop, Dictionary<string, string> resMap)
+        {
+            prop.ClearArray();
+            var avatarCsvPath = Path.Combine(Path.GetFullPath(Path.Combine(Application.dataPath, "../../..")), "shared/datas/avatar/avatar.csv");
+            if (!File.Exists(avatarCsvPath)) return;
+
+            var lines = File.ReadAllLines(avatarCsvPath);
+            int count = 0;
+            for (int i = 4; i < lines.Length; i++)
+            {
+                var line = lines[i].Trim();
+                if (string.IsNullOrEmpty(line)) continue;
+                var cols = line.Split(',');
+                if (cols.Length < 2 || !int.TryParse(cols[0].Trim(), out int avatarId)) continue;
+                string resKey = cols[1].Trim();
+                if (!resMap.TryGetValue(resKey, out string spritePath)) continue;
+                var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(spritePath);
+                if (sprite == null) continue;
+
+                prop.InsertArrayElementAtIndex(count);
+                var el = prop.GetArrayElementAtIndex(count);
+                el.FindPropertyRelative("avatarId").intValue = avatarId;
+                el.FindPropertyRelative("resourceName").stringValue = resKey;
+                el.FindPropertyRelative("sprite").objectReferenceValue = sprite;
+                count++;
+            }
+        }
+
+        static GameObject BuildAvatarCard()
+        {
+            string path = $"{BaseCommonPath}/AvatarCard.prefab";
+            bool loaded = AssetDatabase.LoadAssetAtPath<GameObject>(path) != null;
+            var cell = loaded ? PrefabUtility.LoadPrefabContents(path) : new GameObject("AvatarCard");
+            RT(cell).sizeDelta = new Vector2(180, 210);
+            var bg = Img(cell, UI_BG_DEEP);
+            var btn = Comp<Button>(cell); btn.targetGraphic = bg;
+            Comp<UIButtonAnimator>(cell);
+
+            var visual = Child(cell, "Visual");
+            Fixed(visual, new Vector2(0, 25), new Vector2(160, 150));
+
+            var icon = Child(visual, "Icon");
+            Fixed(icon, Vector2.zero, new Vector2(120, 120));
+            var iconImg = Img(icon, UI_BG_MID); iconImg.preserveAspect = true;
+
+            var highlight = Child(visual, "SelectedHighlight"); Stretch(highlight);
+            var hlImg = Img(highlight, UI_BORDER);
+            hlImg.rectTransform.offsetMin = new Vector2(-4, -4);
+            hlImg.rectTransform.offsetMax = new Vector2(4, 4);
+            highlight.SetActive(false);
+
+            var lockOverlay = Child(visual, "LockOverlay"); Stretch(lockOverlay);
+            Img(lockOverlay, new Color(0, 0, 0, 0.6f));
+            var lockIcon = Child(lockOverlay, "LockIcon");
+            Fixed(lockIcon, new Vector2(0, 10), new Vector2(40, 40));
+            var lockIconImg = Img(lockIcon, Color.white); lockIconImg.preserveAspect = true;
+            var resMap = LoadDynamicResourceMap();
+            if (resMap.TryGetValue("ui_lock_icon", out string lockIconPath))
+            {
+                var spr = AssetDatabase.LoadAssetAtPath<Sprite>(lockIconPath);
+                if (spr != null) lockIconImg.sprite = spr;
+            }
+            lockOverlay.SetActive(false);
+
+            TMP(cell, "StateText", Center(0, -85, 170, 40), 18, UI_CTA, "0", null, TextCategory.Normal);
+
+            PrefabUtility.SaveAsPrefabAsset(cell, path);
+            if (loaded) PrefabUtility.UnloadPrefabContents(cell); else Object.DestroyImmediate(cell);
+            CreateCommonVariantIfMissing("AvatarCard");
+            AssetDatabase.SaveAssets();
+            Debug.Log($"[UIEditorSetup] Saved Base Popup → {path}");
+            // Reference the Final variant so user customization on it is what gets instantiated at runtime.
+            return AssetDatabase.LoadAssetAtPath<GameObject>($"{PrefabRoot}/AvatarCard.prefab")
+                ?? AssetDatabase.LoadAssetAtPath<GameObject>(path);
+        }
+
+        static void CreateAvatarPreviewPopup()
+        {
+            var root = FullScreen("AvatarPreviewPopupView");
+            Img(root, DIM); Comp<AvatarPreviewPopupView>(root); Comp<UIPanelAppear>(root); Comp<CanvasGroup>(root);
+            var backdrop = Child(root, "Backdrop"); Stretch(backdrop); Img(backdrop, DIM);
+
+            var panel = Panel(root, "Panel", new Vector2(720, 760), UI_BG_MID);
+            RibbonTitle(panel, "TitleText", "Avatar", PopupAccountLabelSelectAvatar);
+
+            var preview = Child(panel, "Preview");
+            Fixed(preview, new Vector2(0, 140), new Vector2(320, 320));
+            var pImg = Img(preview, UI_BG_DEEP); pImg.preserveAspect = true;
+
+            var state = TMP(panel, "StateText", Center(0, -140, 600, 60), 24, UI_CTA, "800", null, TextCategory.Normal);
+
+            var action = Btn(panel, "ActionButton", new Vector2(0, -280), new Vector2(420, 96), UI_CTA, "Buy & Equip", "shop.cosmetic.btn_buy_apply");
+            var actionLabel = action.transform.Find("Visual/Label")?.GetComponent<TextMeshProUGUI>();
+            var closeBtn = CloseBtnAt(panel, new Vector2(330, 345));
+
+            var so = new SerializedObject(root.GetComponent<AvatarPreviewPopupView>());
+            so.FindProperty("_previewImage").objectReferenceValue = pImg;
+            so.FindProperty("_stateText").objectReferenceValue = state;
+            so.FindProperty("_actionButton").objectReferenceValue = action.GetComponent<Button>();
+            so.FindProperty("_actionLabel").objectReferenceValue = actionLabel;
+            so.FindProperty("_closeButton").objectReferenceValue = closeBtn;
+            so.ApplyModifiedProperties();
+
+            Save(root, "AvatarPreviewPopupView");
+        }
+
+        static void CreateAchievementToast()
+        {
+            var root = FullScreen("AchievementToastView");
+            var rootImg = Img(root, new Color(0, 0, 0, 0)); rootImg.raycastTarget = false;
+            Comp<AchievementToastView>(root);
+
+            var banner = Child(root, "Banner");
+            var brt = RT(banner);
+            brt.anchorMin = new Vector2(0.5f, 1f); brt.anchorMax = new Vector2(0.5f, 1f); brt.pivot = new Vector2(0.5f, 1f);
+            brt.anchoredPosition = new Vector2(0, 220); brt.sizeDelta = new Vector2(820, 160);
+            Img(banner, UI_BG_MID); PixelShadow(banner);
+
+            var badge = Child(banner, "TierBadge");
+            Fixed(badge, new Vector2(-330, 0), new Vector2(90, 90));
+            var badgeImg = Img(badge, UI_PRIMARY);
+
+            var nm = TMP(banner, "NameText", new Rect(40, 0, 600, 100), 24, UI_TEXT, "Achievement", null, TextCategory.Normal);
+            nm.alignment = TextAlignmentOptions.Left;
+
+            var so = new SerializedObject(root.GetComponent<AchievementToastView>());
+            so.FindProperty("_banner").objectReferenceValue = brt;
+            so.FindProperty("_tierBadge").objectReferenceValue = badgeImg;
+            so.FindProperty("_nameText").objectReferenceValue = nm;
+            so.ApplyModifiedProperties();
+
+            Save(root, "AchievementToastView");
+        }
+
+        static void CreateDailyChallengePopup()
+        {
+            var root = FullScreen("DailyChallengePopupView");
+            Img(root, DIM); Comp<DailyChallengePopupView>(root); Comp<UIPanelAppear>(root); Comp<CanvasGroup>(root);
+            var backdrop = Child(root, "Backdrop"); Stretch(backdrop); Img(backdrop, DIM);
+
+            var panel = Panel(root, "Panel", new Vector2(820, 760), UI_BG_MID);
+            var title = RibbonTitle(panel, "TitleText", "Daily Challenge", "popup.challenge.title");
+
+            var date = TMP(panel, "DateText", Center(0, 200, 700, 60), 24, UI_TEXT, "2026-01-01", null, TextCategory.Normal);
+            var diff = TMP(panel, "DifficultyText", Center(0, 110, 700, 70), 30, UI_CTA, "Difficulty", null, TextCategory.Header);
+            var part = TMP(panel, "ParticipantsText", Center(0, 30, 700, 50), 22, UI_TEXT, "Participants", null, TextCategory.Normal);
+            var streak = TMP(panel, "StreakText", Center(0, -40, 700, 50), 22, UI_TEXT, "Streak", null, TextCategory.Normal);
+
+            var start = Btn(panel, "StartButton", new Vector2(0, -160), new Vector2(480, 96), UI_CTA, "Start", "popup.challenge.btn_start");
+            var ranking = Btn(panel, "RankingButton", new Vector2(0, -270), new Vector2(480, 90), UI_BG_DEEP, "Ranking", "popup.challenge.btn_ranking");
+            var closeBtn = CloseBtnAt(panel, new Vector2(330, 345));
+
+            var so = new SerializedObject(root.GetComponent<DailyChallengePopupView>());
+            so.FindProperty("_titleText").objectReferenceValue = title;
+            so.FindProperty("_dateText").objectReferenceValue = date;
+            so.FindProperty("_difficultyText").objectReferenceValue = diff;
+            so.FindProperty("_participantsText").objectReferenceValue = part;
+            so.FindProperty("_streakText").objectReferenceValue = streak;
+            so.FindProperty("_startButton").objectReferenceValue = start.GetComponent<Button>();
+            so.FindProperty("_rankingButton").objectReferenceValue = ranking.GetComponent<Button>();
+            so.FindProperty("_closeButton").objectReferenceValue = closeBtn;
+            so.ApplyModifiedProperties();
+
+            Save(root, "DailyChallengePopupView");
         }
 
         static void CreateReLoginView()
@@ -1080,7 +1862,7 @@ namespace Game.Editor
             Img(root, DIM); Comp<FailOverlayView>(root); Comp<UIPanelAppear>(root); Comp<CanvasGroup>(root);
 
             var panel = Panel(root, "Panel", new Vector2(700, 780), UI_BG_MID);
-            RibbonTitle(panel, "TitleText", "Just a bit more!", PopupFailTitle);
+            RibbonTitle(panel, "TitleText", "Just a bit more!", PopupResultFailed);
 
             var forfBtn = Btn(panel, "ForfeitButton",  new Vector2(0, -285), new Vector2(280, 96), UI_DANGER, "Give Up", PopupFailBtnForfeit);
 
@@ -1097,19 +1879,17 @@ namespace Game.Editor
             Stretch(backdrop);
             Img(backdrop, DIM);
 
-            var panel = Panel(root, "Panel", new Vector2(600, 600), UI_BG_MID);
+            var panel = Panel(root, "Panel", new Vector2(600, 500), UI_BG_MID);
             var title = RibbonTitle(panel, "TitleText", "Paused", PopupPauseTitle);
 
-            var resume  = Btn(panel, "ResumeButton",      new Vector2(0,  120), new Vector2(480, 96), UI_CTA,     "Resume",       PopupPauseBtnResume);
-            var restart = Btn(panel, "RestartButton",     new Vector2(0,   10), new Vector2(480, 96), UI_DANGER,  "Restart",      PopupPauseBtnRestart);
-            var settings= Btn(panel, "SettingsButton",    new Vector2(0, -100), new Vector2(480, 96), UI_BG_DEEP, "Settings",     CommonSettings);
-            var select  = Btn(panel, "StageSelectButton", new Vector2(0, -210), new Vector2(480, 96), UI_BG_DEEP, "Stage Select", PopupPauseBtnStageSelect);
-            var closeBtn = CloseBtnAt(panel, new Vector2(250, 258));
+            var resume  = Btn(panel, "ResumeButton",      new Vector2(0,   80), new Vector2(480, 96), UI_CTA,     "Resume",       PopupPauseBtnResume);
+            var restart = Btn(panel, "RestartButton",     new Vector2(0,  -30), new Vector2(480, 96), UI_DANGER,  "Restart",      PopupPauseBtnRestart);
+            var select  = Btn(panel, "StageSelectButton", new Vector2(0, -140), new Vector2(480, 96), UI_BG_DEEP, "Stage Select", PopupPauseBtnStageSelect);
+            var closeBtn = CloseBtnAt(panel, new Vector2(250, 208));
 
             var so = new SerializedObject(root.GetComponent<PausePopupView>());
             so.FindProperty("_resumeButton").objectReferenceValue      = resume.GetComponent<Button>();
             so.FindProperty("_restartButton").objectReferenceValue     = restart.GetComponent<Button>();
-            so.FindProperty("_settingsButton").objectReferenceValue    = settings.GetComponent<Button>();
             so.FindProperty("_stageSelectButton").objectReferenceValue = select.GetComponent<Button>();
             so.FindProperty("_closeButton").objectReferenceValue       = closeBtn;
             so.ApplyModifiedProperties();
@@ -1174,16 +1954,14 @@ namespace Game.Editor
             Stretch(backdrop);
             Img(backdrop, DIM);
 
-            var panel = Panel(root, "Panel", new Vector2(850, 1200), UI_BG_MID);
+            var panel = Panel(root, "Panel", new Vector2(850, 720), UI_BG_MID);
             var uidTxt = RibbonTitle(panel, "UserIdText", "Guest", CommonGuest);
 
-            // Tabs setup (y = 505)
-            var avatarTabBtn = Btn(panel, "AvatarTabButton", new Vector2(-200, 505), new Vector2(320, 75), UI_PRIMARY, "Avatars", PopupAccountTabAvatars);
-            var themeTabBtn = Btn(panel, "BoardThemeTabButton", new Vector2(200, 505), new Vector2(320, 75), UI_BG_MID, "Board Skins", PopupAccountTabBoardSkins);
+            // Avatar selection + Achievements entry moved out (Shop avatar section / lobby Achievement tab).
 
             // 1. Nickname Input Area (grouped in NicknameArea)
             var nicknameAreaGo = Child(panel, "NicknameArea");
-            Fixed(nicknameAreaGo, new Vector2(0, 380), new Vector2(800, 160));
+            Fixed(nicknameAreaGo, new Vector2(0, 150), new Vector2(800, 160));
             
             var nickLabel = TMP(nicknameAreaGo, "NicknameLabel", Center(0, 45, 750, 50), 20, UI_TEXT, "Nickname", PopupAccountLabelNickname, TextCategory.Normal);
 
@@ -1203,14 +1981,22 @@ namespace Game.Editor
             var textComponentGo = Child(textAreaGo, "TextComponent");
             Stretch(textComponentGo);
             var textTmp = Comp<TextMeshProUGUI>(textComponentGo);
-            textTmp.fontSize = 28f;
+            // InputField exception: fixed min=max=32 (autosize on, no resize range → caret/scroll safe)
+            textTmp.enableAutoSizing = true;
+            textTmp.fontSizeMin = 32f;
+            textTmp.fontSizeMax = 32f;
+            textTmp.fontSize = 32f;
             textTmp.color = UI_TEXT;
             textTmp.alignment = TextAlignmentOptions.Left;
 
             var placeholderGo = Child(textAreaGo, "Placeholder");
             Stretch(placeholderGo);
             var placeholderTmp = Comp<TextMeshProUGUI>(placeholderGo);
-            placeholderTmp.fontSize = 28f;
+            // InputField exception: must match input text sizing (fixed 32)
+            placeholderTmp.enableAutoSizing = true;
+            placeholderTmp.fontSizeMin = 32f;
+            placeholderTmp.fontSizeMax = 32f;
+            placeholderTmp.fontSize = 32f;
             placeholderTmp.color = new Color(UI_TEXT.r, UI_TEXT.g, UI_TEXT.b, 0.5f);
             placeholderTmp.text = "Enter nickname...";
             placeholderTmp.alignment = TextAlignmentOptions.Left;
@@ -1225,217 +2011,23 @@ namespace Game.Editor
 
             var saveBtn = Btn(nicknameAreaGo, "SaveNicknameButton", new Vector2(250, -30), new Vector2(160, 80), UI_CTA, "Save", PopupAccountBtnSave);
 
-            // 2. Avatar & Theme Grid Area
-            var gridLabelTxt = TMP(panel, "GridLabelText", Center(0, 220, 750, 50), 20, UI_TEXT, "Choose Avatar", PopupAccountLabelSelectAvatar, TextCategory.Normal);
+            // 2. Platform Account Buttons (Link for guest / Switch for OAuth — only one shown at runtime)
+            var linkBtn = Btn(panel, "LinkAccountButton",   new Vector2(0, -180), new Vector2(600, 96), UI_CTA, "Link Account",   PopupAccountBtnLink);
+            var swBtn   = Btn(panel, "SwitchAccountButton", new Vector2(0, -180), new Vector2(600, 96), UI_CTA, "Switch Account", PopupAccountBtnSwitch);
+            var closeBtn = CloseBtnAt(panel, new Vector2(377, 312));
 
-            var scrollViewGo = Child(panel, "AvatarScrollView");
-            Fixed(scrollViewGo, new Vector2(0, -60), new Vector2(750, 420));
-            var scrollRect = Comp<ScrollRect>(scrollViewGo);
-            scrollRect.horizontal = false;
-            scrollRect.vertical = true;
-
-            var viewportGo = Child(scrollViewGo, "Viewport");
-            Stretch(viewportGo);
-            Comp<RectMask2D>(viewportGo);
-            var viewportImg = Comp<Image>(viewportGo);
-            viewportImg.color = new Color(0, 0, 0, 0.01f);
-            scrollRect.viewport = RT(viewportGo);
-
-            var contentGo = Child(viewportGo, "Content");
-            var contentRt = RT(contentGo);
-            contentRt.anchorMin = new Vector2(0, 1);
-            contentRt.anchorMax = new Vector2(1, 1);
-            contentRt.pivot = new Vector2(0.5f, 1);
-            contentRt.sizeDelta = new Vector2(0, 420);
-            scrollRect.content = contentRt;
-
-            var grid = Comp<GridLayoutGroup>(contentGo);
-            grid.cellSize = new Vector2(130, 130);
-            grid.spacing = new Vector2(12, 12);
-            grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-            grid.constraintCount = 5;
-            grid.childAlignment = TextAnchor.UpperCenter;
-            grid.padding = new RectOffset(15, 15, 15, 15);
-
-            var csf = Comp<ContentSizeFitter>(contentGo);
-            csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-            csf.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
-
-            // Template Slot for Grid
-            var templateGo = Child(contentGo, "AvatarSlotTemplate");
-            RT(templateGo).sizeDelta = new Vector2(130, 130);
-            var slotBg = Comp<Image>(templateGo);
-            slotBg.color = UI_BG_DEEP;
-            var templateBtn = Comp<Button>(templateGo);
-            templateBtn.targetGraphic = slotBg;
-            Comp<UIButtonAnimator>(templateGo);
-
-            var visualGo = Child(templateGo, "Visual");
-            Stretch(visualGo);
-
-            var iconGo = Child(visualGo, "Icon");
-            Fixed(iconGo, Vector2.zero, new Vector2(90, 90));
-            var iconImg = Comp<Image>(iconGo);
-            iconImg.preserveAspect = true;
-
-            var hlGo = Child(visualGo, "SelectedHighlight");
-            Stretch(hlGo);
-            var hlImg = Comp<Image>(hlGo);
-            hlImg.color = UI_BORDER;
-            RT(hlGo).offsetMin = new Vector2(-4, -4);
-            RT(hlGo).offsetMax = new Vector2(4, 4);
-            hlGo.SetActive(false);
-
-            var lockGo = Child(visualGo, "LockOverlay");
-            Stretch(lockGo);
-            var lockBg = Comp<Image>(lockGo);
-            lockBg.color = new Color(0, 0, 0, 0.6f);
-
-            var lockIconGo = Child(lockGo, "LockIcon");
-            Fixed(lockIconGo, new Vector2(0, 15), new Vector2(40, 40));
-            var lockIconImg = Comp<Image>(lockIconGo);
-            lockIconImg.color = Color.white;
-            lockIconImg.preserveAspect = true;
-
-            var costTextGo = Child(lockGo, "CostText");
-            Fixed(costTextGo, new Vector2(0, -35), new Vector2(120, 35));
-            var costTxt = Comp<TextMeshProUGUI>(costTextGo);
-            costTxt.fontSize = 20f;
-            costTxt.color = UI_CTA;
-            costTxt.alignment = TextAlignmentOptions.Center;
-            costTxt.text = "0";
-
-            lockGo.SetActive(false);
-
-            // 3. Platform Account Buttons
-            var linkBtn = Btn(panel, "LinkAccountButton",   new Vector2(0, -340), new Vector2(600, 96), UI_CTA,     "Link Account",   PopupAccountBtnLink);
-            var swBtn   = Btn(panel, "SwitchAccountButton", new Vector2(0, -340), new Vector2(600, 96), UI_CTA,     "Switch Account", PopupAccountBtnSwitch);
-            var closeBtn = CloseBtnAt(panel, new Vector2(377, 552));
-
-            // 4. Map Avatar Sprites
+            // 3. Serialize Object Wiring (avatar sprite mapping retained for HeaderView / TutorialOverlay)
             var resMap = LoadDynamicResourceMap();
-            var avatarCsvPath = Path.Combine(Path.GetFullPath(Path.Combine(Application.dataPath, "../../..")), "shared/datas/avatar/avatar.csv");
-            var avatarMappings = new List<AccountPopupView.AvatarSpriteMapping>();
-
-            if (File.Exists(avatarCsvPath))
-            {
-                var lines = File.ReadAllLines(avatarCsvPath);
-                for (int i = 4; i < lines.Length; i++)
-                {
-                    var line = lines[i].Trim();
-                    if (string.IsNullOrEmpty(line)) continue;
-                    var cols = line.Split(',');
-                    if (cols.Length >= 2)
-                    {
-                        if (int.TryParse(cols[0].Trim(), out int avatarId))
-                        {
-                            string resourceName = cols[1].Trim();
-                            Sprite sprite = null;
-                            if (resMap.TryGetValue(resourceName, out string spritePath))
-                            {
-                                sprite = AssetDatabase.LoadAssetAtPath<Sprite>(spritePath);
-                            }
-                            
-                            avatarMappings.Add(new AccountPopupView.AvatarSpriteMapping
-                            {
-                                avatarId = avatarId,
-                                resourceName = resourceName,
-                                sprite = sprite
-                            });
-                        }
-                    }
-                }
-            }
-
-            // Map Board Theme Sprites
-            var themeCsvPath = Path.Combine(Path.GetFullPath(Path.Combine(Application.dataPath, "../../..")), "shared/datas/board_theme/board_theme.csv");
-            var themeMappings = new List<AccountPopupView.BoardThemeSpriteMapping>();
-
-            if (File.Exists(themeCsvPath))
-            {
-                var lines = File.ReadAllLines(themeCsvPath);
-                for (int i = 4; i < lines.Length; i++)
-                {
-                    var line = lines[i].Trim();
-                    if (string.IsNullOrEmpty(line)) continue;
-                    var cols = line.Split(',');
-                    if (cols.Length >= 2)
-                    {
-                        if (int.TryParse(cols[0].Trim(), out int themeId))
-                        {
-                            string resourceName = cols[1].Trim();
-                            Sprite borderSprite = null;
-                            Sprite socketSprite = null;
-                            if (resMap.TryGetValue($"{resourceName}_border", out string borderPath))
-                            {
-                                borderSprite = AssetDatabase.LoadAssetAtPath<Sprite>(borderPath);
-                            }
-                            if (resMap.TryGetValue($"{resourceName}_socket", out string socketPath))
-                            {
-                                socketSprite = AssetDatabase.LoadAssetAtPath<Sprite>(socketPath);
-                            }
-                            
-                            themeMappings.Add(new AccountPopupView.BoardThemeSpriteMapping
-                            {
-                                themeId = themeId,
-                                resourceName = resourceName,
-                                borderSprite = borderSprite,
-                                socketSprite = socketSprite
-                            });
-                        }
-                    }
-                }
-            }
-
-            if (resMap.TryGetValue("ui_lock_icon", out string lockIconPath))
-            {
-                var lockIconSprite = AssetDatabase.LoadAssetAtPath<Sprite>(lockIconPath);
-                if (lockIconSprite != null)
-                {
-                    lockIconImg.sprite = lockIconSprite;
-                    EditorUtility.SetDirty(lockIconImg);
-                }
-            }
-
-            // 5. Serialize Object Wiring
             var so = new SerializedObject(root.GetComponent<AccountPopupView>());
             so.FindProperty("_userIdText").objectReferenceValue          = uidTxt;
             so.FindProperty("_linkAccountButton").objectReferenceValue   = linkBtn.GetComponent<Button>();
             so.FindProperty("_switchAccountButton").objectReferenceValue = swBtn.GetComponent<Button>();
             so.FindProperty("_closeButton").objectReferenceValue         = closeBtn;
-
             so.FindProperty("_displayNameInput").objectReferenceValue    = inputField;
             so.FindProperty("_saveNicknameButton").objectReferenceValue   = saveBtn.GetComponent<Button>();
-            so.FindProperty("_avatarGridParent").objectReferenceValue     = contentRt;
-            so.FindProperty("_avatarSlotTemplate").objectReferenceValue   = templateGo;
-
-            so.FindProperty("_avatarTabButton").objectReferenceValue     = avatarTabBtn.GetComponent<Button>();
-            so.FindProperty("_boardThemeTabButton").objectReferenceValue  = themeTabBtn.GetComponent<Button>();
             so.FindProperty("_nicknameArea").objectReferenceValue         = nicknameAreaGo;
-            so.FindProperty("_gridLabelText").objectReferenceValue        = gridLabelTxt;
 
-            var avatarSpritesProp = so.FindProperty("_avatarSprites");
-            avatarSpritesProp.ClearArray();
-            avatarSpritesProp.arraySize = avatarMappings.Count;
-            for (int i = 0; i < avatarMappings.Count; i++)
-            {
-                var elem = avatarSpritesProp.GetArrayElementAtIndex(i);
-                elem.FindPropertyRelative("avatarId").intValue = avatarMappings[i].avatarId;
-                elem.FindPropertyRelative("resourceName").stringValue = avatarMappings[i].resourceName;
-                elem.FindPropertyRelative("sprite").objectReferenceValue = avatarMappings[i].sprite;
-            }
-
-            var themeSpritesProp = so.FindProperty("_boardThemeSprites");
-            themeSpritesProp.ClearArray();
-            themeSpritesProp.arraySize = themeMappings.Count;
-            for (int i = 0; i < themeMappings.Count; i++)
-            {
-                var elem = themeSpritesProp.GetArrayElementAtIndex(i);
-                elem.FindPropertyRelative("themeId").intValue = themeMappings[i].themeId;
-                elem.FindPropertyRelative("resourceName").stringValue = themeMappings[i].resourceName;
-                elem.FindPropertyRelative("borderSprite").objectReferenceValue = themeMappings[i].borderSprite;
-                elem.FindPropertyRelative("socketSprite").objectReferenceValue = themeMappings[i].socketSprite;
-            }
+            PopulateAvatarSprites(so.FindProperty("_avatarSprites"), resMap);
 
             so.ApplyModifiedProperties();
 
@@ -1592,9 +2184,7 @@ namespace Game.Editor
             textRt.offsetMax = new Vector2(-20, -20);
             var textTmp = textGo.GetComponent<TextMeshProUGUI>();
             if (textTmp == null) textTmp = Comp<TextMeshProUGUI>(textGo);
-            textTmp.fontSizeMin = 24f;
-            textTmp.fontSizeMax = 36f;
-            textTmp.fontSize = 32f;
+            ApplyAutoFontSize(textTmp, TextCategory.Normal);
             textTmp.color = Color.white;
             textTmp.text = "Tutorial Message";
             textTmp.alignment = TextAlignmentOptions.Center;
@@ -1996,30 +2586,7 @@ namespace Game.Editor
             var editorFont = GetEditorDefaultFont();
             if (editorFont != null) tmp.font = editorFont;
 
-            // AutoFontSize: applied only for size >= 28. Below 28 uses fixed size.
-            if (size < 28)
-            {
-                tmp.enableAutoSizing = false;
-                tmp.fontSize = size;
-            }
-            else
-            {
-                tmp.enableAutoSizing = true;
-                switch (category)
-                {
-                    case TextCategory.Header:
-                        tmp.fontSizeMin = 48f; tmp.fontSizeMax = 72f;
-                        break;
-                    case TextCategory.Button:
-                        tmp.fontSizeMin = 36f; tmp.fontSizeMax = 56f;
-                        break;
-                    case TextCategory.Normal:
-                    default:
-                        tmp.fontSizeMin = 28f; tmp.fontSizeMax = 36f;
-                        break;
-                }
-                tmp.fontSize = tmp.fontSizeMax;
-            }
+            ApplyAutoFontSize(tmp, category);
             tmp.color     = color;
             tmp.text      = StripEmojis(text);
             tmp.alignment = TextAlignmentOptions.Center;
@@ -2036,8 +2603,31 @@ namespace Game.Editor
             
             var style = Comp<UITextStyle>(go);
             style.ApplyStyle();
-            
+
             return tmp;
+        }
+
+        /// <summary>
+        /// Readability convention (MANDATORY for every TMP): AutoFontSize is ALWAYS on, min font
+        /// size is 32 (never smaller), and `category` drives the max so titles render large:
+        /// Header 32–72, Button 32–56, Normal 32–40. fontSize starts at max and shrinks to fit
+        /// down to 32. Call for hand-built TMP too (TMP_InputField is the only exception — it uses
+        /// a fixed min=max size inline to avoid caret/scroll glitches).
+        /// </summary>
+        static void ApplyAutoFontSize(TMP_Text tmp, TextCategory category)
+        {
+            float max;
+            switch (category)
+            {
+                case TextCategory.Header: max = 72f; break;
+                case TextCategory.Button: max = 56f; break;
+                case TextCategory.Normal:
+                default:                  max = 40f; break;
+            }
+            tmp.enableAutoSizing = true;
+            tmp.fontSizeMin = 32f;
+            tmp.fontSizeMax = max;
+            tmp.fontSize    = max;
         }
 
         static Image Img(GameObject go, Color color)
@@ -2198,10 +2788,7 @@ namespace Game.Editor
             captionRt.offsetMin = new Vector2(15, 5);
             captionRt.offsetMax = new Vector2(-70, -5);
             var captionTmp = Comp<TextMeshProUGUI>(captionGo);
-            captionTmp.enableAutoSizing   = true;
-            captionTmp.fontSizeMin        = 28f;
-            captionTmp.fontSizeMax        = 38f;
-            captionTmp.fontSize           = 38f;
+            ApplyAutoFontSize(captionTmp, TextCategory.Normal);
             captionTmp.color              = UI_TEXT;
             captionTmp.alignment          = TextAlignmentOptions.Left;
             captionTmp.overflowMode       = TextOverflowModes.Overflow;
@@ -2267,10 +2854,7 @@ namespace Game.Editor
             itemLabelRt.offsetMin = new Vector2(20, 4);
             itemLabelRt.offsetMax = new Vector2(-50, -4);  // -50 clears right-side checkmark
             var itemLabelTmp = Comp<TextMeshProUGUI>(itemLabelGo);
-            itemLabelTmp.enableAutoSizing   = true;
-            itemLabelTmp.fontSizeMin        = 28f;
-            itemLabelTmp.fontSizeMax        = 38f;
-            itemLabelTmp.fontSize           = 38f;
+            ApplyAutoFontSize(itemLabelTmp, TextCategory.Normal);
             itemLabelTmp.color              = UI_TEXT;
             itemLabelTmp.alignment          = TextAlignmentOptions.Left;
             itemLabelTmp.overflowMode       = TextOverflowModes.Overflow;
@@ -2470,7 +3054,7 @@ namespace Game.Editor
 
         static void EnsureDirs()
         {
-            foreach (var path in new[] { PrefabRoot, PrefabBase, BaseCommonPath, BaseScenesPath, PrefabFinal })
+            foreach (var path in new[] { PrefabRoot, PrefabBase, BaseCommonPath, BaseScenesPath, PrefabFinal, PrefabsGamePath })
                 MkDir(path);
         }
 
@@ -2888,7 +3472,7 @@ namespace Game.Editor
             labelLe.flexibleWidth = 0f;
             var labelTmp = Comp<TextMeshProUGUI>(labelGo);
             labelTmp.text              = "CATEGORY";
-            labelTmp.fontSize          = 14f;
+            ApplyAutoFontSize(labelTmp, TextCategory.Normal);
             labelTmp.fontStyle         = FontStyles.Bold;
             labelTmp.color             = UI_CTA;
             labelTmp.alignment         = TextAlignmentOptions.Center;
@@ -2978,7 +3562,7 @@ namespace Game.Editor
             // Left-Bottom: Price Button (X=-320, Y=-85, size=200x56)
             var priceBtn = Btn(visual, "PriceButton", new Vector2(-320, -85), new Vector2(200, 56), UI_SUCCESS, "$0.00", null);
             var priceTxt = priceBtn.transform.Find("Visual/Label").GetComponent<TextMeshProUGUI>();
-            priceTxt.fontSize = 18;
+            ApplyAutoFontSize(priceTxt, TextCategory.Normal);
             priceTxt.fontStyle = FontStyles.Bold;
             priceTxt.color = UI_TEXT;
 
@@ -2987,7 +3571,7 @@ namespace Game.Editor
             Fixed(titleGo, new Vector2(120, 60), new Vector2(600, 60));
             var titleText = Comp<TextMeshProUGUI>(titleGo);
             titleText.text = "Product Title";
-            titleText.fontSize = 30;
+            ApplyAutoFontSize(titleText, TextCategory.Header);
             titleText.color = Hex("FFDF00"); // High-readability gold/yellow for title
             titleText.fontStyle = FontStyles.Bold;
             titleText.alignment = TextAlignmentOptions.Left;
@@ -2998,7 +3582,7 @@ namespace Game.Editor
             Fixed(descGo, new Vector2(120, -40), new Vector2(600, 120));
             var descText = Comp<TextMeshProUGUI>(descGo);
             descText.text = "Product description goes here. Highly readable text style.";
-            descText.fontSize = 18;
+            ApplyAutoFontSize(descText, TextCategory.Normal);
             descText.color = UI_TEXT; // Crisp white for description
             descText.alignment = TextAlignmentOptions.Left;
             descText.enableWordWrapping = true;
@@ -3022,14 +3606,10 @@ namespace Game.Editor
             tbImg.rectTransform.offsetMin = new Vector2(-2, -2);
             tbImg.rectTransform.offsetMax = new Vector2(2, 2);
 
-            // TagText configured manually to prevent massive font sizing issues caused by TextCategory.Header
             var tagTxtGo = Child(tagGo, "TagText");
             Fixed(tagTxtGo, new Vector2(15, 0), new Vector2(190, 42));
             var tagTxt = Comp<TextMeshProUGUI>(tagTxtGo);
-            tagTxt.enableAutoSizing = true;
-            tagTxt.fontSizeMin = 12f;
-            tagTxt.fontSizeMax = 20f;
-            tagTxt.fontSize = 18f;
+            ApplyAutoFontSize(tagTxt, TextCategory.Normal);
             tagTxt.color = Hex("1E0F27");
             tagTxt.text = "TAG";
             tagTxt.fontStyle = FontStyles.Bold;
@@ -3043,7 +3623,7 @@ namespace Game.Editor
             Fixed(limitGo, new Vector2(200, -85), new Vector2(300, 56));
             var limitText = Comp<TextMeshProUGUI>(limitGo);
             limitText.text = "";
-            limitText.fontSize = 18;
+            ApplyAutoFontSize(limitText, TextCategory.Normal);
             limitText.color = Hex("DFD5E6"); // Slate white/gray
             limitText.alignment = TextAlignmentOptions.Right;
             Comp<LocalizedText>(limitGo);
@@ -3083,16 +3663,12 @@ namespace Game.Editor
             iconImg.preserveAspect = true;
 
             // Title — right of icon, pixel-art pixel style
-            var titleTmp = TMP(inner, "Title", Center(38f, 55f, 185f, 44f), 18, UI_TEXT, "Item Name", null, TextCategory.Normal);
-            titleTmp.fontSizeMin = 20f;
-            titleTmp.fontSizeMax = 32f;
+            var titleTmp = TMP(inner, "Title", Center(38f, 55f, 185f, 44f), 32, UI_TEXT, "Item Name", null, TextCategory.Normal);
             titleTmp.enableWordWrapping = false;
             titleTmp.alignment = TextAlignmentOptions.Left;
 
             // Desc — full width, below icon and title
-            var descTmp = TMP(inner, "Desc", Center(0f, -45f, 310f, 80f), 14, new Color(0.82f, 0.78f, 0.88f, 1f), "Description", null, TextCategory.Normal);
-            descTmp.fontSizeMin = 14f;
-            descTmp.fontSizeMax = 22f;
+            var descTmp = TMP(inner, "Desc", Center(0f, -45f, 310f, 80f), 28, new Color(0.82f, 0.78f, 0.88f, 1f), "Description", null, TextCategory.Normal);
             descTmp.enableWordWrapping = true;
             descTmp.alignment = TextAlignmentOptions.Center;
 

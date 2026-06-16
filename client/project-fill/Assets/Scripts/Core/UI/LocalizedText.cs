@@ -113,14 +113,17 @@ namespace Game.Core.UI
             var lines = csv.Split(new[] { '\r', '\n' }, System.StringSplitOptions.RemoveEmptyEntries);
             if (lines.Length < 2) return null;
             var headers = SplitLine(lines[0]);
-            int langCol = -1;
+            int langCol = -1, keyCol = 0;
             for (int i = 0; i < headers.Length; i++)
-                if (headers[i] == langCode) { langCol = i; break; }
+            {
+                if (headers[i] == langCode) langCol = i;
+                if (headers[i].EndsWith("_key")) keyCol = i;
+            }
             if (langCol < 0) return null;
             for (int r = 1; r < lines.Length; r++)
             {
                 var cols = SplitLine(lines[r]);
-                if (cols.Length > 0 && cols[0].Trim() == key && langCol < cols.Length)
+                if (keyCol < cols.Length && cols[keyCol].Trim() == key && langCol < cols.Length)
                     return cols[langCol].Trim();
             }
             return null;

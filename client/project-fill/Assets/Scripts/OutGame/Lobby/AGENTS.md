@@ -17,7 +17,16 @@ Namespace: `Game.OutGame.Lobby`
 | `ScrollStateCache.cs` | `ScrollStateCache` | Static session memory: HomeScrollPosition, LastPlayedStageId |
 | `ChapterBgTheme.cs` | `ChapterBgTheme` | Static theme config per `bg_theme_id`; colors + particle params |
 | `ChapterBackgroundView.cs` | `ChapterBackgroundView` | Chapter scroll background: gradient + fade seams + animated particles + label |
-| `ShopTabView.cs` | `ShopTabView` | Shop tab UI; groups IAP cards by `iap_category`, renders divider+label headers, handles purchase limits and dynamic status |
+| `ShopTabView.cs` | `ShopTabView` | Shop tab UI; groups IAP cards by `iap_category`, renders divider+label headers, handles purchase limits and dynamic status; keeps `_cosmeticSection` then `_avatarSection` last siblings below IAP cards |
+| `RewardDisplay.cs` | `RewardDisplay` | Static helper; converts `GrantedRewardDto[]` → `RewardPopupView.RewardItem[]` (gold/item/avatar/no-ads icons). Shared by attendance/achievement/challenge claim flows |
+| `CosmeticSectionView.cs` | `CosmeticSectionView` | Shop cosmetic section: Chip/Lane/Board category tabs + grid; canonical board-customization surface (unified — replaced AccountPopup board tab) |
+| `CosmeticPreviewPopupView.cs` | `CosmeticPreviewPopupView` | Cosmetic preview popup: preview/name/desc + buy-and-apply / apply via `CosmeticApiService` |
+| `AvatarSectionView.cs` | `AvatarSectionView` | Shop avatar section: horizontal scroll carousel of avatar cards (loads `avatar.csv`); card tap → `AvatarPreviewPopupView`. Uses existing avatar API (NOT cosmetic system); holds `_avatarSprites` mapping |
+| `AvatarPreviewPopupView.cs` | `AvatarPreviewPopupView` | Avatar preview popup: preview + cost/state + equip / buy-and-equip via `PlayerApiService.UpdateProfile` + local gold |
+| `AttendancePopupView.cs` | `AttendancePopupView` | Daily attendance popup: 7 day cards (claimed/today/future), today reward preview, claim CTA → RewardPopup; auto-opened from `LobbyView` |
+| `AchievementTabView.cs` | `AchievementTabView` | Achievement lobby tab (right of Ranking): 4 category tabs + scroll list (tier badge, progress bar, claim). Migrated from former AchievementListPopupView |
+| `AchievementToastView.cs` | `AchievementToastView` | Slide-down achievement-unlocked toast (tier badge + name, 3s); `Show(nameKey,tier)` via ShowOverlay — gameplay trigger is InGame seam |
+| `DailyChallengePopupView.cs` | `DailyChallengePopupView` | Daily challenge entry popup: date/difficulty/participants/streak; [Start]=coming-soon (InGame seam), [Ranking]→Ranking Challenge tab |
 
 ## Symbols
 | symbol | kind | note |
@@ -27,6 +36,7 @@ Namespace: `Game.OutGame.Lobby`
 | `LobbyView._rankingTabView` | SerializeField | Ranking tab refresh target |
 | `BottomNavBarView.OnTabChanged` | event | `Action<LobbyTab>` |
 | `BottomNavBarView.SelectTab(LobbyTab)` | method | Public; sets highlight |
+| `BottomNavBarView._achievementButton` | SerializeField | 4th nav tab (right of Ranking); fires `LobbyTab.Achievement` |
 | `RankingTabView.Refresh` | method | Fetches page + my rank via `RankingApiService` |
 | `RankingTabView._myRankPin` | SerializeField | `RankingItemView` ref; SetHighlight(true) distinguishes from list items |
 | `RankingItemView.Bind(entry,avatarSprite,scoreSprite)` | method | Populates all text/icon fields from RankingEntryDto |
@@ -37,7 +47,17 @@ Namespace: `Game.OutGame.Lobby`
 | `StageInfoPopupView.Init(stageId,bestStars,bestMoves,onPlay,difficulty,isLocked)` | method | Required before showing; isLocked=true disables PlayButton; difficulty tints ribbon: 0=amber(default), 1=neon blue, 2=coral red |
 | `ScrollStateCache.HomeScrollPosition` | prop | Float 0..1; save on leave, restore on enter |
 | `ScrollStateCache.LastPlayedStageId` | prop | Set before entering InGame scene |
-| `LobbyTab` | enum | Home / Shop / Ranking |
+| `LobbyTab` | enum | Home / Shop / Ranking / Achievement |
+| `LobbyView._achievementTabRoot` | SerializeField | Achievement tab root toggled by nav; `AchievementTabView` fetches OnEnable |
+| `LobbyView.GoToRankingChallenge()` | method | Switches to Ranking tab + selects Challenge sub-tab; called by `DailyChallengePopupView` |
+| `LobbyView.TryShowDailyAttendance()` | method | Once-per-session; auto-opens `AttendancePopupView` if today unclaimed (Start) |
+| `RankingTabView.SelectChallenge()` | method | Public; switches to `_rankingType="challenge"` (daily-challenge ranking via `DailyChallengeApiService`, score=moves_used) |
+| `RankingTabView._challengeTabButton` | SerializeField | Third ranking tab; reuses VirtualizedScrollRect + RankingItemView |
+| `CosmeticSectionView.Rebuild()` | method | Builds grid for current `CosmeticCategory`; cell tap → CosmeticPreviewPopupView |
+| `AvatarSectionView.GetAvatarSprite(int)` | method | Resolves avatar sprite from `_avatarSprites` mapping (populated by UIEditorSetup from avatar.csv) |
+| `AvatarPreviewPopupView.Init(avatarId,sprite,unlockCost,unlocked,onChanged)` | method | Required before showing; equip / buy-and-equip; onChanged → section Rebuild |
+| `AchievementTabView.BindCell()` | method | Tier-colored badge, progress fill, claim button vs completed label; dims incomplete |
+| `LobbyBadgeContainer` | component | EventLayoutGroup now spawns attendance + challenge badges (open respective popups) |
 | `ShopTabView` | component | Shop screen; loads `iap_category` + `iap_product` CSVs; renders per-category section headers (divider+label) and product cards; hides exhausted/owned items |
 | `ShopTabView.InitializeCards()` | method | Rebuilds card tree grouped by category; creates headers, spacers, and cards in sort_order sequence |
 | `ShopTabView.CreateCategoryHeader(cat)` | method | Programmatic HLG: left-divider + TMP label + right-divider; uses LocalizedText for language reload |

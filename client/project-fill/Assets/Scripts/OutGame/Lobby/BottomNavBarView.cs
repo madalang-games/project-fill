@@ -4,16 +4,18 @@ using UnityEngine.UI;
 
 namespace Game.OutGame.Lobby
 {
-    public enum LobbyTab { Home, Shop, Ranking }
+    public enum LobbyTab { Home, Shop, Ranking, Achievement }
 
     public class BottomNavBarView : MonoBehaviour
     {
         [SerializeField] private Button   _homeButton;
         [SerializeField] private Button   _shopButton;
         [SerializeField] private Button   _rankingButton;
+        [SerializeField] private Button   _achievementButton;
         [SerializeField] private Image    _homeHighlight;
         [SerializeField] private Image    _shopHighlight;
         [SerializeField] private Image    _rankingHighlight;
+        [SerializeField] private Image    _achievementHighlight;
 
         public event Action<LobbyTab> OnTabChanged;
 
@@ -25,6 +27,7 @@ namespace Game.OutGame.Lobby
             _homeButton.onClick.AddListener(    () => SelectTab(LobbyTab.Home));
             _shopButton.onClick.AddListener(    () => SelectTab(LobbyTab.Shop));
             _rankingButton.onClick.AddListener( () => SelectTab(LobbyTab.Ranking));
+            _achievementButton?.onClick.AddListener( () => SelectTab(LobbyTab.Achievement));
 
             SetTabHighlight(LobbyTab.Home);
         }
@@ -40,6 +43,7 @@ namespace Game.OutGame.Lobby
             SetHighlight(_homeHighlight,    active == LobbyTab.Home);
             SetHighlight(_shopHighlight,    active == LobbyTab.Shop);
             SetHighlight(_rankingHighlight, active == LobbyTab.Ranking);
+            SetHighlight(_achievementHighlight, active == LobbyTab.Achievement);
         }
 
         private static void SetHighlight(Image img, bool on)

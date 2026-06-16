@@ -1,6 +1,7 @@
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UImage = UnityEngine.UI.Image;
 
 namespace Game.InGame.View
 {
@@ -14,14 +15,14 @@ namespace Game.InGame.View
             return go.AddComponent<RectTransform>();
         }
 
-        public static Image Image(Transform parent, string name, Sprite sprite, Color color, bool sliced = true)
+        public static UImage Image(Transform parent, string name, Sprite sprite, Color color, bool sliced = true)
         {
             var rt  = Rect(parent, name);
-            var img = rt.gameObject.AddComponent<Image>();
+            var img = rt.gameObject.AddComponent<UImage>();
             img.sprite = sprite;
             img.color  = color;
             if (sprite != null && sliced && sprite.border != Vector4.zero)
-                img.type = Image.Type.Sliced;
+                img.type = UImage.Type.Sliced;
             img.raycastTarget = false;
             return img;
         }

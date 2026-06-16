@@ -6,7 +6,6 @@ using System;
 using System.Collections.Generic;
 using Game.Core;
 using Game.Core.UI;
-using Game.Utils;
 
 namespace Game.OutGame.Settings
 {
@@ -20,15 +19,10 @@ namespace Game.OutGame.Settings
         [Header("Profile Modifications")]
         [SerializeField] private TMP_InputField _displayNameInput;
         [SerializeField] private Button         _saveNicknameButton;
-        [SerializeField] private RectTransform  _avatarGridParent;
-        [SerializeField] private GameObject     _avatarSlotTemplate;
-
-        [Header("Tabs")]
-        [SerializeField] private Button         _avatarTabButton;
-        [SerializeField] private Button         _boardThemeTabButton;
         [SerializeField] private GameObject     _nicknameArea;
-        [SerializeField] private TMP_Text       _gridLabelText;
 
+        // Avatar selection moved to the Shop avatar section. This sprite mapping is retained because
+        // HeaderView and TutorialOverlay read the equipped avatar sprite via GetAvatarSprite on this prefab.
         [System.Serializable]
         public struct AvatarSpriteMapping
         {
@@ -39,22 +33,6 @@ namespace Game.OutGame.Settings
 
         [SerializeField] private List<AvatarSpriteMapping> _avatarSprites = new List<AvatarSpriteMapping>();
 
-        [System.Serializable]
-        public struct BoardThemeSpriteMapping
-        {
-            public int themeId;
-            public string resourceName;
-            public Sprite borderSprite;
-            public Sprite socketSprite;
-        }
-
-        [SerializeField] private List<BoardThemeSpriteMapping> _boardThemeSprites = new List<BoardThemeSpriteMapping>();
-
-        private enum Tab { Avatars, BoardThemes }
-        private static readonly Color TabPrimaryColor = new Color(1f, 0.3019608f, 0.4745098f);
-        private static readonly Color TabSecondaryColor = new Color(0.3019608f, 0.1372549f, 0.3647059f);
-        private Tab _currentTab = Tab.Avatars;
-
         public Sprite GetAvatarSprite(int avatarId)
         {
             if (_avatarSprites != null)
@@ -63,19 +41,6 @@ namespace Game.OutGame.Settings
                 {
                     if (mapping.avatarId == avatarId)
                         return mapping.sprite;
-                }
-            }
-            return null;
-        }
-
-        public Sprite GetBoardThemeBorderSprite(int themeId)
-        {
-            if (_boardThemeSprites != null)
-            {
-                foreach (var mapping in _boardThemeSprites)
-                {
-                    if (mapping.themeId == themeId)
-                        return mapping.borderSprite;
                 }
             }
             return null;
@@ -103,53 +68,7 @@ namespace Game.OutGame.Settings
             }
             _saveNicknameButton?.onClick.AddListener(OnSaveNickname);
 
-            // Bind tabs
-            _avatarTabButton?.onClick.AddListener(() => SwitchTab(Tab.Avatars));
-            _boardThemeTabButton?.onClick.AddListener(() => SwitchTab(Tab.BoardThemes));
-
-            // Default view
-            SwitchTab(Tab.Avatars);
-        }
-
-        private void SwitchTab(Tab tab)
-        {
-            _currentTab = tab;
-
-            if (tab == Tab.Avatars)
-            {
-                if (_nicknameArea != null) _nicknameArea.SetActive(true);
-                if (_gridLabelText != null) _gridLabelText.text = LocalizationService.Instance.Get("popup.account.choose_avatar");
-
-                SetTabVisuals();
-                PopulateAvatars();
-            }
-            else
-            {
-                if (_nicknameArea != null) _nicknameArea.SetActive(false);
-                if (_gridLabelText != null) _gridLabelText.text = LocalizationService.Instance.Get("popup.account.choose_board_theme");
-
-                SetTabVisuals();
-                PopulateBoardThemes();
-            }
-        }
-
-        private void SetTabVisuals()
-        {
-            bool avatarActive = _currentTab == Tab.Avatars;
-            SetTabButtonColor(_avatarTabButton, avatarActive ? TabPrimaryColor : TabSecondaryColor);
-            SetTabButtonColor(_boardThemeTabButton, avatarActive ? TabSecondaryColor : TabPrimaryColor);
-        }
-
-        private void SetTabButtonColor(Button button, Color color)
-        {
-            if (button == null) return;
-
-            if (button.targetGraphic != null)
-                button.targetGraphic.color = color;
-
-            var textStyle = button.GetComponentInChildren<UITextStyle>();
-            if (textStyle != null)
-                textStyle.ApplyStyle();
+            if (_nicknameArea != null) _nicknameArea.SetActive(true);
         }
 
         private void OnSaveNickname()
@@ -187,278 +106,6 @@ namespace Game.OutGame.Settings
                 else
                 {
                     string errorMsg = LocalizationService.Instance.Get("toast.nickname_update_failed");
-                    if (!string.IsNullOrEmpty(err))
-                    {
-                        errorMsg = LocalizationService.Instance != null 
-                            ? LocalizationService.Instance.GetError(err) 
-                            : err;
-                    }
-                    Game.Core.UIManager.Instance?.ShowToast(errorMsg, Core.UI.ToastType.Error);
-                }
-            });
-        }
-
-        private void PopulateAvatars()
-        {
-            if (_avatarGridParent == null || _avatarSlotTemplate == null) return;
-
-            // Clear existing spawned slots (skip template)
-            foreach (Transform child in _avatarGridParent)
-            {
-                if (child.gameObject != _avatarSlotTemplate)
-                {
-                    Destroy(child.gameObject);
-                }
-            }
-            _avatarSlotTemplate.SetActive(false);
-
-            var avatars = CsvLoader.Load<ProjectFill.Data.Generated.Avatar>(ProjectFill.Data.Generated.Avatar.ResourcePath);
-            if (avatars == null) return;
-
-            int currentEquippedAvatarId = AuthService.Instance != null ? AuthService.Instance.AvatarId : 1;
-
-            foreach (var avatar in avatars)
-            {
-                var slotGo = Instantiate(_avatarSlotTemplate, _avatarGridParent);
-                slotGo.SetActive(true);
-
-                var iconImg = slotGo.transform.Find("Visual/Icon")?.GetComponent<Image>();
-                var selectHighlight = slotGo.transform.Find("Visual/SelectedHighlight")?.gameObject;
-                var lockOverlay = slotGo.transform.Find("Visual/LockOverlay")?.gameObject;
-                var costText = slotGo.transform.Find("Visual/LockOverlay/CostText")?.GetComponent<TMP_Text>();
-                var btn = slotGo.GetComponent<Button>();
-
-                // Set sprite
-                if (iconImg != null)
-                {
-                    iconImg.sprite = GetAvatarSprite(avatar.id);
-                    iconImg.color = Color.white;
-                    iconImg.preserveAspect = true;
-                }
-
-                // Equip highlight
-                bool isEquipped = avatar.id == currentEquippedAvatarId;
-                if (selectHighlight != null) selectHighlight.SetActive(isEquipped);
-
-                // Lock state
-                bool isUnlocked = PlayerProgressService.Instance != null && PlayerProgressService.Instance.IsAvatarUnlocked(avatar.id);
-                if (lockOverlay != null) lockOverlay.SetActive(!isUnlocked);
-
-                if (!isUnlocked && costText != null)
-                {
-                    costText.text = $"{avatar.unlock_cost}";
-                }
-
-                if (btn != null)
-                {
-                    btn.onClick.RemoveAllListeners();
-                    btn.onClick.AddListener(() => OnAvatarClicked(avatar, isUnlocked));
-                }
-            }
-        }
-
-        private void PopulateBoardThemes()
-        {
-            if (_avatarGridParent == null || _avatarSlotTemplate == null) return;
-
-            // Clear existing spawned slots (skip template)
-            foreach (Transform child in _avatarGridParent)
-            {
-                if (child.gameObject != _avatarSlotTemplate)
-                {
-                    Destroy(child.gameObject);
-                }
-            }
-            _avatarSlotTemplate.SetActive(false);
-
-            var themes = CsvLoader.Load<ProjectFill.Data.Generated.BoardTheme>(ProjectFill.Data.Generated.BoardTheme.ResourcePath);
-            if (themes == null) return;
-
-            int currentEquippedThemeId = PlayerProgressService.Instance != null ? PlayerProgressService.Instance.EquippedBoardThemeId : 1;
-
-            foreach (var theme in themes)
-            {
-                var slotGo = Instantiate(_avatarSlotTemplate, _avatarGridParent);
-                slotGo.SetActive(true);
-
-                var iconImg = slotGo.transform.Find("Visual/Icon")?.GetComponent<Image>();
-                var selectHighlight = slotGo.transform.Find("Visual/SelectedHighlight")?.gameObject;
-                var lockOverlay = slotGo.transform.Find("Visual/LockOverlay")?.gameObject;
-                var costText = slotGo.transform.Find("Visual/LockOverlay/CostText")?.GetComponent<TMP_Text>();
-                var btn = slotGo.GetComponent<Button>();
-
-                // Set sprite or color tint
-                if (iconImg != null)
-                {
-                    Sprite customBorder = GetBoardThemeBorderSprite(theme.theme_id);
-                    if (customBorder != null)
-                    {
-                        iconImg.sprite = customBorder;
-                        iconImg.color = Color.white;
-                    }
-                    else
-                    {
-                        iconImg.sprite = null;
-                        if (theme.theme_id == 1) iconImg.color = new Color(0.055f, 0.071f, 0.118f); // Classic
-                        else if (theme.theme_id == 2) iconImg.color = new Color(0.15f, 0.95f, 1f); // Neon
-                        else if (theme.theme_id == 3) iconImg.color = new Color(0.25f, 0.15f, 0.08f); // Wood
-                        else if (theme.theme_id == 4) iconImg.color = new Color(1f, 0.78f, 0f); // Cyberpunk
-                    }
-                    iconImg.preserveAspect = true;
-                }
-
-                // Equip highlight
-                bool isEquipped = theme.theme_id == currentEquippedThemeId;
-                if (selectHighlight != null) selectHighlight.SetActive(isEquipped);
-
-                // Lock state
-                bool isUnlocked = PlayerProgressService.Instance != null && PlayerProgressService.Instance.IsThemeUnlocked(theme.theme_id);
-                if (lockOverlay != null) lockOverlay.SetActive(!isUnlocked);
-
-                if (!isUnlocked && costText != null)
-                {
-                    costText.text = $"{theme.unlock_cost}";
-                }
-
-                if (btn != null)
-                {
-                    btn.onClick.RemoveAllListeners();
-                    btn.onClick.AddListener(() => OnThemeClicked(theme, isUnlocked));
-                }
-            }
-        }
-
-        private void OnThemeClicked(ProjectFill.Data.Generated.BoardTheme theme, bool isUnlocked)
-        {
-            if (isUnlocked)
-            {
-                EquipBoardTheme(theme.theme_id);
-            }
-            else
-            {
-                if (PlayerProgressService.Instance != null && !PlayerProgressService.Instance.CanAfford(theme.unlock_cost))
-                {
-                    Game.Core.UIManager.Instance?.ShowToast(LocalizationService.Instance.Get("toast.theme_not_enough_gold"), Core.UI.ToastType.Error);
-                    return;
-                }
-
-                Game.Core.UIManager.Instance?.ShowPopup<Core.UI.ConfirmDialogView>(v => v.Init(
-                    title:        LocalizationService.Instance.Get("popup.account.confirm_unlock_theme_title"),
-                    body:         string.Format(LocalizationService.Instance.Get("popup.account.confirm_unlock_theme_body_fmt"), theme.unlock_cost),
-                    confirmLabel: LocalizationService.Instance.Get("common.btn_unlock"),
-                    onConfirm:    () => BuyAndEquipBoardTheme(theme.theme_id, theme.unlock_cost),
-                    danger:       false));
-            }
-        }
-
-        private void EquipBoardTheme(int themeId)
-        {
-            UIManager.Instance?.ShowLoading();
-            PlayerApiService.Instance.UpdateProfile(null, null, themeId, (ok, res, err) =>
-            {
-                UIManager.Instance?.HideLoading();
-                if (ok && res != null)
-                {
-                    PopulateBoardThemes(); // Refresh grid
-                    Game.Core.UIManager.Instance?.ShowToast(LocalizationService.Instance.Get("toast.theme_equipped"), Core.UI.ToastType.Success);
-                }
-                else
-                {
-                    Game.Core.UIManager.Instance?.ShowToast(LocalizationService.Instance.Get("toast.theme_equip_failed"), Core.UI.ToastType.Error);
-                }
-            });
-        }
-
-        private void BuyAndEquipBoardTheme(int themeId, int cost)
-        {
-            UIManager.Instance?.ShowLoading();
-            PlayerApiService.Instance.UpdateProfile(null, null, themeId, (ok, res, err) =>
-            {
-                UIManager.Instance?.HideLoading();
-                if (ok && res != null)
-                {
-                    if (PlayerProgressService.Instance != null)
-                    {
-                        PlayerProgressService.Instance.SpendGold(cost);
-                        PlayerProgressService.Instance.UnlockThemeLocally(themeId);
-                    }
-                    PopulateBoardThemes(); // Refresh grid
-                    Game.Core.UIManager.Instance?.ShowToast(LocalizationService.Instance.Get("toast.theme_unlocked"), Core.UI.ToastType.Success);
-                }
-                else
-                {
-                    string errorMsg = LocalizationService.Instance.Get("popup.account.confirm_failed_unlock_theme");
-                    if (!string.IsNullOrEmpty(err))
-                    {
-                        errorMsg = LocalizationService.Instance != null 
-                            ? LocalizationService.Instance.GetError(err) 
-                            : err;
-                    }
-                    Game.Core.UIManager.Instance?.ShowToast(errorMsg, Core.UI.ToastType.Error);
-                }
-            });
-        }
-
-        private void OnAvatarClicked(ProjectFill.Data.Generated.Avatar avatar, bool isUnlocked)
-        {
-            if (isUnlocked)
-            {
-                EquipAvatar(avatar.id);
-            }
-            else
-            {
-                if (PlayerProgressService.Instance != null && !PlayerProgressService.Instance.CanAfford(avatar.unlock_cost))
-                {
-                    Game.Core.UIManager.Instance?.ShowToast(LocalizationService.Instance.Get("toast.avatar_not_enough_gold"), Core.UI.ToastType.Error);
-                    return;
-                }
-
-                Game.Core.UIManager.Instance?.ShowPopup<Core.UI.ConfirmDialogView>(v => v.Init(
-                    title:        LocalizationService.Instance.Get("popup.account.confirm_unlock_avatar_title"),
-                    body:         string.Format(LocalizationService.Instance.Get("popup.account.confirm_unlock_avatar_body_fmt"), avatar.unlock_cost),
-                    confirmLabel: LocalizationService.Instance.Get("common.btn_unlock"),
-                    onConfirm:    () => BuyAndEquipAvatar(avatar.id, avatar.unlock_cost),
-                    danger:       false));
-            }
-        }
-
-        private void EquipAvatar(int avatarId)
-        {
-            UIManager.Instance?.ShowLoading();
-            PlayerApiService.Instance.UpdateProfile(null, avatarId, null, (ok, res, err) =>
-            {
-                UIManager.Instance?.HideLoading();
-                if (ok && res != null)
-                {
-                    PopulateAvatars(); // Refresh grid
-                    Game.Core.UIManager.Instance?.ShowToast(LocalizationService.Instance.Get("toast.avatar_equipped"), Core.UI.ToastType.Success);
-                }
-                else
-                {
-                    Game.Core.UIManager.Instance?.ShowToast(LocalizationService.Instance.Get("toast.avatar_equip_failed"), Core.UI.ToastType.Error);
-                }
-            });
-        }
-
-        private void BuyAndEquipAvatar(int avatarId, int cost)
-        {
-            UIManager.Instance?.ShowLoading();
-            PlayerApiService.Instance.UpdateProfile(null, avatarId, null, (ok, res, err) =>
-            {
-                UIManager.Instance?.HideLoading();
-                if (ok && res != null)
-                {
-                    if (PlayerProgressService.Instance != null)
-                    {
-                        PlayerProgressService.Instance.SpendGold(cost);
-                        PlayerProgressService.Instance.UnlockAvatarLocally(avatarId);
-                    }
-                    PopulateAvatars(); // Refresh grid
-                    Game.Core.UIManager.Instance?.ShowToast(LocalizationService.Instance.Get("toast.avatar_unlocked"), Core.UI.ToastType.Success);
-                }
-                else
-                {
-                    string errorMsg = LocalizationService.Instance.Get("popup.account.confirm_failed_unlock_avatar");
                     if (!string.IsNullOrEmpty(err))
                     {
                         errorMsg = LocalizationService.Instance != null 

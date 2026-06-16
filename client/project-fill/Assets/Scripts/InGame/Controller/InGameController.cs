@@ -1,4 +1,6 @@
+using Game.Core;
 using Game.InGame.View;
+using Game.OutGame.Settings;
 using UnityEngine;
 
 namespace Game.InGame.Controller
@@ -21,26 +23,110 @@ namespace Game.InGame.Controller
         public void Begin(int startIndex)
         {
             _stageIndex = startIndex;
-            if (!_subscribed)
+            if (_boardView == null)
+            {
+                _boardView = FindObjectOfType<BoardView>();
+            }
+            if (!_subscribed && _boardView != null)
             {
                 _boardView.OnLaneTapped    += HandleLaneTapped;
                 _boardView.OnBoosterTapped += HandleBooster;
-                _boardView.OnChapterCycle  += () => { _stageIndex++; LoadCurrent(); };
-                _boardView.OnRestart       += LoadCurrent;
-                _boardView.OnBack          += () => BoardView.GoToScene("Lobby");
+                _boardView.OnPauseTapped   += HandlePause;
                 _subscribed = true;
             }
             LoadCurrent();
         }
 
+        private void HandlePause()
+        {
+            if (_boardView.IsInputBlocked) return;
+            if (UIManager.Instance != null)
+            {
+                UIManager.Instance.ShowPopup<PausePopupView>(p =>
+                {
+                    p.Configure(
+                        onResume: () => {},
+                        onRestart: LoadCurrent,
+                        onStageSelect: () => BoardView.GoToScene("Lobby")
+                    );
+                });
+            }
+        }
+
         private void LoadCurrent()
         {
-            _def   = StageLibrary.Get(_stageIndex);
-            _board = BoardFactory.Generate(_def);
+            var row = ResolveRow(_stageIndex);
+            _def = row != null ? BuildDefinition(row) : StageLibrary.Get(_stageIndex);
+            // Saved stages carry an explicit board layout (board column) — decode it directly.
+            // Empty board (or no CSV row) → generate one; null generation → known-good sample fallback.
+            _board = (row != null && !string.IsNullOrEmpty(row.board))
+                ? BoardCodec.Decode(row.board, _def)
+                : BoardFactory.Generate(_def);
+            if (_board == null)
+            {
+                _def   = StageLibrary.Get(_stageIndex);
+                _board = BoardFactory.Generate(_def);
+            }
             _selectedLane = -1;
             _boardView.Init(_board, _def);
             UpdateSoftStuck();
         }
+
+        // Stage source of truth is shared/datas/stage/stage.csv (via StageDataService). The hardcoded
+        // StageLibrary remains a dev fallback when the CSV/service is unavailable or the id is missing.
+        private ProjectFill.Data.Generated.Stage ResolveRow(int index)
+        {
+            var svc = Game.Services.StageDataService.Instance;
+            return svc != null ? svc.GetStage(index + 1) : null; // stage_id is 1-based
+        }
+
+        // Maps a Stage CSV row to the runtime StageDefinition. Glyph order = SignalType order
+        // (R B G Y P C O M L T = 0..9); lane kind codes N/L/B = Normal/Locked/Blind.
+        private const string Glyphs = "RBGYPCOMLT";
+
+        private static StageDefinition BuildDefinition(ProjectFill.Data.Generated.Stage s)
+        {
+            int laneCount = s.lane_kinds != null ? s.lane_kinds.Length : 0;
+            var kinds  = new LaneKind[laneCount];
+            var unlock = new SignalType[laneCount];
+            for (int i = 0; i < laneCount; i++)
+            {
+                kinds[i]  = ParseLaneKind(s.lane_kinds[i]);
+                unlock[i] = (s.lock_unlock != null && i < s.lock_unlock.Length)
+                    ? ParseGlyph(s.lock_unlock[i]) : SignalType.Red;
+            }
+
+            SignalType[] relay = null;
+            if (!string.IsNullOrEmpty(s.relay_order))
+            {
+                relay = new SignalType[s.relay_order.Length];
+                for (int i = 0; i < relay.Length; i++) relay[i] = ParseGlyph(s.relay_order[i]);
+            }
+
+            return new StageDefinition
+            {
+                Name          = $"STAGE {s.chapter_id}-{s.stage_order}",
+                Chapter       = s.chapter_id,
+                Types         = s.types,
+                LaneKinds     = kinds,
+                LockUnlock    = unlock,
+                OverloadType  = s.overload_type >= 0 ? (SignalType)s.overload_type : (SignalType?)null,
+                RelayOrder    = relay,
+            };
+        }
+
+        private static SignalType ParseGlyph(char c)
+        {
+            int i = Glyphs.IndexOf(c);
+            return (SignalType)(i < 0 ? 0 : i);
+        }
+
+        private static LaneKind ParseLaneKind(char c) => c switch
+        {
+            'L' => LaneKind.Locked,
+            'B' => LaneKind.Blind,
+            _   => LaneKind.Normal,
+        };
 
         // ── Input ────────────────────────────────────────────────────────────
 
@@ -67,12 +153,13 @@ namespace Game.InGame.Controller
 
                 if (_board.CanMoveTo(from, lane))
                 {
-                    var chip    = _board.Lanes[from].TopChip!.Value;
-                    int srcSlot = _board.Lanes[from].Count - 1;
+                    var chip     = _board.Lanes[from].TopChip!.Value;
+                    int count    = _board.MovableCount(from, lane);
+                    int destBase = _board.Lanes[lane].Count;
                     var absorbed = _board.Move(from, lane);
 
                     _boardView.BlockInput(true);
-                    _boardView.AnimateMove(from, lane, chip, srcSlot, absorbed, () =>
+                    _boardView.AnimateMove(from, lane, chip, count, destBase, absorbed, () =>
                     {
                         _boardView.BlockInput(false);
                         PostMoveCheck();

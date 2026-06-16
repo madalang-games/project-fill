@@ -19,4 +19,5 @@ MonoBehaviour orchestrators for the Signal Sort loop and scene entry.
 ## Rules
 - Controller owns game logic; BoardView owns rendering/animation. Controller never touches GameObjects.
 - BoardView events are subscribed once in `Begin` (BoardView persists across stage reloads).
-- Move flow: capture top chip + slot → `Board.Move` → `BoardView.AnimateMove(…, onComplete: PostMoveCheck)`.
+- Move flow: capture top chip + `MovableCount` + destBase → `Board.Move` (A-R08 stack pour) → `BoardView.AnimateMove(…, onComplete: PostMoveCheck)`.
+- `LoadCurrent` → `ResolveRow(index)` reads `StageDataService.GetStage(index+1)`; `BuildDefinition` maps gimmicks to `StageDefinition`; the board comes from `BoardCodec.Decode(row.board, def)`. Empty `board`/no row → `BoardFactory.Generate` fallback; null → `StageLibrary`. Glyph order `RBGYPCOMLT`=SignalType 0..9; lane codes N/L/B.

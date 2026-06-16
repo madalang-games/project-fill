@@ -17,6 +17,8 @@ namespace Game.OutGame.Lobby
     public class ShopTabView : MonoBehaviour
     {
         [SerializeField] private RectTransform _contentContainer;
+        [SerializeField] private RectTransform _cosmeticSection; // built in SetupLobby; kept below IAP cards
+        [SerializeField] private RectTransform _avatarSection;   // built in SetupLobby; kept below the cosmetic section
 
         private Dictionary<string, Button> _buttons = new Dictionary<string, Button>();
         private Dictionary<string, GameObject> _cards = new Dictionary<string, GameObject>();
@@ -135,7 +137,7 @@ namespace Game.OutGame.Lobby
                     .Where(p => p.is_enabled && p.category_id == cat.id)
                     .Where(p => !(p.product_type == IapProductType.NonConsumable && IAPService.Instance.IsNoAdsPurchased))
                     .Where(p => !(p.purchase_limit > 0 && p.reset_period == PurchaseResetPeriod.None &&
-                                 (IAPService.Instance?.GetRemainingPurchases(p.id) ?? 1) <= 0))
+                                 (IAPService.Instance?.GetRemainingPurchases(p.info_id) ?? 1) <= 0))
                     .OrderBy(p => p.sort_order)
                     .ToList();
 
@@ -149,6 +151,10 @@ namespace Game.OutGame.Lobby
                 foreach (var prod in catProducts)
                     CreateAndConfigureCard(cardPrefab, prod, prod.store_product_id + "Card");
             }
+
+            // Cosmetic + Avatar sections are static children; keep them rendered below all IAP cards (avatar last).
+            if (_cosmeticSection != null) _cosmeticSection.SetAsLastSibling();
+            if (_avatarSection != null) _avatarSection.SetAsLastSibling();
         }
 
         private void CreateAndConfigureCard(GameObject prefab, GeneratedIapProduct prod, string cardName)
@@ -239,7 +245,7 @@ namespace Game.OutGame.Lobby
                 return;
             }
 
-            var remaining = IAPService.Instance.GetRemainingPurchases(prod.id);
+            var remaining = IAPService.Instance.GetRemainingPurchases(prod.info_id);
             if (remaining.HasValue && remaining.Value <= 0)
             {
                 ShowToast("toast.iap_limit_reached", ToastType.Warning);
@@ -341,7 +347,7 @@ namespace Game.OutGame.Lobby
 
                 if (prod.purchase_limit > 0 && prod.reset_period == PurchaseResetPeriod.None)
                 {
-                    var remaining = IAPService.Instance?.GetRemainingPurchases(prod.id) ?? prod.purchase_limit;
+                    var remaining = IAPService.Instance?.GetRemainingPurchases(prod.info_id) ?? prod.purchase_limit;
                     if (remaining <= 0) isLimitNoneAndReached = true;
                 }
 
@@ -353,7 +359,7 @@ namespace Game.OutGame.Lobby
                 {
                     if (prod.purchase_limit > 0)
                     {
-                        var remaining = IAPService.Instance?.GetRemainingPurchases(prod.id) ?? prod.purchase_limit;
+                        var remaining = IAPService.Instance?.GetRemainingPurchases(prod.info_id) ?? prod.purchase_limit;
                         string limitFormatKey = prod.reset_period switch
                         {
                             PurchaseResetPeriod.Daily => "shop.iap.limit.daily",
@@ -382,7 +388,7 @@ namespace Game.OutGame.Lobby
 
                 var txt = button.GetComponentInChildren<TMP_Text>();
                 bool isNonConsumable = prod.product_type == IapProductType.NonConsumable;
-                var remaining = IAPService.Instance?.GetRemainingPurchases(prod.id);
+                var remaining = IAPService.Instance?.GetRemainingPurchases(prod.info_id);
                 bool limitReached = remaining.HasValue && remaining.Value <= 0;
                 bool canBuy = !limitReached && !(isNonConsumable && isNoAds);
 
