@@ -16,6 +16,9 @@
 | `pkt_generator.bat` | Runs pkt_generator only |
 | `subset_tool/` | CSV-driven TMP source font subsetting before Unity release builds | -> `subset_tool/AGENTS.md` |
 | `subset_fonts.bat` | Runs `subset_tool/subset_fonts.js` manually with logs; not part of `all_generator` |
+| `stage_editor/` | Next.js Signal Sort stage editor (authors `stage/stage.csv` def+seed) | -> `stage_editor/AGENTS.md` |
+| `stage_generator/` | .NET 8 CLI: scored Signal Sort board generation, invoked by stage_editor | -> `stage_generator/AGENTS.md` |
+| `stage_editor.bat` | Publishes stage_generator + runs the stage_editor dev server (`[::1]:3000`); not part of `all_generator` |
 
 ## Rules
 - **NEVER modify generated files manually** — always update the source and re-run the relevant generator
