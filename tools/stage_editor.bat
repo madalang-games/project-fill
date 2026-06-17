@@ -23,7 +23,7 @@ powershell -NoProfile -Command ^
 if %ERRORLEVEL% neq 0 (
     call :log "[stage_generator] Publishing Release build..."
     powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-      "& cmd.exe /d /c 'dotnet publish ""%GEN_PROJ%"" -c Release -o ""%GEN_DIR%\bin\publish"" --nologo -v quiet 2>&1' | ForEach-Object { Write-Host $_; Add-Content -Value $_ -Path '%LOG_FILE%' -Encoding UTF8 }; exit $LASTEXITCODE"
+      "& dotnet publish '%GEN_PROJ%' -c Release -o '%GEN_DIR%\bin\publish' --nologo -v quiet 2>&1 | ForEach-Object { Write-Host $_; Add-Content -Value $_ -Path '%LOG_FILE%' -Encoding UTF8 }; exit $LASTEXITCODE"
     if %ERRORLEVEL% neq 0 (
         set "EXIT_CODE=%ERRORLEVEL%"
         call :log "[stage_generator] ERROR: publish failed"

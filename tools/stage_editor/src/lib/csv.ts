@@ -61,19 +61,22 @@ function writeCSV(csvPath: string, dataLines: string[]): void {
 
 // ── stage.csv ──────────────────────────────────────────────────────────────
 
+// stage.csv columns (12): stage_id, chapter_id, stage_order, difficulty, par_moves,
+// reward_group_id, types, lane_kinds, lock_unlock, overload_type, relay_order, board.
 function rowToStage(f: string[]): StageRow {
   return {
     stage_id:        parseInt(f[0]),
     chapter_id:      parseInt(f[1]) || 1,
     stage_order:     parseInt(f[2]) || 1,
     difficulty:      parseInt(f[3]) || 0,
-    reward_group_id: parseInt(f[4]) || 0,
-    types:           parseInt(f[5]) || 0,
-    lane_kinds:      f[6] ?? '',
-    lock_unlock:     f[7] ?? '',
-    overload_type:   f[8] === '' || f[8] == null ? -1 : parseInt(f[8]),
-    relay_order:     f[9] ?? '',
-    board:           f[10] ?? '',
+    par_moves:       parseInt(f[4]) || 0,
+    reward_group_id: parseInt(f[5]) || 0,
+    types:           parseInt(f[6]) || 0,
+    lane_kinds:      f[7] ?? '',
+    lock_unlock:     f[8] ?? '',
+    overload_type:   f[9] === '' || f[9] == null ? -1 : parseInt(f[9]),
+    relay_order:     f[10] ?? '',
+    board:           f[11] ?? '',
   };
 }
 
@@ -83,6 +86,7 @@ function stageToRow(s: StageRow): string[] {
     String(s.chapter_id ?? 1),
     String(s.stage_order ?? 1),
     String(s.difficulty ?? 0),
+    String(s.par_moves ?? 0),
     String(s.reward_group_id ?? 0),
     String(s.types ?? 0),
     s.lane_kinds ?? '',

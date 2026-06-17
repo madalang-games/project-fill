@@ -19,6 +19,7 @@ export interface StageRow {
   chapter_id: number;
   stage_order: number;
   difficulty: number;       // 0 Easy / 1 Normal / 2 Hard
+  par_moves: number;        // perfect-clear threshold (server scope S); set = optimal solveLength on generate
   reward_group_id: number;
   types: number;            // signal types = number of sets
   lane_kinds: string;       // per-lane kind codes, e.g. "NNNNNL"
@@ -46,6 +47,27 @@ export interface GeneratorConfig {
   relayOrder: string;
   difficulty: number;
   maxAttempts: number;
+  // Randomize mode: place gimmicks by count with random colors (else explicit painting above).
+  lockCount: number;
+  blindCount: number;
+  randomizeGimmicks: boolean;
+  randomOverload: boolean;
+  randomRelay: boolean;
+}
+
+// Editor-level generator settings (persist across stage select / New; not per-stage meta).
+// `useGenerateDef` ON → generate from THIS block (ignores the per-stage Definition/Metadata panels);
+// the gimmick layout is count-based random. OFF → generate from the per-stage definition (explicit).
+export interface GenSettings {
+  maxAttempts: number;
+  useGenerateDef: boolean;
+  types: number;
+  laneCount: number;
+  difficulty: number;
+  lockCount: number;
+  blindCount: number;
+  overload: boolean;   // include overload with a random color
+  relay: boolean;      // include relay with a random order
 }
 
 // Result returned by the generator (best scored candidate) or reproduce mode.
@@ -57,4 +79,9 @@ export interface GenerateResult {
   solveLength: number;
   verifiedSolution: string; // "from,to;from,to;..."
   score: number;
+  // Resolved gimmick layout the generator actually produced (drives meta write-back in randomize mode).
+  laneKinds: string;
+  lockUnlock: string;
+  overloadType: number;
+  relayOrder: string;
 }

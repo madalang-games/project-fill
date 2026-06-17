@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import type { StageRow, ChapterRow, StageMeta, GenerateResult, GeneratorConfig } from '../types/stage';
+import type { StageRow, ChapterRow, StageMeta, GenerateResult, GeneratorConfig, GenSettings } from '../types/stage';
 import {
   BoardState, fromLanes, cloneBoard, applyMove, isCleared, isHardStuck, selectable, solve,
 } from '../lib/rules';
@@ -25,7 +25,25 @@ interface PlaytestState {
 
 interface GenInfo { attempts: number; solveLength: number; score: number; }
 
-function defConfig(meta: StageMeta, maxAttempts: number): GeneratorConfig {
+function defConfig(meta: StageMeta, gen: GenSettings): GeneratorConfig {
+  // Generate-definition mode: ignore the per-stage definition, build from the generator block
+  // (count-based random gimmicks). Otherwise use the explicit per-stage definition as-is.
+  if (gen.useGenerateDef) {
+    return {
+      types: gen.types,
+      laneKinds: 'N'.repeat(Math.max(0, gen.laneCount)), // only length (= total lanes) is read in randomize mode
+      lockUnlock: '',
+      overloadType: -1,
+      relayOrder: '',
+      difficulty: gen.difficulty,
+      maxAttempts: gen.maxAttempts,
+      lockCount: gen.lockCount,
+      blindCount: gen.blindCount,
+      randomizeGimmicks: true,
+      randomOverload: gen.overload,
+      randomRelay: gen.relay,
+    };
+  }
   return {
     types: meta.types,
     laneKinds: meta.lane_kinds,
@@ -33,9 +51,26 @@ function defConfig(meta: StageMeta, maxAttempts: number): GeneratorConfig {
     overloadType: meta.overload_type,
     relayOrder: meta.relay_order,
     difficulty: meta.difficulty,
-    maxAttempts,
+    maxAttempts: gen.maxAttempts,
+    lockCount: 0,
+    blindCount: 0,
+    randomizeGimmicks: false,
+    randomOverload: false,
+    randomRelay: false,
   };
 }
+
+const DEFAULT_GEN_SETTINGS: GenSettings = {
+  maxAttempts: 100,
+  useGenerateDef: false,
+  types: 4,
+  laneCount: 6,
+  difficulty: 0,
+  lockCount: 0,
+  blindCount: 0,
+  overload: false,
+  relay: false,
+};
 
 function decodeStageBoard(m: StageMeta): BoardState | null {
   if (!hasBoard(m.board)) return null;
@@ -57,8 +92,20 @@ export default function EditorPage() {
   const [genStatus, setGenStatus] = useState<GeneratorStatus>('idle');
   const [genInfo, setGenInfo] = useState<GenInfo | null>(null);
   const [genError, setGenError] = useState<string | null>(null);
+  // Generator settings persist across stage select / New (not stored per-stage).
+  const [genSettings, setGenSettings] = useState<GenSettings>(DEFAULT_GEN_SETTINGS);
 
   useEffect(() => {
+    fetch('/api/generator-defaults')
+      .then(r => r.json())
+      .then(d => setGenSettings(s => ({
+        ...s,
+        maxAttempts: typeof d.maxAttempts === 'number' ? d.maxAttempts : s.maxAttempts,
+        types:       typeof d.types === 'number'       ? d.types       : s.types,
+        laneCount:   typeof d.laneCount === 'number'   ? d.laneCount   : s.laneCount,
+        difficulty:  typeof d.difficulty === 'number'  ? d.difficulty  : s.difficulty,
+      })))
+      .catch(() => {});
     fetch('/api/stages').then(r => r.json()).then(setStages).catch(console.error);
     fetch('/api/chapters').then(r => r.json()).then((chs: ChapterRow[]) => {
       setChapters(chs);
@@ -90,6 +137,7 @@ export default function EditorPage() {
     const laneCount = d.laneCount ?? 6;
     return {
       chapter_id: chapterId, stage_order: order, difficulty,
+      par_moves: 0, // set to optimal solveLength on first Generate
       reward_group_id: DIFFICULTY_REWARD[difficulty] ?? 2001,
       types: d.types ?? 4,
       lane_kinds: 'N'.repeat(laneCount),
@@ -195,7 +243,7 @@ export default function EditorPage() {
     setDirty(true);
   }, []);
 
-  const handleGenerate = useCallback(async (maxAttempts: number) => {
+  const handleGenerate = useCallback(async () => {
     if (!meta) return;
     setGenStatus('running');
     setGenInfo(null);
@@ -205,15 +253,31 @@ export default function EditorPage() {
     try {
       const res = await fetch('/api/generate-board', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(defConfig(meta, maxAttempts)),
+        body: JSON.stringify(defConfig(meta, genSettings)),
       });
       const result: GenerateResult | { error: string } | null = await res.json();
       if (!res.ok || !result || 'error' in (result as object)) {
         throw new Error((result as { error?: string })?.error ?? 'Generator failed.');
       }
       const g = result as GenerateResult;
-      setBoard(fromLanes(g.lanes, meta.types, relayOrderToTypes(meta.relay_order)));
-      setMeta(prev => prev ? { ...prev, board: encodeBoard(g.lanes) } : prev);
+      setBoard(fromLanes(g.lanes, g.types, relayOrderToTypes(g.relayOrder)));
+      // Persist the resolved gimmick layout the generator produced (essential in randomize mode,
+      // where these were chosen server-side and must match the stored board for correct rendering).
+      // In generate-definition mode also adopt the block's types/difficulty so the saved stage matches.
+      setMeta(prev => prev ? {
+        ...prev,
+        board: encodeBoard(g.lanes),
+        lane_kinds: g.laneKinds,
+        lock_unlock: g.lockUnlock,
+        overload_type: g.overloadType,
+        relay_order: g.relayOrder,
+        par_moves: g.solveLength, // perfect-clear threshold = optimal move count
+        ...(genSettings.useGenerateDef ? {
+          types: g.types,
+          difficulty: genSettings.difficulty,
+          reward_group_id: DIFFICULTY_REWARD[genSettings.difficulty] ?? prev.reward_group_id,
+        } : {}),
+      } : prev);
       setGenInfo({ attempts: g.attempts, solveLength: g.solveLength, score: g.score });
       setGenStatus('success');
       setDirty(true);
@@ -221,7 +285,7 @@ export default function EditorPage() {
       setGenStatus('failed');
       setGenError(e instanceof Error ? e.message : 'Generator failed.');
     }
-  }, [meta]);
+  }, [meta, genSettings]);
 
   const handleSave = useCallback(async () => {
     if (!meta || !selectedId) return;
@@ -324,7 +388,11 @@ export default function EditorPage() {
             </div>
             <div className="flex-shrink-0">
               <MetadataPanel meta={meta} onFieldChange={handleMetaField} />
-              <GeneratorPanel onGenerate={handleGenerate} status={genStatus} info={genInfo} error={genError} />
+              <GeneratorPanel
+                onGenerate={handleGenerate}
+                settings={genSettings} onSettingsChange={setGenSettings}
+                status={genStatus} info={genInfo} error={genError}
+              />
               <PlaytestPanel
                 hasBoard={!!board} hasSeed={hasBoard(meta.board)} isPlaytest={!!playtest}
                 moveCount={playtest?.moveCount ?? 0} cleared={playtest?.cleared ?? false}

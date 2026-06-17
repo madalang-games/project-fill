@@ -173,16 +173,20 @@ export function selectable(b: BoardState, lane: number): boolean {
   return !!l && l.chips.length > 0 && !l.pending && !l.locked;
 }
 
-// ── Solver (mirrors CLI BatchSolver) — node-capped DFS → first clearing batch-move sequence ──
+// ── Solver (mirrors CLI BatchSolver) — exact-shortest BFS over canonical states ──
+// Returns the minimal clearing batch-move sequence (no wasteful moves), so Simulate replays the
+// same clean, optimal path the generator scored against. Canonical (lane-order-invariant) keys
+// collapse lane permutations, keeping the search tractable.
 
-function stateKey(b: BoardState): string {
-  let s = '';
+function canonicalKey(b: BoardState): string {
+  const sigs: string[] = [];
   for (const l of b.lanes) {
-    s += l.locked ? 'L' : l.pending ? 'P' : '.';
+    let s = l.locked ? 'L' + String(l.unlockType) : l.pending ? 'P' : '.';
     for (const c of l.chips) { s += String(c.type); if (c.overload) s += '!'; }
-    s += '/';
+    sigs.push(s);
   }
-  return s + '#' + b.relayProgress;
+  sigs.sort();
+  return sigs.join('/') + '#' + b.relayProgress;
 }
 
 function enumerateMoves(b: BoardState): [number, number][] {
@@ -199,44 +203,45 @@ function enumerateMoves(b: BoardState): [number, number][] {
   return out;
 }
 
-function movePriority(b: BoardState, from: number, to: number): number {
-  const src = b.lanes[from];
-  const dst = b.lanes[to];
-  let p = dst.chips.length > 0 ? 2 : 0;
-  const type = src.chips[src.chips.length - 1].type;
-  let run = 0;
-  for (let i = src.chips.length - 1; i >= 0 && src.chips[i].type === type; i--) run++;
-  if (run === src.chips.length) p += 1;
-  return p;
-}
-
 export function solve(start: BoardState, nodeCap = 120000): [number, number][] | null {
   if (isCleared(start)) return [];
-  const visited = new Set<string>([stateKey(start)]);
-  const path: [number, number][] = [];
-  const counter = { n: 0 };
-  return dfs(start, visited, path, counter, nodeCap) ? path : null;
+  const startKey = canonicalKey(start);
+  // key → { prev: predecessor key | null, move }
+  const parent = new Map<string, { prev: string | null; move: [number, number] }>();
+  parent.set(startKey, { prev: null, move: [0, 0] });
+  const queue: { board: BoardState; key: string }[] = [{ board: start, key: startKey }];
+
+  let nodes = 0;
+  let head = 0;
+  while (head < queue.length) {
+    if (++nodes > nodeCap) return null;
+    const { board: cur, key: curKey } = queue[head++];
+    for (const [from, to] of enumerateMoves(cur)) {
+      const r = applyMove(cur, from, to);
+      if (!r) continue;
+      const key = canonicalKey(r.board);
+      if (parent.has(key)) continue;
+      parent.set(key, { prev: curKey, move: [from, to] });
+      if (isCleared(r.board)) return reconstruct(parent, key);
+      queue.push({ board: r.board, key });
+    }
+  }
+  return null;
 }
 
-function dfs(
-  cur: BoardState, visited: Set<string>, path: [number, number][],
-  counter: { n: number }, cap: number,
-): boolean {
-  if (isCleared(cur)) return true;
-  if (++counter.n > cap) return false;
-  const moves = enumerateMoves(cur).sort((a, b) => movePriority(cur, b[0], b[1]) - movePriority(cur, a[0], a[1]));
-  for (const [from, to] of moves) {
-    const r = applyMove(cur, from, to);
-    if (!r) continue;
-    const k = stateKey(r.board);
-    if (visited.has(k)) continue;
-    visited.add(k);
-    path.push([from, to]);
-    if (dfs(r.board, visited, path, counter, cap)) return true;
-    path.pop();
-    if (counter.n > cap) return false;
+function reconstruct(
+  parent: Map<string, { prev: string | null; move: [number, number] }>, endKey: string,
+): [number, number][] {
+  const moves: [number, number][] = [];
+  let key: string | null = endKey;
+  while (key !== null) {
+    const node = parent.get(key)!;
+    if (node.prev === null) break;
+    moves.push(node.move);
+    key = node.prev;
   }
-  return false;
+  moves.reverse();
+  return moves;
 }
 
 export { LaneKind };

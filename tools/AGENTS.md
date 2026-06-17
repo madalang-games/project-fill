@@ -6,7 +6,7 @@
 | `config-loader.js` | Loads required `template.ini` + `.env.dev`/`.env.prod` + `types.json`; exposes paths, namespaces, `cfg.types`, `cfg.infoGenSkip` |
 | `types.json` | **Shared type registry** — normalized type → `{csharp, mysql}`. SoT for type mapping; consumed by info_generator (csharp) + db_generator (csharp+mysql). NEVER duplicate maps in a generator |
 | `info_generator/` | `shared/datas/**/*.csv` -> `*/generated/data/**/*.csv` + `StaticData/*.g.cs` + `IStaticDataService.g.cs` (diff-only + manifest stale cleanup) |
-| `db_generator/` | `server/db/schema.json` -> DB CREATE/ALTER TABLE + migration SQL + generated EF data access (diff-only ORM writes). Detects column type/nullability changes (`MODIFY`, commented unless `--allow-drops`); records applied migrations in `schema_migrations` ledger |
+| `db_generator/` | `server/db/schema.json` -> DB CREATE/ALTER TABLE + migration SQL + generated EF data access (diff-only ORM writes). Detects column type/nullability changes (`MODIFY`, commented unless `--allow-drops`); records applied migrations in `schema_migrations` ledger. Comment-only diffs (deferred drops/modifies w/o `--allow-drops`) write no file — logged to console only |
 | `pkt_generator/` | `shared/contracts/**/*.cs` -> configured client contracts output dir (diff-only, preserves `.meta`) |
 | `validate/` | Read-only cross-source validator (enum membership / FK integrity / CSV↔DB type); `npm run gen:validate` | -> `validate/AGENTS.md` |
 | `gen.js` | **Incremental orchestrator** — hashes each gen's source tree, runs only changed gens in order (`info`->`db`->`pkt`); `npm run gen` (incremental), `--all`, `--check`, `npm run gen:watch`. Cache: `.gen-cache/orchestrator.json` |
@@ -15,6 +15,8 @@
 | `db_generator.bat` | Runs db_generator only |
 | `pkt_generator.bat` | Runs pkt_generator only |
 | `subset_tool/` | CSV-driven TMP source font subsetting before Unity release builds | -> `subset_tool/AGENTS.md` |
+| `server_generator.bat` | Server **build** gate: `docker compose --build` of the dev stack (compiles server image + stack-up); exit 0 = pass. Requires Docker + `.env.dev`; ends with interactive `pause`. See `server/AGENTS.md` Build/Test Verification |
+| `server_test.bat` | Server **unit-test** gate: `dotnet test` of `tests/ProjectFill.API.Tests` (xUnit); exit 0 = pass. SDK-only (no Docker); honors `GEN_BATCH_NO_PAUSE=1` to skip pause. Independent of `server_generator.bat` |
 | `subset_fonts.bat` | Runs `subset_tool/subset_fonts.js` manually with logs; not part of `all_generator` |
 | `stage_editor/` | Next.js Signal Sort stage editor (authors `stage/stage.csv` def+seed) | -> `stage_editor/AGENTS.md` |
 | `stage_generator/` | .NET 8 CLI: scored Signal Sort board generation, invoked by stage_editor | -> `stage_generator/AGENTS.md` |

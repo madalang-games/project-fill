@@ -49,7 +49,27 @@ export default function BoardView({ board, selectedLane, isPlaytest, onLaneClick
   }
 
   return (
-    <div className="rounded-lg p-5 flex gap-3 items-end" style={{ background: BOARD_BG }}>
+    <div className="flex flex-col gap-2 items-start">
+      {board.relayOrder.length > 0 && (
+        <div className="flex items-center gap-0.5 text-[11px]">
+          <span className="text-purple-300 mr-1 font-semibold">Relay</span>
+          {board.relayOrder.map((t, i) => (
+            <span key={i} className="flex items-center">
+              {i > 0 && <span className="text-gray-600 mx-0.5">→</span>}
+              <span
+                className={`w-5 h-5 rounded flex items-center justify-center text-[10px] font-bold ${
+                  i < board.relayProgress ? 'opacity-30 line-through' : ''
+                }`}
+                style={{ background: SIGNAL_COLORS[t] ?? '#888', color: '#1a1a1a' }}
+                title={i < board.relayProgress ? 'absorbed' : 'pending'}
+              >
+                {typeToGlyph(t)}
+              </span>
+            </span>
+          ))}
+        </div>
+      )}
+      <div className="rounded-lg p-5 flex gap-3 items-end" style={{ background: BOARD_BG }}>
       {board.lanes.map((lane, i) => {
         const selected = selectedLane === i;
         const isBlind = lane.kind === LaneKind.Blind;
@@ -83,6 +103,7 @@ export default function BoardView({ board, selectedLane, isPlaytest, onLaneClick
           </div>
         );
       })}
+      </div>
     </div>
   );
 }

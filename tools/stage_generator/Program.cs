@@ -1,11 +1,13 @@
+using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
 // Signal Sort stage generator CLI.
-// Mirrors the runtime board model (client/.../InGame/{Chip,SlotLane,Board,BoardFactory,BoardSolver}.cs)
-// so a (StageDefinition, seed) pair reproduces the exact same board the Unity client builds.
-// Adds an editor-only scoring layer: sample many seeds, batch-solve each, score difficulty, keep best.
+// Mirrors the runtime board model (client/.../InGame/{Chip,SlotLane,Board,BoardFactory}.cs).
+// Adds an editor-only layer: sample many seeds, exact-shortest-solve each (BFS over canonical states),
+// score difficulty, keep the best. The board is persisted explicitly, so byte-parity with the runtime
+// generator is not required.
 
 var jsonOptions = new JsonSerializerOptions
 {
@@ -43,7 +45,7 @@ catch (Exception ex)
 
 public sealed record GeneratorRequest(
     int Types,
-    string LaneKinds,     // per-lane: 'N' Normal, 'L' Locked, 'B' Blind  (length = lane count)
+    string LaneKinds,     // explicit mode: per-lane 'N'/'L'/'B' (length = lane count). Randomize mode: only length is read (= total lanes)
     string LockUnlock,    // per-lane unlock glyph or '.'; "" = no locks
     int OverloadType,     // -1 = none, else SignalType index
     string RelayOrder,    // glyph sequence e.g. "RBGYP"; "" = no relay
@@ -51,7 +53,17 @@ public sealed record GeneratorRequest(
     int Difficulty,       // 0 Easy / 1 Normal / 2 Hard — drives scoring only
     int Seed,             // reproduce mode: rebuild this exact board
     bool Reproduce,
-    int MaxAttempts);
+    int MaxAttempts,
+    // Randomize mode: place gimmicks by count with random colors instead of explicit per-lane painting.
+    int LockCount = 0,         // # Locked lanes (random positions, random unlock color)
+    int BlindCount = 0,        // # Blind lanes (random positions)
+    bool RandomizeGimmicks = false,  // true → ignore explicit LaneKinds/LockUnlock placement, use counts below
+    bool RandomOverload = false,     // true → include overload with a random color (else OverloadType)
+    bool RandomRelay = false,        // true → include relay with a random full-Types permutation (else RelayOrder)
+    // Solve-only mode: decode an explicit `Board` (+ gimmick columns) and return its optimal solveLength.
+    // Used by the par_moves migration; no generation/scoring.
+    bool SolveOnly = false,
+    string Board = "");
 
 public sealed record ChipDto(int Type, bool Overload);
 public sealed record LaneDto(int Kind, bool Locked, int UnlockType, ChipDto[] Chips);
@@ -62,7 +74,12 @@ public sealed record GeneratorResult(
     int Attempts,
     int SolveLength,
     string VerifiedSolution,
-    double Score);
+    double Score,
+    // Resolved gimmick layout (echoed so the editor can persist what randomize actually produced).
+    string LaneKinds,
+    string LockUnlock,
+    int OverloadType,
+    string RelayOrder);
 
 // ── Runtime-mirrored model ─────────────────────────────────────────────────────
 
@@ -179,15 +196,6 @@ public sealed class Board
         ResolveCompletions();
     }
 
-    // Single-chip move (solver insurance path, matches runtime Board.ApplyMoveRaw).
-    public void ApplyMoveRaw(int from, int to)
-    {
-        var chip = _lanes[from].Pop();
-        _lanes[to].Push(chip);
-        MoveCount++;
-        ResolveCompletions();
-    }
-
     private void ResolveCompletions()
     {
         bool changed = true;
@@ -260,50 +268,33 @@ public sealed class Board
         return b;
     }
 
-    public string StateKey()
+    // Lane-order-invariant state key. Lanes are interchangeable in this game (moves reference lanes by
+    // content, not index), so two boards differing only by a lane permutation are the same position —
+    // sorting the per-lane signatures collapses them, shrinking the search space by orders of magnitude.
+    // Mechanically-relevant identity only: Locked + unlock color (when locked), Pending (relay), chips,
+    // and board-level relay progress. Kind (Blind vs Normal) and a former-locked lane's unlock color do
+    // not affect any rule (CanAccept/IsComplete/Move ignore them), so they are omitted for tighter dedup.
+    public string CanonicalKey()
     {
-        var sb = new StringBuilder(_lanes.Count * 12);
+        var sigs = new List<string>(_lanes.Count);
         foreach (var lane in _lanes)
         {
-            sb.Append(lane.Locked ? 'L' : lane.Pending ? 'P' : '.');
+            var sb = new StringBuilder(8);
+            if (lane.Locked) { sb.Append('L'); sb.Append((char)('0' + (int)lane.UnlockType)); }
+            else if (lane.Pending) sb.Append('P');
+            else sb.Append('.');
             foreach (var c in lane.Chips)
             {
                 sb.Append((char)('0' + (int)c.Type));
                 if (c.Overload) sb.Append('!');
             }
-            sb.Append('/');
+            sigs.Add(sb.ToString());
         }
-        sb.Append('#').Append(_relayProgress);
-        return sb.ToString();
-    }
-}
-
-// Verbatim runtime solvability check (single-chip moves) — used as generation insurance.
-public static class BoardSolver
-{
-    public static bool IsSolvable(Board board, int nodeCap, bool resultOnCapExceeded)
-    {
-        var start = board.Clone();
-        if (start.IsCleared) return true;
-
-        var visited = new HashSet<string> { start.StateKey() };
-        var stack = new Stack<Board>();
-        stack.Push(start);
-
-        int nodes = 0;
-        while (stack.Count > 0)
-        {
-            if (++nodes > nodeCap) return resultOnCapExceeded;
-            var cur = stack.Pop();
-            foreach (var (from, to) in cur.EnumerateMoves())
-            {
-                var next = cur.Clone();
-                next.ApplyMoveRaw(from, to);
-                if (next.IsCleared) return true;
-                if (visited.Add(next.StateKey())) stack.Push(next);
-            }
-        }
-        return false;
+        sigs.Sort(StringComparer.Ordinal);
+        var outSb = new StringBuilder(_lanes.Count * 8);
+        foreach (var s in sigs) { outSb.Append(s); outSb.Append('/'); }
+        outSb.Append('#').Append(_relayProgress);
+        return outSb.ToString();
     }
 }
 
@@ -322,21 +313,21 @@ public sealed class StageDef
 
 public static class BoardFactory
 {
-    private const int GenNodeCap = 80_000;
-    private const int InternalAttempts = 60; // reshuffles per seed before giving up
+    private const int InternalAttempts = 60; // re-rolls per seed to dodge freebies before giving up
 
-    // Seeded random-fill + solvability verification. Robust for any reasonable lane/type config
-    // (the runtime's reverse-scramble deadlocks into freebies for normal counts). `ScrambleSteps`
-    // is kept on the def for forward compatibility but no longer drives the deal.
-    public static Board? Generate(StageDef def)
+    // Seeded random-fill. Re-rolls only to avoid pre-completed (freebie) lanes — solvability is no
+    // longer checked here (the exact BatchSolver proves it once while scoring; a board that can't be
+    // cleared simply yields no candidate). `ScrambleSteps` is kept on the def for forward compatibility
+    // but no longer drives the deal.
+    public static Board? Generate(StageDef def, CancellationToken ct = default)
     {
         var rng = new Random(def.Seed);
         for (int attempt = 0; attempt < InternalAttempts; attempt++)
         {
+            ct.ThrowIfCancellationRequested();
             var board = BuildRandom(def, rng);
             if (board is null) return null;                                  // config can never fit
             if (AnyCompleteLane(board)) continue;                            // A-R09 no-freebie
-            if (!BoardSolver.IsSolvable(board.Clone(), GenNodeCap, false)) continue;
             return board;
         }
         return null;
@@ -366,6 +357,11 @@ public static class BoardFactory
         Shuffle(pool, rng);
         Shuffle(fillIdx, rng);
 
+        // Blind on an empty lane is a no-op gimmick (the player only ever stacks chips they placed
+        // themselves, so nothing is truly hidden). Bias the fill so Blind lanes land in the initially
+        // filled set — stable order keeps the shuffle random within each group.
+        fillIdx = fillIdx.OrderByDescending(i => lanes[i].Kind == LaneKind.Blind).ToList();
+
         // Fill `Types` lanes to capacity from the shuffled pool; remaining fill lanes stay empty.
         for (int k = 0; k < def.Types; k++)
         {
@@ -394,58 +390,58 @@ public static class BoardFactory
     }
 }
 
-// Editor-only batch solver — a player-facing move sequence that clears the board.
-// Node-capped DFS returning the first clear found (a solution always exists by reverse-scramble
-// construction). Length is near-minimal — precise enough for difficulty scoring, far cheaper than
-// an optimal BFS whose frontier explodes on ball-sort state spaces.
+// Editor-only batch solver — the SHORTEST player-facing move sequence that clears the board.
+// BFS over canonical (lane-order-invariant) states: canonical dedup collapses lane permutations so the
+// frontier stays tractable even at higher type counts, and BFS guarantees the returned length is the
+// true minimum number of player moves — a valid, heuristic-free difficulty metric. Returns null if no
+// clear is reachable within `nodeCap` (treated as "this seed produced no usable board").
 public static class BatchSolver
 {
-    public static List<(int from, int to)>? Solve(Board board, int nodeCap)
+    public static List<(int from, int to)>? Solve(Board board, int nodeCap, CancellationToken ct = default)
     {
         var start = board.Clone();
         if (start.IsCleared) return new List<(int, int)>();
 
-        var visited = new HashSet<string> { start.StateKey() };
-        var path = new List<(int, int)>();
+        var startKey = start.CanonicalKey();
+        // canonicalKey → (predecessor canonicalKey, move that produced this state)
+        var parent = new Dictionary<string, (string? prev, int from, int to)> { [startKey] = (null, 0, 0) };
+        var queue = new Queue<(Board board, string key)>();
+        queue.Enqueue((start, startKey));
+
         int nodes = 0;
-        return Dfs(start, visited, path, ref nodes, nodeCap) ? path : null;
-    }
-
-    private static bool Dfs(Board cur, HashSet<string> visited, List<(int, int)> path, ref int nodes, int nodeCap)
-    {
-        if (cur.IsCleared) return true;
-        if (++nodes > nodeCap) return false;
-
-        // Prefer moves that complete or grow same-type stacks first (faster descent to a clear).
-        var moves = cur.EnumerateMoves().ToList();
-        moves.Sort((a, b) => MovePriority(cur, b) - MovePriority(cur, a));
-
-        foreach (var (from, to) in moves)
+        while (queue.Count > 0)
         {
-            var next = cur.Clone();
-            next.ApplyMoveBatch(from, to);
-            var key = next.StateKey();
-            if (!visited.Add(key)) continue;
-            path.Add((from, to));
-            if (Dfs(next, visited, path, ref nodes, nodeCap)) return true;
-            path.RemoveAt(path.Count - 1);
-            if (nodes > nodeCap) return false;
+            ct.ThrowIfCancellationRequested();
+            if (++nodes > nodeCap) return null;
+            var (cur, curKey) = queue.Dequeue();
+            foreach (var (from, to) in cur.EnumerateMoves())
+            {
+                var next = cur.Clone();
+                next.ApplyMoveBatch(from, to);
+                var key = next.CanonicalKey();
+                if (parent.ContainsKey(key)) continue;
+                parent[key] = (curKey, from, to);
+                if (next.IsCleared) return Reconstruct(parent, key);
+                queue.Enqueue((next, key));
+            }
         }
-        return false;
+        return null;
     }
 
-    // Heuristic: stacking onto a matching non-empty lane, or emptying the source, is most productive.
-    private static int MovePriority(Board b, (int from, int to) m)
+    private static List<(int from, int to)> Reconstruct(
+        Dictionary<string, (string? prev, int from, int to)> parent, string endKey)
     {
-        var src = b.Lanes[m.from];
-        var dst = b.Lanes[m.to];
-        int p = dst.IsEmpty ? 0 : 2;              // stacking onto same type
-
-        var type = src.TopChip!.Value.Type;       // length of the same-type run at the source top
-        int run = 0;
-        for (int i = src.Count - 1; i >= 0 && src.Chips[i].Type == type; i--) run++;
-        if (run == src.Count) p += 1;             // whole lane is one run → move can empty it
-        return p;
+        var moves = new List<(int, int)>();
+        var key = endKey;
+        while (true)
+        {
+            var (prev, from, to) = parent[key];
+            if (prev is null) break;
+            moves.Add((from, to));
+            key = prev;
+        }
+        moves.Reverse();
+        return moves;
     }
 }
 
@@ -453,46 +449,68 @@ public static class StageGenerator
 {
     private const int SolveNodeCap = 120_000;
 
+    // Safety budget: cap total generation wall-clock and parallel fan-out so a large
+    // lane/type config can never spin the CLI (and its memory) without bound. On expiry
+    // the loop is cancelled cooperatively and the best candidate found so far is returned.
+    private static readonly TimeSpan TimeBudget = TimeSpan.FromSeconds(20);
+    private const int MaxAttemptsCap = 500;
+
     public static GeneratorResult? Generate(GeneratorRequest request)
     {
-        var def = BuildDef(request);
-        if (def.LaneCount == 0 || def.Types <= 0) return null;
+        if (request.Types <= 0 || (request.LaneKinds ?? "").Length == 0) return null;
+
+        if (request.SolveOnly)
+            return SolveExplicit(request);
 
         if (request.Reproduce)
         {
+            var def = BuildDef(request, request.Seed);
+            if (def.LaneCount == 0) return null;
             def.Seed = request.Seed;
-            return Evaluate(def, request.Difficulty, request.Seed, attempts: 1);
+            return Evaluate(def, request.Difficulty, request.Seed, attempts: 1, CancellationToken.None);
         }
 
         if (request.MaxAttempts <= 0) return null;
+        int maxAttempts = Math.Min(request.MaxAttempts, MaxAttemptsCap);
 
         GeneratorResult? best = null;
         var sync = new object();
         var baseSeed = Environment.TickCount;
 
-        Parallel.For(1, request.MaxAttempts + 1, attempt =>
+        using var cts = new CancellationTokenSource(TimeBudget);
+        var options = new ParallelOptions
         {
-            var seed = unchecked(baseSeed * 31 + attempt * 7919);
-            if (seed == 0) seed = attempt;
-            var localDef = BuildDef(request);
-            localDef.Seed = seed;
-            var candidate = Evaluate(localDef, request.Difficulty, seed, attempt);
-            if (candidate is null) return;
-            lock (sync)
+            MaxDegreeOfParallelism = Math.Max(1, Environment.ProcessorCount - 1),
+            CancellationToken = cts.Token,
+        };
+
+        try
+        {
+            Parallel.For(1, maxAttempts + 1, options, attempt =>
             {
-                if (best is null || candidate.Score > best.Score) best = candidate;
-            }
-        });
+                var seed = unchecked(baseSeed * 31 + attempt * 7919);
+                if (seed == 0) seed = attempt;
+                var localDef = BuildDef(request, seed);
+                localDef.Seed = seed;
+                var candidate = Evaluate(localDef, request.Difficulty, seed, attempt, cts.Token);
+                if (candidate is null) return;
+                lock (sync)
+                {
+                    if (best is null || candidate.Score > best.Score) best = candidate;
+                }
+            });
+        }
+        catch (OperationCanceledException) { /* time budget hit — return best-so-far */ }
 
         return best;
     }
 
-    private static GeneratorResult? Evaluate(StageDef def, int difficulty, int seed, int attempts)
+    private static GeneratorResult? Evaluate(StageDef def, int difficulty, int seed, int attempts, CancellationToken ct)
     {
-        var board = BoardFactory.Generate(def);
+        var board = BoardFactory.Generate(def, ct);
         if (board is null) return null; // config can't produce a clean solvable board
 
-        var solution = BatchSolver.Solve(board.Clone(), SolveNodeCap);
+        var solution = BatchSolver.Solve(board.Clone(), SolveNodeCap, ct);
         if (solution is null || solution.Count == 0) return null;
 
         double score = ScoreCandidate(def, difficulty, solution.Count, board);
@@ -501,7 +519,64 @@ public static class StageGenerator
             l.Chips.Select(c => new ChipDto((int)c.Type, c.Overload)).ToArray())).ToArray();
         var solutionStr = string.Join(';', solution.Select(m => $"{m.from},{m.to}"));
 
-        return new GeneratorResult(lanes, def.Types, seed, attempts, solution.Count, solutionStr, score);
+        // Echo the resolved gimmick layout so the editor persists exactly what was produced
+        // (essential in randomize mode, where the editor never specified these).
+        var laneKinds = new string(def.LaneKinds.Select(KindToChar).ToArray());
+        var lockUnlock = new string(Enumerable.Range(0, def.LaneCount)
+            .Select(i => def.LaneKinds[i] == LaneKind.Locked ? Glyphs[(int)def.LockUnlock[i]] : '.').ToArray());
+        var overloadType = def.OverloadType.HasValue ? (int)def.OverloadType.Value : -1;
+        var relayOrder = new string(def.RelayOrder.Select(t => Glyphs[(int)t]).ToArray());
+
+        return new GeneratorResult(lanes, def.Types, seed, attempts, solution.Count, solutionStr, score,
+            laneKinds, lockUnlock, overloadType, relayOrder);
+    }
+
+    // Decode an explicit board layout (stage.csv `board` column) and return its optimal solveLength.
+    private static GeneratorResult? SolveExplicit(GeneratorRequest request)
+    {
+        var def = BuildDef(request, request.Seed);
+        if (def.LaneCount == 0) return null;
+
+        var board = BuildExplicitBoard(def, request.Board ?? "");
+        var solution = BatchSolver.Solve(board.Clone(), SolveNodeCap);
+        if (solution is null) return null; // not solvable within cap
+
+        var lanes = board.Lanes.Select(l => new LaneDto(
+            (int)l.Kind, l.Locked, (int)l.UnlockType,
+            l.Chips.Select(c => new ChipDto((int)c.Type, c.Overload)).ToArray())).ToArray();
+        var solutionStr = string.Join(';', solution.Select(m => $"{m.from},{m.to}"));
+        var laneKinds = new string(def.LaneKinds.Select(KindToChar).ToArray());
+        var lockUnlock = new string(Enumerable.Range(0, def.LaneCount)
+            .Select(i => def.LaneKinds[i] == LaneKind.Locked ? Glyphs[(int)def.LockUnlock[i]] : '.').ToArray());
+        var overloadType = def.OverloadType.HasValue ? (int)def.OverloadType.Value : -1;
+        var relayOrder = new string(def.RelayOrder.Select(t => Glyphs[(int)t]).ToArray());
+
+        return new GeneratorResult(lanes, def.Types, request.Seed, 0, solution.Count, solutionStr, 0,
+            laneKinds, lockUnlock, overloadType, relayOrder);
+    }
+
+    // Mirrors tools/stage_editor lib/board-codec: 4 chars/lane, csv order, bottom→top,
+    // UPPER=normal lower=overload '-'=empty. Lane kind/lock come from the def, not the board string.
+    private static Board BuildExplicitBoard(StageDef def, string boardStr)
+    {
+        var lanes = new List<SlotLane>(def.LaneCount);
+        for (int i = 0; i < def.LaneCount; i++)
+        {
+            var lane = new SlotLane(def.LaneKinds[i],
+                i < def.LockUnlock.Length ? def.LockUnlock[i] : SignalType.Red);
+            int start = i * SlotLane.Capacity;
+            for (int c = 0; c < SlotLane.Capacity && start + c < boardStr.Length; c++)
+            {
+                char ch = boardStr[start + c];
+                if (ch == '-') continue;
+                int idx = Glyphs.IndexOf(char.ToUpperInvariant(ch));
+                if (idx < 0) continue;
+                lane.Push(new Chip((SignalType)idx, char.IsLower(ch)));
+            }
+            lanes.Add(lane);
+        }
+        return new Board(lanes, def.Types,
+            def.RelayOrder.Length > 0 ? new List<SignalType>(def.RelayOrder) : null);
     }
 
     // Difficulty-fit scoring (flood-style: reward target length + gimmick engagement, penalise drift).
@@ -531,8 +606,14 @@ public static class StageGenerator
         return score;
     }
 
-    private static StageDef BuildDef(GeneratorRequest r)
+    // Builds a concrete StageDef for one attempt. In randomize mode the gimmick layout is derived
+    // from the per-seed RNG (different attempts explore different layouts; scoring keeps the best).
+    private static StageDef BuildDef(GeneratorRequest r, int seed)
     {
+        int laneCount = (r.LaneKinds ?? "").Length;
+        if (r.RandomizeGimmicks && !r.Reproduce)
+            return BuildRandomizedDef(r, seed, laneCount);
+
         var kinds = (r.LaneKinds ?? "").Select(ParseKind).ToArray();
         var unlock = new SignalType[kinds.Length];
         for (int i = 0; i < kinds.Length; i++)
@@ -546,10 +627,53 @@ public static class StageGenerator
             unlock[i] = u;
         }
         SignalType? overload = r.OverloadType >= 0 ? (SignalType)r.OverloadType : null;
-        var relay = (r.RelayOrder ?? "")
-            .Where(g => TryParseGlyph(g, out _))
-            .Select(g => { TryParseGlyph(g, out var st); return st; })
-            .ToArray();
+
+        return new StageDef
+        {
+            Types = r.Types,
+            LaneKinds = kinds,
+            LockUnlock = unlock,
+            OverloadType = overload,
+            RelayOrder = ParseRelay(r.RelayOrder),
+            ScrambleSteps = r.ScrambleSteps,
+            Seed = r.Seed,
+        };
+    }
+
+    // Randomize mode: scatter LockCount/BlindCount lanes at random positions with random colors,
+    // honour the "always include, value random" overload/relay flags. Per-seed deterministic.
+    private static StageDef BuildRandomizedDef(GeneratorRequest r, int seed, int laneCount)
+    {
+        var rng = new Random(seed);
+        var kinds = new LaneKind[laneCount];   // all Normal by default
+        var unlock = new SignalType[laneCount];
+
+        var idx = Enumerable.Range(0, laneCount).ToList();
+        Shuffle(idx, rng);
+        int p = 0;
+        for (int n = 0; n < Math.Max(0, r.LockCount) && p < laneCount; n++, p++)
+        {
+            kinds[idx[p]] = LaneKind.Locked;
+            unlock[idx[p]] = (SignalType)rng.Next(r.Types);
+        }
+        // Blind is only meaningful on a filled lane, and exactly `Types` lanes are filled, so cap it there.
+        int blindN = Math.Min(Math.Max(0, r.BlindCount), r.Types);
+        for (int n = 0; n < blindN && p < laneCount; n++, p++)
+            kinds[idx[p]] = LaneKind.Blind;
+
+        SignalType? overload =
+            r.RandomOverload ? (SignalType)rng.Next(r.Types)
+            : r.OverloadType >= 0 ? (SignalType)r.OverloadType
+            : null;
+
+        SignalType[] relay;
+        if (r.RandomRelay)
+        {
+            var order = Enumerable.Range(0, r.Types).Select(t => (SignalType)t).ToList();
+            Shuffle(order, rng);
+            relay = order.ToArray();
+        }
+        else relay = ParseRelay(r.RelayOrder);
 
         return new StageDef
         {
@@ -559,15 +683,36 @@ public static class StageGenerator
             OverloadType = overload,
             RelayOrder = relay,
             ScrambleSteps = r.ScrambleSteps,
-            Seed = r.Seed,
+            Seed = seed,
         };
     }
+
+    private static void Shuffle<T>(IList<T> list, Random rng)
+    {
+        for (int i = list.Count - 1; i > 0; i--)
+        {
+            int j = rng.Next(i + 1);
+            (list[i], list[j]) = (list[j], list[i]);
+        }
+    }
+
+    private static SignalType[] ParseRelay(string? s) => (s ?? "")
+        .Where(g => TryParseGlyph(g, out _))
+        .Select(g => { TryParseGlyph(g, out var st); return st; })
+        .ToArray();
 
     private static LaneKind ParseKind(char c) => c switch
     {
         'L' or 'l' => LaneKind.Locked,
         'B' or 'b' => LaneKind.Blind,
         _          => LaneKind.Normal,
+    };
+
+    private static char KindToChar(LaneKind k) => k switch
+    {
+        LaneKind.Locked => 'L',
+        LaneKind.Blind  => 'B',
+        _               => 'N',
     };
 
     private static readonly string Glyphs = "RBGYPCOMLT"; // SignalType order
