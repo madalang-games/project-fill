@@ -15,6 +15,7 @@
 | `Chapter.chest_reward_group_id` | column | FK to `reward/reward_group.csv`; milestone chest granted when all stages in chapter first-cleared |
 | `Stage.stage_id` | column | Stable stage id |
 | `Stage.reward_group_id` | column | FK to `reward/reward_group.csv` |
+| `Stage.par_moves` | column | Server-only (scope `S`) target move count; a clear with `best_moves_used <= par_moves` counts as a perfect clear (feeds `perfect` ranking). Designer-authored per stage. |
 | `Stage.types` | column | Signal Type count = number of sets |
 | `Stage.lane_kinds` | column | Per-lane kind codes `N`/`L`/`B` (Normal/Locked/Blind); length = lane count |
 | `Stage.lock_unlock` | column | Per-lane unlock glyph for Locked lanes, `.` otherwise (e.g. `....R`) |

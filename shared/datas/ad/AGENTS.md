@@ -20,6 +20,7 @@
 | placement_key | ad_type | notes |
 |---|---|---|
 | `STUCK_ADD_LANE` | REWARDED | Stuck context, grants one Add Lane rescue |
+| `DOUBLE_REWARD_STAGE_CLEAR` | REWARDED | Result context; doubles the stage-clear reward (re-grants `stage.reward_group_id`). reward_group_id=0 (per-stage dynamic, not placement-fixed). Server-verified + idempotent (`double_reward:{stage_id}` once) |
 | `INTERSTITIAL_POST_STAGE` | INTERSTITIAL | 180s cooldown, stage 20+ |
 
 ## Rules

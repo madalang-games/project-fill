@@ -13,6 +13,7 @@ namespace ProjectFill.Generated.Data
         public int chapter_id { get; set; }
         public int stage_order { get; set; }
         public int difficulty { get; set; }
+        public int par_moves { get; set; }
         public int reward_group_id { get; set; }
         public int types { get; set; }
         public string lane_kinds { get; set; } = "";
@@ -45,13 +46,14 @@ namespace ProjectFill.Generated.Data
                     chapter_id = idx.TryGetValue("chapter_id", out var i1) && i1 < cols.Length && !string.IsNullOrEmpty(cols[i1]) ? int.Parse(cols[i1]) : default,
                     stage_order = idx.TryGetValue("stage_order", out var i2) && i2 < cols.Length && !string.IsNullOrEmpty(cols[i2]) ? int.Parse(cols[i2]) : default,
                     difficulty = idx.TryGetValue("difficulty", out var i3) && i3 < cols.Length && !string.IsNullOrEmpty(cols[i3]) ? int.Parse(cols[i3]) : default,
-                    reward_group_id = idx.TryGetValue("reward_group_id", out var i4) && i4 < cols.Length && !string.IsNullOrEmpty(cols[i4]) ? int.Parse(cols[i4]) : default,
-                    types = idx.TryGetValue("types", out var i5) && i5 < cols.Length && !string.IsNullOrEmpty(cols[i5]) ? int.Parse(cols[i5]) : default,
-                    lane_kinds = idx.TryGetValue("lane_kinds", out var i6) && i6 < cols.Length ? (cols[i6] ?? "") : "",
-                    lock_unlock = idx.TryGetValue("lock_unlock", out var i7) && i7 < cols.Length ? (cols[i7] ?? "") : "",
-                    overload_type = idx.TryGetValue("overload_type", out var i8) && i8 < cols.Length && !string.IsNullOrEmpty(cols[i8]) ? int.Parse(cols[i8]) : default,
-                    relay_order = idx.TryGetValue("relay_order", out var i9) && i9 < cols.Length ? (cols[i9] ?? "") : "",
-                    board = idx.TryGetValue("board", out var i10) && i10 < cols.Length ? (cols[i10] ?? "") : "",
+                    par_moves = idx.TryGetValue("par_moves", out var i4) && i4 < cols.Length && !string.IsNullOrEmpty(cols[i4]) ? int.Parse(cols[i4]) : default,
+                    reward_group_id = idx.TryGetValue("reward_group_id", out var i5) && i5 < cols.Length && !string.IsNullOrEmpty(cols[i5]) ? int.Parse(cols[i5]) : default,
+                    types = idx.TryGetValue("types", out var i6) && i6 < cols.Length && !string.IsNullOrEmpty(cols[i6]) ? int.Parse(cols[i6]) : default,
+                    lane_kinds = idx.TryGetValue("lane_kinds", out var i7) && i7 < cols.Length ? (cols[i7] ?? "") : "",
+                    lock_unlock = idx.TryGetValue("lock_unlock", out var i8) && i8 < cols.Length ? (cols[i8] ?? "") : "",
+                    overload_type = idx.TryGetValue("overload_type", out var i9) && i9 < cols.Length && !string.IsNullOrEmpty(cols[i9]) ? int.Parse(cols[i9]) : default,
+                    relay_order = idx.TryGetValue("relay_order", out var i10) && i10 < cols.Length ? (cols[i10] ?? "") : "",
+                    board = idx.TryGetValue("board", out var i11) && i11 < cols.Length ? (cols[i11] ?? "") : "",
                 });
             }
             return result;

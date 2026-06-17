@@ -49,6 +49,10 @@ PK,PK,NN,NN,
 104,ui_iap_no_ads,Assets/Resources/Sprites/UI/ui_iap_no_ads.png,UI,No Ads product icon
 105,ui_iap_starter,Assets/Resources/Sprites/UI/ui_iap_starter.png,UI,Starter pack product icon
 106,ui_iap_master,Assets/Resources/Sprites/UI/ui_iap_master.png,UI,Master bundle product icon
+110,led_star,Assets/Resources/Sprites/Decoration/led_star.png,Decoration,Blinking LED star for chapter background
+111,deco_mote,Assets/Resources/Sprites/Decoration/deco_mote.png,Decoration,Drifting glow mote particle (chapter bg)
+112,deco_pulse,Assets/Resources/Sprites/Decoration/deco_pulse.png,Decoration,Signal pulse dot travelling along the stage path
+113,deco_scanline,Assets/Resources/Sprites/Decoration/deco_scanline.png,Decoration,Horizontal scanline sweep band (chapter bg)
 1001,nav_home,Assets/Sprites/UI/Nav/nav_home.png,Nav,Home tab icon
 1002,nav_shop,Assets/Sprites/UI/Nav/nav_shop.png,Nav,Shop tab icon
 1003,nav_ranking,Assets/Sprites/UI/Nav/nav_ranking.png,Nav,Ranking tab icon

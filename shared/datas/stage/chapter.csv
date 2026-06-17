@@ -2,7 +2,8 @@ chapter_id,display_order,unlock_chapter_id,bg_theme_id,chest_reward_group_id
 CS,CS,CS,CS,CS
 int32,int32,int32,int32,int32
 PK,NN,,NN,FK:reward/reward_group
-1,1,,1,3001
-2,2,1,2,3002
-3,3,2,1,3003
-4,4,3,1,3004
+1,1,,1
+2,2,1,2
+3,3,2,1
+4,4,3,1
+5,5,4,1

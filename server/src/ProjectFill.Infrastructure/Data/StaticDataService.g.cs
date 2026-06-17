@@ -188,6 +188,7 @@ public partial class StaticDataService
                 ChapterId = r.chapter_id,
                 StageOrder = r.stage_order,
                 Difficulty = r.difficulty,
+                ParMoves = r.par_moves,
                 RewardGroupId = r.reward_group_id,
                 Types = r.types,
                 LaneKinds = r.lane_kinds,

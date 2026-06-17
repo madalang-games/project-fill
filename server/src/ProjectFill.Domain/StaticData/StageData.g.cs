@@ -9,6 +9,7 @@ public class StageData
     public int ChapterId { get; set; }
     public int StageOrder { get; set; }
     public int Difficulty { get; set; }
+    public int ParMoves { get; set; }
     public int RewardGroupId { get; set; }
     public int Types { get; set; }
     public string LaneKinds { get; set; } = "";

@@ -4,7 +4,7 @@
 | file | role |
 |------|------|
 | `color_palette.csv` | Master color palette — 16 predefined colors (color_id 0–15) |
-| `dynamic_resource.csv` | Dynamic sprite resources (Signal Sort boosters, chests, toasts, avatars, UI assets) |
+| `dynamic_resource.csv` | Dynamic sprite resources (Signal Sort boosters, chests, toasts, avatars, UI assets, decoration) |
 
 ## Rules
 - `color_palette.csv` has exactly 16 Signal Type colors (color_id 0–15); do not reorder or delete rows.

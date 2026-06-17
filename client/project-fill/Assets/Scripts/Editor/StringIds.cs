@@ -129,6 +129,16 @@ namespace Game.Editor
         public const string PopupAccountBtnCopyPid = "popup.account.btn_copy_pid";
         public const string PopupAccountBtnPrivacy = "popup.account.btn_privacy";
         public const string PopupAccountBtnTerms = "popup.account.btn_terms";
+        public const string PopupAccountTitle = "popup.account.title";
+        public const string PopupAccountLabelPid = "popup.account.label_pid";
+        public const string PopupStageInfoDifficultyEasy = "popup.stage_info.difficulty_easy";
+        public const string PopupStageInfoDifficultyNormal = "popup.stage_info.difficulty_normal";
+        public const string PopupStageInfoDifficultyHard = "popup.stage_info.difficulty_hard";
+        public const string PopupStageInfoTypesFmt = "popup.stage_info.types_fmt";
+        public const string PopupFailBtnAddLane = "popup.fail.btn_add_lane";
+        public const string PopupFailBtnShuffle = "popup.fail.btn_shuffle";
+        public const string PopupResultRewards = "popup.result.rewards";
+        public const string PopupFailShuffleConfirmFmt = "popup.fail.shuffle_confirm_fmt";
 
         // toast
         public const string ToastAccountAlreadyActive = "toast.account_already_active";
@@ -177,6 +187,13 @@ namespace Game.Editor
         public const string LobbyRankingUnavailable = "lobby.ranking.unavailable";
         public const string LobbyRankingTabStages = "lobby.ranking.tab_stages";
         public const string LobbyRankingTabMaxStage = "lobby.ranking.tab_max_stage";
+        public const string LobbyRankingDescStage = "lobby.ranking.desc_stage";
+        public const string LobbyRankingTabPerfect = "lobby.ranking.tab_perfect";
+        public const string LobbyRankingPerfectTitle = "lobby.ranking.perfect_title";
+        public const string LobbyRankingDescPerfect = "lobby.ranking.desc_perfect";
+        public const string LobbyRankingTabWeekly = "lobby.ranking.tab_weekly";
+        public const string LobbyRankingWeeklyTitle = "lobby.ranking.weekly_title";
+        public const string LobbyRankingDescWeekly = "lobby.ranking.desc_weekly";
 
         // ingame
         public const string IngameMovesLabel = "ingame.moves_label";
@@ -364,6 +381,16 @@ namespace Game.Editor
 
         // ranking
         public const string RankingTabChallenge = "ranking.tab.challenge";
+
+        // gimmick
+        public const string GimmickLockedLaneName = "gimmick.locked_lane.name";
+        public const string GimmickLockedLaneDesc = "gimmick.locked_lane.desc";
+        public const string GimmickBlindLaneName = "gimmick.blind_lane.name";
+        public const string GimmickBlindLaneDesc = "gimmick.blind_lane.desc";
+        public const string GimmickRelayNodeName = "gimmick.relay_node.name";
+        public const string GimmickRelayNodeDesc = "gimmick.relay_node.desc";
+        public const string GimmickOverloadChipName = "gimmick.overload_chip.name";
+        public const string GimmickOverloadChipDesc = "gimmick.overload_chip.desc";
     }
 }
 #endif

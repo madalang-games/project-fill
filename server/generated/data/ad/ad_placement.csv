@@ -1,3 +1,4 @@
 id,placement_key,reward_group_id,context_type,is_enabled,ad_type,cooldown_seconds,min_stage
 1,STUCK_ADD_LANE,0,stuck,true,REWARDED,0,0
+2,DOUBLE_REWARD_STAGE_CLEAR,0,result,true,REWARDED,0,0
 3,INTERSTITIAL_POST_STAGE,0,post_stage,true,INTERSTITIAL,180,20
