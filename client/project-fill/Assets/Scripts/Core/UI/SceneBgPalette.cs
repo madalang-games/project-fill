@@ -32,56 +32,48 @@ namespace Game.Core.UI
         {
             if (mode == BackgroundMode.Default)
                 return Boot();
-            return (bgThemeId, mode) switch
-            {
-                (1, BackgroundMode.Lobby) => GrasslandLobby(),
-                (1, BackgroundMode.Night) => GrasslandNight(),
-                (2, BackgroundMode.Lobby) => OceanLobby(),
-                (2, BackgroundMode.Night) => OceanNight(),
-                _                         => Boot()
-            };
+            return LobbyTheme(bgThemeId, mode == BackgroundMode.Night);
         }
 
-        // ── Palettes ─────────────────────────────────────────────────
+        // ── Palettes (circuit / neon dark, matches ChapterBgTheme hue sweep) ──
 
+        // Boot: circuit dusk — indigo→deep blue with cyan signal glow.
         private static SceneBgPalette Boot() => new(
-            skyTop:        new Color(0.82f, 0.45f, 0.25f, 1f),
-            skyBottom:     new Color(0.35f, 0.12f, 0.30f, 1f),
-            accentA:       new Color(1.00f, 0.80f, 0.30f, 0.90f),
-            accentB:       new Color(1.00f, 0.55f, 0.20f, 0.06f),
-            particleColor: new Color(1.00f, 0.88f, 0.50f, 0.70f),
+            skyTop:        new Color(0.10f, 0.07f, 0.22f, 1f),
+            skyBottom:     new Color(0.04f, 0.10f, 0.22f, 1f),
+            accentA:       new Color(0.30f, 0.85f, 1.00f, 0.90f),
+            accentB:       new Color(0.40f, 0.70f, 1.00f, 0.06f),
+            particleColor: new Color(0.60f, 0.90f, 1.00f, 0.70f),
             particleSpeed: 18f, particleCount: 10);
 
-        private static SceneBgPalette GrasslandLobby() => new(
-            skyTop:        new Color(0.42f, 0.71f, 0.83f, 1f),
-            skyBottom:     new Color(0.24f, 0.48f, 0.21f, 1f),
-            accentA:       new Color(1.00f, 0.90f, 0.25f, 0.92f),
-            accentB:       new Color(1.00f, 0.85f, 0.20f, 0.06f),
-            particleColor: new Color(0.98f, 0.94f, 0.40f, 0.85f),
-            particleSpeed: 30f, particleCount: 12);
+        // Lobby/Night: dark bg tinted by the chapter's neon accent.
+        private static SceneBgPalette LobbyTheme(int themeId, bool night)
+        {
+            Color a       = ThemeNeon(themeId);
+            Color skyTop  = night ? new Color(0.03f, 0.03f, 0.07f, 1f)
+                                  : new Color(0.05f, 0.06f, 0.12f, 1f);
+            float bMul    = night ? 0.10f : 0.18f;
+            Color skyBot  = new Color(a.r * bMul, a.g * bMul, a.b * bMul + 0.05f, 1f);
 
-        private static SceneBgPalette GrasslandNight() => new(
-            skyTop:        new Color(0.05f, 0.06f, 0.18f, 1f),
-            skyBottom:     new Color(0.07f, 0.16f, 0.09f, 1f),
-            accentA:       new Color(0.90f, 0.92f, 1.00f, 0.90f),
-            accentB:       new Color(0.60f, 0.65f, 0.95f, 0.15f),
-            particleColor: new Color(0.70f, 0.90f, 0.50f, 0.75f),
-            particleSpeed: 20f, particleCount: 14, isNight: true);
+            return new SceneBgPalette(
+                skyTop:        skyTop,
+                skyBottom:     skyBot,
+                accentA:       a,
+                accentB:       new Color(a.r, a.g, a.b, 0.10f),
+                particleColor: new Color(a.r, a.g, a.b, night ? 0.70f : 0.60f),
+                particleSpeed: night ? 22f : 30f,
+                particleCount: night ? 16 : 12,
+                isNight:       night);
+        }
 
-        private static SceneBgPalette OceanLobby() => new(
-            skyTop:        new Color(0.10f, 0.22f, 0.37f, 1f),
-            skyBottom:     new Color(0.18f, 0.55f, 0.48f, 1f),
-            accentA:       new Color(1.00f, 0.90f, 0.25f, 0.85f),
-            accentB:       new Color(0.55f, 0.88f, 0.98f, 0.06f),
-            particleColor: new Color(0.72f, 0.94f, 1.00f, 0.65f),
-            particleSpeed: 40f, particleCount: 14);
-
-        private static SceneBgPalette OceanNight() => new(
-            skyTop:        new Color(0.02f, 0.04f, 0.15f, 1f),
-            skyBottom:     new Color(0.03f, 0.12f, 0.20f, 1f),
-            accentA:       new Color(0.00f, 0.80f, 0.70f, 0.60f),
-            accentB:       new Color(0.20f, 0.40f, 0.80f, 0.20f),
-            particleColor: new Color(0.40f, 0.95f, 0.85f, 0.70f),
-            particleSpeed: 22f, particleCount: 18, isNight: true);
+        // Neon accent per chapter — cyan → blue → violet → magenta.
+        private static Color ThemeNeon(int themeId) => themeId switch
+        {
+            1 => new Color(0.21f, 0.84f, 0.95f, 1f),
+            2 => new Color(0.40f, 0.55f, 1.00f, 1f),
+            3 => new Color(0.72f, 0.40f, 1.00f, 1f),
+            4 => new Color(1.00f, 0.40f, 0.80f, 1f),
+            _ => new Color(0.21f, 0.84f, 0.95f, 1f),
+        };
     }
 }

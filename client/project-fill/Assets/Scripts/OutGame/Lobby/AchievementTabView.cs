@@ -91,11 +91,11 @@ namespace Game.OutGame.Lobby
             var descText = go.transform.Find("DescText")?.GetComponent<TMP_Text>();
             if (descText != null) descText.text = loc != null ? loc.Get(a.DescKey) : a.DescKey;
 
-            var fill = go.transform.Find("ProgressBar/Fill")?.GetComponent<Image>();
-            if (fill != null)
+            var bar = go.transform.Find("ProgressBar")?.GetComponent<AnimatedProgressBar>();
+            if (bar != null)
             {
                 float ratio = a.ConditionValue > 0 ? Mathf.Clamp01((float)a.Progress / a.ConditionValue) : (a.IsCompleted ? 1f : 0f);
-                fill.fillAmount = ratio;
+                bar.SetProgress(ratio, a.IsCompleted);
             }
 
             var progressText = go.transform.Find("ProgressText")?.GetComponent<TMP_Text>();
@@ -114,11 +114,6 @@ namespace Game.OutGame.Lobby
                 claimButton.onClick.AddListener(() => OnClaim(captured));
             }
             if (completedLabel != null) completedLabel.gameObject.SetActive(a.IsCompleted && a.RewardClaimed);
-
-            // Dim incomplete achievements
-            var canvasGroup = go.GetComponent<CanvasGroup>();
-            if (canvasGroup == null) canvasGroup = go.AddComponent<CanvasGroup>();
-            canvasGroup.alpha = a.IsCompleted ? 1f : 0.55f;
         }
 
         private void OnClaim(AchievementDto a)

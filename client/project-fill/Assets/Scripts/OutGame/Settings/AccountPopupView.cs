@@ -11,7 +11,7 @@ namespace Game.OutGame.Settings
 {
     public class AccountPopupView : MonoBehaviour
     {
-        [SerializeField] private TMP_Text       _userIdText;
+        [SerializeField] private TMP_Text       _pidText;
         [SerializeField] private Button         _copyPidButton;
         [SerializeField] private Button         _linkAccountButton;
         [SerializeField] private Button         _switchAccountButton;
@@ -57,8 +57,8 @@ namespace Game.OutGame.Settings
             bool isGuest = auth == null || auth.IsGuest;
 
             string pid = auth?.Pid ?? string.Empty;
-            if (_userIdText != null)
-                _userIdText.text = string.IsNullOrEmpty(pid)
+            if (_pidText != null)
+                _pidText.text = string.IsNullOrEmpty(pid)
                     ? (LocalizationService.Instance?.Get("common.guest") ?? "Guest")
                     : pid;
 

@@ -1,9 +1,11 @@
 using System;
+using System.Collections.Generic;
 using Game.Core;
 using Game.Core.UI;
 using Game.InGame.View;
 using Game.OutGame.Settings;
 using Game.Services;
+using ProjectFill.Contracts.Rewards;
 using UnityEngine;
 
 namespace Game.InGame.Controller
@@ -319,15 +321,19 @@ namespace Game.InGame.Controller
         private void SubmitClear(int stageId)
         {
             int moves = _board.MoveCount;
-            var completedTypes = new System.Collections.Generic.List<int>(_def.Types);
+            var completedTypes = new List<int>(_def.Types);
             for (int t = 0; t < _def.Types; t++) completedTypes.Add(t);
+
+            // Stable id for this clear attempt; links the optional double-reward ad claim (logging).
+            string attemptId = Guid.NewGuid().ToString("N");
 
             var api = StageApiService.Instance;
             if (api == null)
             {
                 PlayerProgressService.Instance?.RecordBestMoves(stageId, moves);
                 PlayerProgressService.Instance?.UnlockStage(stageId + 1);
-                ShowClear();
+                ShowClear(stageId, attemptId, Array.Empty<GrantedRewardDto>(), canDouble: false,
+                    new ClearSummary(moves, moves, false));
                 return;
             }
 
@@ -338,20 +344,25 @@ namespace Game.InGame.Controller
                     progress?.RecordBestMoves(stageId, res.BestMovesUsed);
                     progress?.ApplyMaxClearedStage(res.MaxClearedStageId);
                     _boardView.SetBestMoves(res.BestMovesUsed);
-                    ShowClear();
+                    // Double reward only on first clear (re-clears grant nothing to double).
+                    bool canDouble = res.IsFirstClear && res.GrantedRewards != null && res.GrantedRewards.Count > 0;
+                    ShowClear(stageId, attemptId, res.GrantedRewards, canDouble,
+                        new ClearSummary(res.MovesUsed, res.BestMovesUsed, res.IsNewBest));
                 },
                 onError: err =>
                 {
                     PlayerProgressService.Instance?.RecordBestMoves(stageId, moves);
                     PlayerProgressService.Instance?.UnlockStage(stageId + 1);
                     ShowSpendError(err); // reuse server-error toast
-                    ShowClear();
+                    ShowClear(stageId, attemptId, Array.Empty<GrantedRewardDto>(), canDouble: false,
+                        new ClearSummary(moves, moves, false));
                 });
         }
 
-        private void ShowClear()
+        private void ShowClear(int stageId, string attemptId, IReadOnlyList<GrantedRewardDto> rewards,
+            bool canDouble, ClearSummary summary)
         {
-            _boardView.ShowClearPanel(
+            _boardView.ShowClearPanel(stageId, attemptId, rewards, canDouble, summary,
                 onNext:  () => ShowInterstitialThen(() => { _stageIndex++; LoadCurrent(); }),
                 onLobby: () => ShowInterstitialThen(() => BoardView.GoToScene("Lobby")));
         }
@@ -363,7 +374,9 @@ namespace Game.InGame.Controller
             int moves   = _board.MoveCount;
             int seconds = System.Math.Max(0, Mathf.RoundToInt(Time.realtimeSinceStartup - _challengeStart));
             DailyChallengeApiService.Instance?.SubmitClear(moves, seconds, _ => { }, _ => { });
-            _boardView.ShowClearPanel(onNext: ReturnFromChallenge, onLobby: ReturnFromChallenge);
+            // Daily challenge has no per-stage clear reward group → no reward list, no double-reward.
+            _boardView.ShowClearPanel(0, string.Empty, Array.Empty<GrantedRewardDto>(), canDouble: false,
+                summary: null, onNext: ReturnFromChallenge, onLobby: ReturnFromChallenge);
         }
 
         private void ReturnFromChallenge()

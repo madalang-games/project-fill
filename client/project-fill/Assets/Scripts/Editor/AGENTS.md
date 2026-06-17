@@ -48,9 +48,9 @@
 | `UIEditorSetup.BuildAvatarCard()` | method | Avatar card prefab (Visual/Icon + SelectedHighlight + LockOverlay + StateText); referenced by AvatarSectionView, built in SetupLobby |
 | `UIEditorSetup.PopulateAvatarSprites(prop,resMap)` | method | Fills an `_avatarSprites` SerializedProperty from avatar.csv; shared by Shop avatar section + AccountPopup |
 | `UIEditorSetup.CreateAchievementToast()` | method | [MenuItem ".../AchievementToast"] slide-down tier-badge toast |
-| `UIEditorSetup.BuildAchievementCell()` | method | Achievement list cell prefab; referenced by AchievementTabView, built in SetupLobby |
+| `UIEditorSetup.BuildAchievementCell()` | method | Achievement list cell prefab; referenced by AchievementTabView, built in SetupLobby; ProgressBar uses sprite-free `AnimatedProgressBar` (width-driven Fill, no sprite/mask) |
 | `UIEditorSetup.CreateDailyChallengePopup()` | method | [MenuItem ".../DailyChallengePopup"] challenge info popup |
-| `UIEditorSetup.SetupLobby()` | method | builds 4 bottom-nav tabs (Shop/Home/Ranking/Achievement), Shop cosmetic + avatar sections, Ranking Challenge tab, and the Achievement tab (migrated from AchievementListPopupView) |
+| `UIEditorSetup.SetupLobby()` | method | builds 4 bottom-nav tabs (Shop/Home/Ranking/Achievement), Shop cosmetic + avatar sections, Ranking tab (stage/perfect/weekly buttons + per-tab DescText below the row; legacy stars/max-stage/challenge buttons cleaned up), and the Achievement tab |
 | `UIEditorSetup.BuildAllFromSpecs()` | method | [MenuItem "Tools/UI Setup/Specs/Build All From Specs"] builds every `UISpecs/*.json`. PROTOTYPE — proves data-driven popup definition; `_`-prefixed JSON skipped |
 | `UIEditorSetup.ResolveColor(s)` | method | spec color string → `UIColorPalette` static property (reflection), else `Hex()` one-off |
 | `UIEditorSetup.ApplyCanvasScaler(go)` | method | Enforces canonical CanvasScaler on any canvas GO: ScaleWithScreenSize, 1080×1920, MatchWidthOrHeight=0.5, referencePixelsPerUnit=100. Called by both `LoadOrCreateCanvas` (load path) and `CreateTempCanvas` (create path). |
@@ -65,7 +65,11 @@
 | `UIEditorSetup.MapStarAndIconSprites()` | method | Re-maps star_empty/star_filled/lock icon on Common prefabs without recreating them |
 | `UIEditorSetup.CreateForceUpdateView()` | method | [MenuItem ".../ForceUpdateView"] forced-action update popup; opaque `UI_BG_DEEP` bg, Update button wired to `ForceUpdateView._updateButton` |
 | `UIEditorSetup.CreateRewardPopup()` | method | Also creates `RewardItemCell.prefab` inline (background+Icon+Quantity badge+RewardItemCellView); wires `_itemRowPrefab` and `_closeButton` on RewardPopupView; adds visual-only Backdrop child |
+| `UIEditorSetup.CreateResultOverlay()` | method | [MenuItem ".../ResultOverlay"] stage-clear overlay: StatsBlock (MovesText/BestText runtime-formatted + NewBestBadge, hidden by default) + RewardCellContainer (HLG, runtime RewardItemCell rows) + DoubleReward/Next/Map; wires `ResultOverlayView` refs incl. `_statsBlock`/`_movesText`/`_bestText`/`_newBestBadge`, `_rewardCellPrefab` = `RewardItemCell.prefab` |
+| `UIEditorSetup.CreateFailOverlay()` | method | [MenuItem ".../FailOverlay"] stuck-rescue overlay: AddLane(ad + "Watch Ad" badge)/Shuffle(icon+price)/Forfeit + in-panel ShuffleConfirmPanel (body/Confirm/Cancel, hidden by default); wires `FailOverlayView` refs incl. `_shuffleCostText`, `_shuffleConfirmPanel`/`_shuffleConfirmBody`/`_shuffleConfirmYes`/`_shuffleConfirmNo`; button icons via `AddButtonIcon` from `dynamic_resource` |
+| `UIEditorSetup.AddButtonIcon(btn,key,resMap)` | method | Adds a left-aligned non-raycast icon Image to a wide button from a `dynamic_resource` sprite key |
 | `UIEditorSetup.CreateItemTooltip()` | method | Creates `ItemTooltipView.prefab` skeleton in Base/Common; missing Resources/Prefabs/UI variant is created automatically |
+| `UIEditorSetup.MakeGimmickBadge(parent,name,spritePath)` | method | Builds a 96×96 icon badge (sprite from `Assets/Sprites/UI/Icons/`) with `LongPressTooltipTrigger`; used by StageInfoPopup gimmick row |
 | `UIEditorSetup.CreateVariantIfMissing()` | method | Creates Final prefab variants from Base prefabs; skips when target variant already exists |
 | `UIEditorSetup.MapHierarchyImageSprite()` | method | Maps a sprite key from resMap to an Image at `childPath` inside a loaded prefab |
 | `UIEditorSetup.TMP(parent, name, rect, size, color, text, stringId, category)` | method | Creates TMP_Text with LocalizedText + UITextStyle; sizing via `ApplyAutoFontSize(tmp, category)` (see font size rules). `size` arg is legacy/unused for sizing — `category` drives the max |

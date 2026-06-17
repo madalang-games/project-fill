@@ -12,7 +12,7 @@ namespace Game.Core
         public const string ProdGameServerUrl           = "https://pixelpop.madalang.com"; // TODO: 실제 프로덕션 서버 URL로 교체
 
         // 약관/정책 웹 페이지 베이스 URL (게임 API 서버와 별개)
-        public const string DevWebUrl                   = "http://localhost:20001"; // 개발 웹 URL
+        public const string DevWebUrl                   = "http://localhost:20002"; // 개발 웹 URL
         public const string ProdWebUrl                  = "https://www.madalang.com"; // 프로덕션 웹 URL
         public const string WebPrivacyPath              = "/privacy"; // 개인정보처리방침 경로
         public const string WebTermsPath                = "/terms"; // 이용약관 경로

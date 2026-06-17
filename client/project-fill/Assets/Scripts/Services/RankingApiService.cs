@@ -37,6 +37,26 @@ namespace Game.Services
             });
         }
 
+        public void FetchWeeklyPage(int offset, int limit, Action<RankingPageResponse> onSuccess, Action<string> onError = null)
+        {
+            NetworkService.Instance.Get($"/api/rankings/weekly?offset={offset}&limit={limit}", (ok, result) =>
+            {
+                if (!ok) { onError?.Invoke(result); return; }
+                var json = JsonUtility.FromJson<RankingPageJson>(result);
+                onSuccess?.Invoke(json.ToContract());
+            });
+        }
+
+        public void FetchMyWeeklyRank(Action<MyRankingResponse> onSuccess, Action<string> onError = null)
+        {
+            NetworkService.Instance.Get("/api/rankings/weekly/me", (ok, result) =>
+            {
+                if (!ok) { onError?.Invoke(result); return; }
+                var json = JsonUtility.FromJson<MyRankingJson>(result);
+                onSuccess?.Invoke(json.ToContract());
+            });
+        }
+
         public void FetchMyStageRank(int stageId, Action<StageRankResponse> onSuccess, Action<string> onError = null)
         {
             NetworkService.Instance.Get($"/api/rankings/stages/{stageId}/me", (ok, result) =>

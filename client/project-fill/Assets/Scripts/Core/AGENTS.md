@@ -39,7 +39,7 @@
 | `AppEnvironment` | enum | Dev / Prod |
 | `AppConfig.DevGameServerUrl` | const | Dev server base URL |
 | `AppConfig.ProdGameServerUrl` | const | Prod server base URL |
-| `AppConfig.DevWebUrl` / `ProdWebUrl` | const | Web page base URL (Dev `localhost:20001` / Prod `www.madalang.com`); for Privacy/Terms links |
+| `AppConfig.DevWebUrl` / `ProdWebUrl` | const | Web page base URL (Dev `localhost:20002` / Prod `www.madalang.com`); for Privacy/Terms links |
 | `AppConfig.WebPrivacyPath` / `WebTermsPath` | const | `/privacy` / `/terms` redirect paths appended to web base URL |
 | `AppConfig.GoogleWebClientId` | const | Google OAuth2 web client ID — fill in before release |
 | `AppConfig.AdMobAndroidAppId` | const | Google Mobile Ads Android App ID (test ID by default) |

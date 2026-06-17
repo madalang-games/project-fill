@@ -177,6 +177,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4161620103499267482, guid: 3f564a58322b2dd449804ac9cb0a55bd, type: 3}
+      propertyPath: m_MinHeight
+      value: 360
+      objectReference: {fileID: 0}
+    - target: {fileID: 4161620103499267482, guid: 3f564a58322b2dd449804ac9cb0a55bd, type: 3}
       propertyPath: m_PreferredHeight
       value: 360
       objectReference: {fileID: 0}

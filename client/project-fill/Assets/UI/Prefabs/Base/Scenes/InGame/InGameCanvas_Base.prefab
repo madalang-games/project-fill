@@ -2652,13 +2652,19 @@ MonoBehaviour:
   _skin:
     chip: {fileID: 0}
     chipOutline: {fileID: 0}
+    laneOutline: {fileID: 0}
     glow: {fileID: 0}
     laneSlot: {fileID: 0}
     circuit: {fileID: 0}
     panelNode: {fileID: 0}
     disc: {fileID: 0}
     ring: {fileID: 0}
+    lockSeal: {fileID: 0}
   _worldCamera: {fileID: 0}
+  _laneWidth: 0.95
+  _laneHeight: 3.2
+  _laneGap: 0.18
+  _maxColumns: 6
 --- !u!114 &6211270665357645979
 MonoBehaviour:
   m_ObjectHideFlags: 0

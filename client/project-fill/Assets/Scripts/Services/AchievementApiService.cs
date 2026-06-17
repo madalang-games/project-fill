@@ -9,12 +9,26 @@ namespace Game.Services
 {
     public class AchievementApiService : MonoBehaviour
     {
-        public static AchievementApiService Instance { get; private set; }
+        private static AchievementApiService _instance;
+
+        public static AchievementApiService Instance
+        {
+            get
+            {
+                if (_instance == null)
+                {
+                    var go = new GameObject("AchievementApiService");
+                    _instance = go.AddComponent<AchievementApiService>();
+                    DontDestroyOnLoad(go);
+                }
+                return _instance;
+            }
+        }
 
         private void Awake()
         {
-            if (Instance != null) { Destroy(gameObject); return; }
-            Instance = this;
+            if (_instance != null && _instance != this) { Destroy(gameObject); return; }
+            _instance = this;
             DontDestroyOnLoad(gameObject);
         }
 

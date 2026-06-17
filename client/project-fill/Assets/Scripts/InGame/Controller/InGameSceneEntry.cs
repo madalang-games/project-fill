@@ -1,5 +1,10 @@
+using Game.Core;
+using Game.Core.UI;
 using Game.InGame.View;
+using Game.OutGame.Lobby;
+using Game.Services;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Game.InGame.Controller
 {
@@ -8,6 +13,8 @@ namespace Game.InGame.Controller
         [SerializeField] private InGameController          _controller;
         [SerializeField] private InGameSceneBackgroundView _sceneBg; // kept for scene compatibility
         [SerializeField] private int                       _startStageIndex; // index into StageLibrary.Samples
+
+        private const string LobbyScene = "Lobby";
 
         private void Start()
         {
@@ -19,7 +26,41 @@ namespace Game.InGame.Controller
                 Debug.LogError("[InGame] InGameController reference missing on SceneEntry");
                 return;
             }
-            _controller.Begin(_startStageIndex);
+
+            // Campaign stage selected in the lobby (StageInfoPopupView PLAY → EnterStage) lands here via
+            // ScrollStateCache; index = stageId - 1. Falls back to _startStageIndex for direct in-editor play.
+            int stageId = ScrollStateCache.LastPlayedStageId;
+            int index   = stageId > 0 ? stageId - 1 : _startStageIndex;
+
+            // Daily challenge is not a campaign stage — it has no unlock gating and Begin consumes
+            // ChallengeContext directly. Skip the campaign stage-start validation.
+            var api = StageApiService.Instance;
+            if (ChallengeContext.Active || api == null)
+            {
+                // ChallengeContext path, or offline/dev play (no Boot scene → no StageApiService) → start locally.
+                _controller.Begin(index);
+                return;
+            }
+
+            // Server-authoritative gate: only build the board once the server confirms the stage is reachable.
+            api.StartStage(index + 1,
+                onSuccess: res =>
+                {
+                    PlayerProgressService.Instance?.ApplyMaxClearedStage(res.MaxClearedStageId);
+                    _controller.Begin(index);
+                },
+                onError: OnStartFailed);
+        }
+
+        // Stage not reachable (STAGE_LOCKED) or server error: surface a toast and bounce back to the lobby.
+        private static void OnStartFailed(string errorResponse)
+        {
+            var loc = LocalizationService.Instance;
+            UIManager.Instance?.ShowToast(loc != null ? loc.GetErrorFromResponse(errorResponse) : errorResponse, ToastType.Warning);
+
+            var transition = SceneTransition.Instance;
+            if (transition != null) transition.SlideDownToScene(LobbyScene);
+            else SceneManager.LoadScene(LobbyScene);
         }
     }
 }

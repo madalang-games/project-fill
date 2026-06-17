@@ -32,7 +32,10 @@ namespace Game.InGame.View
                 float yMax = -panelHeight * 0.5f + 0.88f * panelHeight;
 
                 Vector3 localPos = new Vector3((xMin + xMax) * 0.5f, (yMin + yMax) * 0.5f, 0f);
-                Vector2 nodeSize = new Vector2(xMax - xMin, yMax - yMin);
+                // Fixed LED-style node: a stable fraction of panel height, NOT stretched to fill the
+                // (often wide) cell — keeps the lit disc/ring/glow compact instead of ballooning.
+                float diameter = Mathf.Min(panelHeight * 0.42f, (xMax - xMin) * 0.8f, yMax - yMin);
+                Vector2 nodeSize = new Vector2(diameter, diameter);
 
                 var node = SpawnNode(nodePrefab);
                 node.transform.localPosition = localPos;
@@ -73,6 +76,18 @@ namespace Game.InGame.View
         {
             foreach (var n in _nodes)
                 if (n.Type == type) n.PlayRegister();
+        }
+
+        // World-space segment from a node to the next one in the chain — drives the register light-pulse
+        // trace. False for the last node (no forward connector to propagate along).
+        public bool TryGetTraceTarget(SignalType type, out Vector3 from, out Vector3 to)
+        {
+            from = to = Vector3.zero;
+            int idx = _nodes.FindIndex(n => n.Type == type);
+            if (idx < 0 || idx + 1 >= _nodes.Count) return false;
+            from = _nodes[idx].WorldPos;
+            to   = _nodes[idx + 1].WorldPos;
+            return true;
         }
     }
 }

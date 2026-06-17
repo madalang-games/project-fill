@@ -8,7 +8,7 @@ namespace Game.InGame.View
     // a circuit "back" for Blind lanes, and a pulsing overload glow. Fits its container.
     public class ChipView : MonoBehaviour
     {
-        private SpriteRenderer _glow, _fill, _outline, _back;
+        private SpriteRenderer _glow, _fill, _outline, _back, _backCirc;
         private SpriteRenderer[] _pinsL;
         private SpriteRenderer[] _pinsR;
         private SpriteRenderer _indexDot;
@@ -69,6 +69,7 @@ namespace Game.InGame.View
             _label = WorldUtil.CreateLabel(transform, "Glyph", "", 30f, size);
             _label.fontStyle = FontStyles.Bold;
             _label.sortingOrder = 14;
+            _label.gameObject.SetActive(false); // chip is color-only — no type glyph
 
             // Create index dot at top-left
             float dotSize = size.x * 0.08f;
@@ -76,9 +77,12 @@ namespace Game.InGame.View
             _indexDot.transform.localPosition = new Vector3(-size.x * 0.35f, size.y * 0.35f, 0f);
 
             // Blind "back": rounded chip body in dark circuit-blue with an inset circuit pattern.
+            // Circ sits under the chip ROOT (sibling of Back), NOT as Back's child — a non-9-sliced
+            // chip skin gives Back a <1 localScale that a child Circ would inherit and shrink by.
             _back = WorldUtil.CreateSprite(transform, "Back", s.Chip, new Color(0.10f, 0.14f, 0.20f), size, sortingOrder: 12);
-            var circ = WorldUtil.CreateSprite(_back.transform, "Circ", s.Circuit, new Color(0.32f, 0.62f, 0.68f, 0.9f), size - new Vector2(0.08f, 0.08f), sliced: false, sortingOrder: 13);
+            _backCirc = WorldUtil.CreateSprite(transform, "Circ", s.Circuit, new Color(0.32f, 0.62f, 0.68f, 0.9f), size, sliced: false, sortingOrder: 13);
             _back.gameObject.SetActive(false);
+            _backCirc.gameObject.SetActive(false);
         }
 
         public void SetChip(Chip chip, bool revealed)
@@ -97,6 +101,7 @@ namespace Game.InGame.View
             if (_revealed)
             {
                 _back.gameObject.SetActive(false);
+                _backCirc.gameObject.SetActive(false);
                 var col = _chip.Type.ToColor();
 
                 // Casual color token: body = the signal color, bold dark outline, dark glyph for
@@ -112,6 +117,7 @@ namespace Game.InGame.View
             else
             {
                 _back.gameObject.SetActive(true);
+                _backCirc.gameObject.SetActive(true);
                 _fill.color    = new Color(0.09f, 0.11f, 0.14f);
                 _outline.color = new Color(0.25f, 0.45f, 0.52f);
                 _label.text    = "";
@@ -145,12 +151,14 @@ namespace Game.InGame.View
         }
 
         private Vector3 _targetLocalPos = Vector3.zero;
+        private float _punch; // one-shot select-pop overshoot, decays in Update
 
         public void SetSelected(bool on, float hoverYOffset = 0f)
         {
             _selected = on;
             _targetLocalPos = on ? new Vector3(0f, hoverYOffset, 0f) : Vector3.zero;
-            if (!on) { transform.localScale = Vector3.one; }
+            if (on) { _punch = 1f; }
+            else { transform.localScale = Vector3.one; }
         }
 
         public void AnimateReveal()
@@ -186,8 +194,9 @@ namespace Game.InGame.View
             if (_selected)
             {
                 var col = _revealed ? _chip.Type.ToColor() : new Color(0.4f, 0.7f, 0.8f);
-                _glow.color = new Color(col.r, col.g, col.b, Mathf.Lerp(0.55f, 0.95f, pulse));
-                float s = Mathf.Lerp(1.06f, 1.11f, pulse);
+                _punch = Mathf.MoveTowards(_punch, 0f, Time.deltaTime * 5f);
+                _glow.color = new Color(col.r, col.g, col.b, Mathf.Lerp(0.7f, 1f, pulse));
+                float s = Mathf.Lerp(1.08f, 1.14f, pulse) + _punch * 0.12f; // pop on select, settle to pulse
                 transform.localScale = new Vector3(s, s, 1f);
                 
                 Color selectPinCol = Color.Lerp(col, Color.white, 0.4f);

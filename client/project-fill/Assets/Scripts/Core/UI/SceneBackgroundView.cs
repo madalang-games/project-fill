@@ -26,7 +26,6 @@ namespace Game.Core.UI
         private readonly List<Particle> _particles = new();
 
         private RectTransform _sunOrMoon;
-        private readonly List<(RectTransform rt, float speed)>  _clouds   = new();
         private readonly List<(Image img, float phase, float period)> _twinkles = new();
         private readonly List<(Image img, float phase, float period)> _rays     = new();
 
@@ -99,34 +98,14 @@ namespace Game.Core.UI
 
         private void CreateDecorations(int bgThemeId)
         {
+            // Circuit/neon theme: a glowing signal node + LED twinkle field + soft
+            // signal beams + drifting particles. All tinted via the palette accents.
             bool night = _mode == BackgroundMode.Night;
             CreateParticles();
-
-            if (_mode == BackgroundMode.Default)
-            {
-                CreateSunOrMoon(isMoon: false);
-                CreateClouds(2, new Color(1f, 0.85f, 0.70f, 0.45f));
-            }
-            else if (bgThemeId == 1 && !night)
-            {
-                CreateSunOrMoon(isMoon: false);
-                CreateClouds(3, new Color(1f, 1f, 1f, 0.55f));
-            }
-            else if (bgThemeId == 1 && night)
-            {
-                CreateSunOrMoon(isMoon: true);
-                CreateTwinkleStars(40);
-            }
-            else if (bgThemeId == 2 && !night)
-            {
-                CreateSunOrMoon(isMoon: false);
-                CreateRays(5);
-            }
-            else if (bgThemeId == 2 && night)
-            {
-                CreateRays(8);
-                CreateTwinkleStars(12);
-            }
+            CreateSunOrMoon(isMoon: night);      // glowing signal node
+            CreateTwinkleStars(night ? 40 : 20); // LED twinkle field
+            if (_mode != BackgroundMode.Default)
+                CreateRays(night ? 6 : 4);       // soft signal beams
         }
 
         // ── Decoration creators ──────────────────────────────────────
@@ -162,32 +141,6 @@ namespace Game.Core.UI
                     ray.GetComponent<RectTransform>().localRotation =
                         Quaternion.Euler(0f, 0f, angle + 90f);
                 }
-            }
-        }
-
-        private void CreateClouds(int count, Color color)
-        {
-            float[] xs     = { -80f, 20f, -20f };
-            float[] ys     = { -30f, -60f, -95f };
-            float[] ws     = { 200f, 160f, 130f };
-            float[] speeds = {  14f,   9f,  18f };
-            int     n      = Mathf.Min(count, xs.Length);
-
-            for (int i = 0; i < n; i++)
-            {
-                var root = new GameObject($"Cloud{i}");
-                root.transform.SetParent(_content, false);
-                var cRt = root.AddComponent<RectTransform>();
-                cRt.anchorMin = cRt.anchorMax = new Vector2(0.5f, 1f);
-                cRt.pivot     = new Vector2(0.5f, 0.5f);
-                cRt.sizeDelta = Vector2.one;
-                cRt.anchoredPosition = new Vector2(xs[i], ys[i]);
-
-                float w = ws[i], h = w * 0.38f;
-                MakeImgLocal(root.transform, Vector2.zero,                          new Vector2(w,        h * 0.65f), color);
-                MakeImgLocal(root.transform, new Vector2(-w * 0.18f,  h * 0.18f),  new Vector2(w * 0.52f, h * 0.9f), color);
-                MakeImgLocal(root.transform, new Vector2( w * 0.12f,  h * 0.10f),  new Vector2(w * 0.48f, h),        color);
-                _clouds.Add((cRt, speeds[i]));
             }
         }
 
@@ -253,7 +206,6 @@ namespace Game.Core.UI
                 float t  = Time.time;
                 UpdateParticles(dt, t);
                 UpdateSunOrMoon(t);
-                UpdateClouds(dt);
                 UpdateTwinkles(t);
                 UpdateRays(t);
                 yield return null;
@@ -288,18 +240,6 @@ namespace Game.Core.UI
             if (_sunOrMoon == null) return;
             float s = 1f + 0.03f * Mathf.Sin(t * (_mode == BackgroundMode.Night ? 0.6f : 1.1f));
             _sunOrMoon.localScale = new Vector3(s, s, 1f);
-        }
-
-        private void UpdateClouds(float dt)
-        {
-            for (int i = 0; i < _clouds.Count; i++)
-            {
-                var (rt, speed) = _clouds[i];
-                var pos = rt.anchoredPosition;
-                pos.x += speed * dt;
-                if (pos.x > 150f) pos.x = -150f;
-                rt.anchoredPosition = pos;
-            }
         }
 
         private void UpdateTwinkles(float t)
@@ -346,7 +286,6 @@ namespace Game.Core.UI
         private void Clear()
         {
             _particles.Clear();
-            _clouds.Clear();
             _twinkles.Clear();
             _rays.Clear();
             _sunOrMoon   = null;
@@ -369,20 +308,6 @@ namespace Game.Core.UI
             img.color = color; img.raycastTarget = false;
             var rt  = go.GetComponent<RectTransform>();
             rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 1f);
-            rt.pivot     = new Vector2(0.5f, 0.5f);
-            rt.sizeDelta = size;
-            rt.anchoredPosition = pos;
-            return img;
-        }
-
-        private static Image MakeImgLocal(Transform parent, Vector2 pos, Vector2 size, Color color)
-        {
-            var go  = new GameObject("_", typeof(Image));
-            go.transform.SetParent(parent, false);
-            var img = go.GetComponent<Image>();
-            img.color = color; img.raycastTarget = false;
-            var rt  = go.GetComponent<RectTransform>();
-            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
             rt.pivot     = new Vector2(0.5f, 0.5f);
             rt.sizeDelta = size;
             rt.anchoredPosition = pos;

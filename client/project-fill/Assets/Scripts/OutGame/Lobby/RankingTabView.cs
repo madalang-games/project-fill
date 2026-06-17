@@ -11,10 +11,11 @@ namespace Game.OutGame.Lobby
 {
     public class RankingTabView : MonoBehaviour
     {
-        [SerializeField] private Button _starsTabButton;
-        [SerializeField] private Button _maxStageTabButton;
-        [SerializeField] private Button _challengeTabButton;
+        [SerializeField] private Button _stageTabButton;
+        [SerializeField] private Button _perfectTabButton;
+        [SerializeField] private Button _weeklyTabButton;
         [SerializeField] private TMP_Text _titleText;
+        [SerializeField] private TMP_Text _descText;
         [SerializeField] private TMP_Text _myRankText;
         [SerializeField] private TMP_Text _entriesText;
         [SerializeField] private VirtualizedScrollRect _virtualizedScrollRect;
@@ -42,16 +43,16 @@ namespace Game.OutGame.Lobby
         [SerializeField] private Color _inactiveTabColor = new Color(0.3f, 0.14f, 0.36f);
 
         private const int PageLimit = 50;
-        private string _rankingType = "stages";
+        private string _rankingType = "stage";
 
         private void Awake()
         {
-            if (_starsTabButton != null)
-                _starsTabButton.onClick.AddListener(() => Select("stages"));
-            if (_maxStageTabButton != null)
-                _maxStageTabButton.onClick.AddListener(() => Select("max-stage"));
-            if (_challengeTabButton != null)
-                _challengeTabButton.onClick.AddListener(() => Select("challenge"));
+            if (_stageTabButton != null)
+                _stageTabButton.onClick.AddListener(() => Select("stage"));
+            if (_perfectTabButton != null)
+                _perfectTabButton.onClick.AddListener(() => Select("perfect"));
+            if (_weeklyTabButton != null)
+                _weeklyTabButton.onClick.AddListener(() => Select("weekly"));
         }
 
         private void OnEnable() => Refresh();
@@ -76,6 +77,7 @@ namespace Game.OutGame.Lobby
         {
             UpdateTabButtonColors();
             if (_rankingType == "challenge") { RefreshChallenge(); return; }
+            var loc = LocalizationService.Instance;
             var api = RankingApiService.Instance;
             if (api == null)
             {
@@ -83,20 +85,18 @@ namespace Game.OutGame.Lobby
                 return;
             }
 
-            if (_titleText != null)
-                _titleText.text = _rankingType == "stages" ? LocalizationService.Instance.Get("lobby.ranking.stages_title") : LocalizationService.Instance.Get("lobby.ranking.stage_title");
-            if (_myRankText != null)
-                _myRankText.text = LocalizationService.Instance.Get("lobby.ranking.my_rank_empty");
-            if (_entriesText != null)
-                _entriesText.text = LocalizationService.Instance.Get("lobby.ranking.loading");
+            if (_titleText != null) _titleText.text = loc.Get(TitleKey(_rankingType));
+            if (_descText != null) _descText.text = loc.Get(DescKey(_rankingType));
+            if (_myRankText != null) _myRankText.text = loc.Get("lobby.ranking.my_rank_empty");
+            if (_entriesText != null) _entriesText.text = loc.Get("lobby.ranking.loading");
 
             var scoreSprite = _stageSprite;
 
-            api.FetchGlobalPage(_rankingType, 0, PageLimit, page =>
+            System.Action<RankingPageResponse> renderPage = page =>
             {
                 if (page.Entries.Count == 0)
                 {
-                    if (_entriesText != null) _entriesText.text = LocalizationService.Instance.Get("lobby.ranking.no_data");
+                    if (_entriesText != null) _entriesText.text = loc.Get("lobby.ranking.no_data");
                     if (_virtualizedScrollRect != null) _virtualizedScrollRect.gameObject.SetActive(false);
                     return;
                 }
@@ -155,15 +155,15 @@ namespace Game.OutGame.Lobby
                         _entriesText.text = lines.ToString();
                     }
                 }
-            }, _ => SetUnavailable());
+            };
 
-            api.FetchMyGlobalRank(_rankingType, mine =>
+            System.Action<MyRankingResponse> renderMine = mine =>
             {
                 if (mine.Entry == null)
                 {
                     if (_myRankPin != null) _myRankPin.gameObject.SetActive(false);
                     if (_myRankText != null)
-                        _myRankText.text = LocalizationService.Instance.Get("lobby.ranking.my_rank_empty");
+                        _myRankText.text = loc.Get("lobby.ranking.my_rank_empty");
                 }
                 else
                 {
@@ -175,12 +175,37 @@ namespace Game.OutGame.Lobby
                     }
 
                     if (_myRankText != null)
-                        _myRankText.text = string.Format(LocalizationService.Instance.Get("lobby.ranking.my_rank_format"), mine.Entry.Rank, mine.Entry.Score);
+                        _myRankText.text = string.Format(loc.Get("lobby.ranking.my_rank_format"), mine.Entry.Rank, mine.Entry.Score);
                 }
-            }, _ => {
-                if (_myRankPin != null) _myRankPin.gameObject.SetActive(false);
-            });
+            };
+
+            System.Action<string> onMineError = _ => { if (_myRankPin != null) _myRankPin.gameObject.SetActive(false); };
+
+            if (_rankingType == "weekly")
+            {
+                api.FetchWeeklyPage(0, PageLimit, renderPage, _ => SetUnavailable());
+                api.FetchMyWeeklyRank(renderMine, onMineError);
+            }
+            else
+            {
+                api.FetchGlobalPage(_rankingType, 0, PageLimit, renderPage, _ => SetUnavailable());
+                api.FetchMyGlobalRank(_rankingType, renderMine, onMineError);
+            }
         }
+
+        private static string TitleKey(string rankingType) => rankingType switch
+        {
+            "perfect" => "lobby.ranking.perfect_title",
+            "weekly"  => "lobby.ranking.weekly_title",
+            _          => "lobby.ranking.stages_title",
+        };
+
+        private static string DescKey(string rankingType) => rankingType switch
+        {
+            "perfect" => "lobby.ranking.desc_perfect",
+            "weekly"  => "lobby.ranking.desc_weekly",
+            _          => "lobby.ranking.desc_stage",
+        };
 
         private void RefreshChallenge()
         {
@@ -246,12 +271,12 @@ namespace Game.OutGame.Lobby
 
         private void UpdateTabButtonColors()
         {
-            if (_starsTabButton != null && _starsTabButton.targetGraphic != null)
-                _starsTabButton.targetGraphic.color = _rankingType == "stars" ? _activeTabColor : _inactiveTabColor;
-            if (_maxStageTabButton != null && _maxStageTabButton.targetGraphic != null)
-                _maxStageTabButton.targetGraphic.color = _rankingType == "max-stage" ? _activeTabColor : _inactiveTabColor;
-            if (_challengeTabButton != null && _challengeTabButton.targetGraphic != null)
-                _challengeTabButton.targetGraphic.color = _rankingType == "challenge" ? _activeTabColor : _inactiveTabColor;
+            if (_stageTabButton != null && _stageTabButton.targetGraphic != null)
+                _stageTabButton.targetGraphic.color = _rankingType == "stage" ? _activeTabColor : _inactiveTabColor;
+            if (_perfectTabButton != null && _perfectTabButton.targetGraphic != null)
+                _perfectTabButton.targetGraphic.color = _rankingType == "perfect" ? _activeTabColor : _inactiveTabColor;
+            if (_weeklyTabButton != null && _weeklyTabButton.targetGraphic != null)
+                _weeklyTabButton.targetGraphic.color = _rankingType == "weekly" ? _activeTabColor : _inactiveTabColor;
         }
 
         private void SetUnavailable()

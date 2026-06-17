@@ -22,10 +22,13 @@ namespace Game.InGame.View
         private ChipView[] _chips;
         private Transform[] _slots;
 
+        private const int MaxPips = 5; // relay queue pips cap (orders longer than this clamp)
+
         private GameObject _lockOverlay;
         private GameObject _blindMarker;
         private GameObject _pendingBadge;
-        private TextMeshPro _pendingLabel;
+        private SpriteRenderer _scanLine;     // blind-lane scanning sweep
+        private SpriteRenderer[] _pips;        // relay queue-position dots
 
         private SlotLane _lane;
         private bool _selected, _validTarget, _flashing;
@@ -75,7 +78,7 @@ namespace Game.InGame.View
             contacts.transform.localPosition = new Vector3(0f, -size.y * 0.5f - contactH * 0.4f, 0f);
             
             // Adding a small socket block that "inserts" the contacts - sortingOrder: 1
-            var insertSocket = WorldUtil.CreateSprite(transform, "InsertSocket", s.ChipOutline, new Color(0.08f, 0.09f, 0.13f, 1f), new Vector2(size.x * 0.9f, contactH * 1.5f), sortingOrder: 1);
+            var insertSocket = WorldUtil.CreateSprite(transform, "InsertSocket", s.LaneOutline, new Color(0.08f, 0.09f, 0.13f, 1f), new Vector2(size.x * 0.9f, contactH * 1.5f), sortingOrder: 1);
             insertSocket.transform.localPosition = new Vector3(0f, -size.y * 0.5f - contactH * 0.8f, 0f);
 
             // Mechanical ejector latches at the top - proportional to width size.x
@@ -108,7 +111,7 @@ namespace Game.InGame.View
                 float yCenter_norm = (yMin + yMax) * 0.5f;
                 float yCenter_local = -size.y * 0.5f + yCenter_norm * size.y;
 
-                var sock = WorldUtil.CreateSprite(transform, $"Socket_{sIdx}", s.ChipOutline, SocketColor, _chipSize, sortingOrder: 4);
+                var sock = WorldUtil.CreateSprite(transform, $"Socket_{sIdx}", s.LaneOutline, SocketColor, _chipSize, sortingOrder: 4);
                 sock.transform.localPosition = new Vector3(0f, yCenter_local, 0f);
 
                 var slot = WorldUtil.CreateGameObject(transform, $"Slot_{sIdx}");
@@ -119,11 +122,11 @@ namespace Game.InGame.View
             }
 
             // Outer border - sortingOrder: 5
-            _border = WorldUtil.CreateSprite(transform, "Border", s.ChipOutline, BorderNormal, size, sortingOrder: 5);
+            _border = WorldUtil.CreateSprite(transform, "Border", s.LaneOutline, BorderNormal, size, sortingOrder: 5);
 
             BuildLockOverlay(s, lane, size);
-            BuildBlindMarker(size);
-            BuildPendingBadge(size);
+            BuildBlindMarker(s, size);
+            BuildPendingBadge(s, size);
         }
 
         // Spawns a chip from the prefab (thin GO + ChipView) into a slot; falls back to a bare
@@ -145,71 +148,60 @@ namespace Game.InGame.View
             // Translucent dark shroud - sortingOrder: 15
             var seal = WorldUtil.CreateSprite(_lockOverlay.transform, "Seal", s.LaneSlot, new Color(0.05f, 0.06f, 0.09f, 0.92f), size, sortingOrder: 15);
 
-            // Access lock chip visual instead of padlock - proportional to size.x
-            float chipW = size.x * 0.45f;
-            float chipH = size.x * 0.45f;
-            float chipY = size.y * 0.12f;
-            var securityChip = WorldUtil.CreateSprite(_lockOverlay.transform, "SecurityChip", s.Chip, new Color(0.15f, 0.16f, 0.22f, 1f), new Vector2(chipW, chipH), sortingOrder: 16);
-            securityChip.transform.localPosition = new Vector3(0f, chipY, 0f);
-            
-            // Red warning outline indicating locked state - sortingOrder: 17
-            var outline = WorldUtil.CreateSprite(securityChip.transform, "ChipOutline", s.ChipOutline, new Color(1f, 0.32f, 0.32f, 0.8f), new Vector2(chipW, chipH), sortingOrder: 17);
-            
-            var label = WorldUtil.CreateLabel(securityChip.transform, "LockGlyph", "🔒", 26f, new Vector2(chipW, chipH));
-            label.color = new Color(1f, 0.32f, 0.32f);
-            label.alignment = TextAlignmentOptions.Center;
-            label.sortingOrder = 18;
-
-            // unlock-condition badge (type color) - proportional to size.x
-            float badgeW = size.x * 0.85f;
-            float badgeH = size.x * 0.22f;
-            float badgeY = -size.y * 0.18f;
-            
-            var badgeBg = WorldUtil.CreateSprite(_lockOverlay.transform, "BadgeBg", s.ChipOutline, new Color(0.20f, 0.22f, 0.30f, 1f), new Vector2(badgeW, badgeH * 1.2f), sortingOrder: 16);
-            badgeBg.transform.localPosition = new Vector3(0f, badgeY, 0f);
-            
-            var badge = WorldUtil.CreateSprite(badgeBg.transform, "Badge", s.Chip, lane.UnlockType.ToColor(), new Vector2(badgeW * 0.9f, badgeH), sortingOrder: 17);
-            
-            var bl = WorldUtil.CreateLabel(badge.transform, "BadgeGlyph", $"{lane.UnlockType.ToLabel()} ACTIVE", 14f, new Vector2(badgeW * 0.9f, badgeH));
-            bl.color = new Color(0, 0, 0, 0.75f);
-            bl.fontStyle = FontStyles.Bold;
-            bl.sortingOrder = 18;
+            // Padlock icon tinted to the UnlockType color — the color tells the player which signal
+            // opens this lane (same palette as the Signal Panel nodes). No text, no emoji.
+            float lockSize = size.x * 0.5f;
+            var lockCol = Color.Lerp(lane.UnlockType.ToColor(), Color.white, 0.2f);
+            var lockIcon = WorldUtil.CreateSprite(_lockOverlay.transform, "LockIcon", s.LockSeal, lockCol, new Vector2(lockSize, lockSize), sliced: false, sortingOrder: 17);
+            lockIcon.transform.localPosition = new Vector3(0f, size.y * 0.04f, 0f);
 
             _lockOverlay.SetActive(lane.Kind == LaneKind.Locked);
         }
 
-        private void BuildBlindMarker(Vector2 size)
+        private void BuildBlindMarker(SpriteSet s, Vector2 size)
         {
-            float w = size.x * 0.88f;
-            float h = size.x * 0.22f; // Scale height with width
-            float y = size.y * 0.5f + h * 0.65f; // sit above the frame so it never covers the top chip
+            float badge = size.x * 0.60f;
+            float y = size.y * 0.5f + badge * 0.55f; // sit above the frame so it never covers the top chip
 
             _blindMarker = WorldUtil.CreateGameObject(transform, "BlindMark").gameObject;
             _blindMarker.transform.localPosition = new Vector3(0f, y, 0f);
 
-            var markBg = WorldUtil.CreateSprite(_blindMarker.transform, "Bg", null, new Color(0.07f, 0.20f, 0.25f, 0.9f), new Vector2(w, h), sortingOrder: 18);
-            var q = WorldUtil.CreateLabel(_blindMarker.transform, "Q", "SCANNING", 14f, new Vector2(w, h));
+            // "?" disc badge (stand-in for the lane_blind_marker sprite; "?" is an ASCII glyph icon).
+            WorldUtil.CreateSprite(_blindMarker.transform, "Bg", s.Disc, new Color(0.07f, 0.20f, 0.25f, 0.95f), new Vector2(badge, badge), sliced: false, sortingOrder: 18);
+            var q = WorldUtil.CreateLabel(_blindMarker.transform, "Q", "?", 40f, new Vector2(badge, badge));
             q.color     = BorderBlind;
             q.fontStyle = FontStyles.Bold;
             q.sortingOrder = 19;
             _blindMarker.SetActive(_lane.Kind == LaneKind.Blind);
+
+            // Scanning sweep: a thin bright bar that travels over the masked stack (animated in Update).
+            _scanLine = WorldUtil.CreateSprite(transform, "ScanLine", s.Chip, new Color(BorderBlind.r, BorderBlind.g, BorderBlind.b, 0f), new Vector2(size.x * 0.68f, size.y * 0.03f), sliced: false, sortingOrder: 14);
+            _scanLine.enabled = false;
         }
 
-        private void BuildPendingBadge(Vector2 size)
+        private void BuildPendingBadge(SpriteSet s, Vector2 size)
         {
-            float w = size.x * 0.88f;
-            float h = size.x * 0.22f; // Scale height with width
-            float y = size.y * 0.5f + h * 0.65f; // sit above the frame so it never covers the top chip
+            float w = size.x * 0.78f;
+            float h = size.x * 0.20f;
+            float y = size.y * 0.5f + h * 0.7f; // sit above the frame so it never covers the top chip
 
             _pendingBadge = WorldUtil.CreateGameObject(transform, "Pending").gameObject;
             _pendingBadge.transform.localPosition = new Vector3(0f, y, 0f);
 
-            // Flashing warning diagonal stripe design
-            var markBg = WorldUtil.CreateSprite(_pendingBadge.transform, "Bg", null, new Color(0.25f, 0.12f, 0.02f, 0.9f), new Vector2(w, h), sortingOrder: 18);
-            _pendingLabel = WorldUtil.CreateLabel(_pendingBadge.transform, "Lbl", "SIGNAL PENDING", 14f, new Vector2(w, h));
-            _pendingLabel.color = BorderPending;
-            _pendingLabel.fontStyle = FontStyles.Bold;
-            _pendingLabel.sortingOrder = 19;
+            WorldUtil.CreateSprite(_pendingBadge.transform, "Bg", s.LaneSlot, new Color(0.25f, 0.14f, 0.02f, 0.9f), new Vector2(w, h), sortingOrder: 18);
+
+            // Queue-position pips: filled count = steps until this lane's signal is next (1 = up next,
+            // shown green). Replaces the "WAIT #N" text. Orders longer than MaxPips clamp.
+            _pips = new SpriteRenderer[MaxPips];
+            float pipD = h * 0.55f;
+            float spacing = pipD * 1.4f;
+            float x0 = -spacing * (MaxPips - 1) * 0.5f;
+            for (int i = 0; i < MaxPips; i++)
+            {
+                var pip = WorldUtil.CreateSprite(_pendingBadge.transform, $"Pip_{i}", s.Disc, BorderPending, new Vector2(pipD, pipD), sliced: false, sortingOrder: 19);
+                pip.transform.localPosition = new Vector3(x0 + i * spacing, 0f, 0f);
+                _pips[i] = pip;
+            }
             _pendingBadge.SetActive(false);
         }
 
@@ -228,10 +220,21 @@ namespace Game.InGame.View
                 else _chips[s].Hide();
             }
 
-            _lockOverlay.SetActive(lane.Locked);
+            // Lock → unlock plays the dissolve FX; otherwise set state directly.
+            if (_lockOverlay.activeSelf && !lane.Locked) PlayUnlockFlash();
+            else if (!_flashing) _lockOverlay.SetActive(lane.Locked);
             _blindMarker.SetActive(lane.Kind == LaneKind.Blind);
             _pendingBadge.SetActive(lane.Pending);
-            if (lane.Pending && pendingNumber > 0) _pendingLabel.text = $"WAIT #{pendingNumber}";
+            if (lane.Pending) SetPips(pendingNumber);
+        }
+
+        // Lights the first N pips (N = relay queue position); next-up (<=1) is green, others amber.
+        private void SetPips(int n)
+        {
+            n = Mathf.Clamp(n, 1, MaxPips);
+            var lit = n <= 1 ? BorderValid : BorderPending;
+            for (int i = 0; i < MaxPips; i++)
+                _pips[i].color = i < n ? lit : new Color(lit.r, lit.g, lit.b, 0.18f);
         }
 
         public Vector3 SlotWorldPos(int slotIndex)
@@ -295,11 +298,27 @@ namespace Game.InGame.View
             if (_flashing) return;
             float pulse = Mathf.Sin(Time.unscaledTime * 5f) * 0.5f + 0.5f;
 
-            if (_selected)              _border.color = BorderSelect;
-            else if (_validTarget)      _border.color = new Color(BorderValid.r, BorderValid.g, BorderValid.b, Mathf.Lerp(0.5f, 1f, pulse));
-            else if (_lane.Pending)     _border.color = new Color(BorderPending.r, BorderPending.g, BorderPending.b, Mathf.Lerp(0.45f, 0.95f, pulse));
-            else if (_lane.Kind == LaneKind.Blind) _border.color = BorderBlind;
-            else                        _border.color = BorderNormal;
+            Color target;
+            if (_selected)              target = BorderSelect;
+            else if (_validTarget)      target = new Color(BorderValid.r, BorderValid.g, BorderValid.b, Mathf.Lerp(0.5f, 1f, pulse));
+            else if (_lane.Pending)     target = new Color(BorderPending.r, BorderPending.g, BorderPending.b, Mathf.Lerp(0.45f, 0.95f, pulse));
+            else if (_lane.Kind == LaneKind.Blind) target = BorderBlind;
+            else                        target = BorderNormal;
+            // Smooth neon color transition between states (no hard snap).
+            _border.color = Color.Lerp(_border.color, target, 1f - Mathf.Exp(-Time.deltaTime * 12f));
+
+            // Blind scanning sweep: a bright bar travels up the masked stack, fading at the ends.
+            if (_scanLine != null)
+            {
+                bool blind = _lane.Kind == LaneKind.Blind;
+                _scanLine.enabled = blind;
+                if (blind)
+                {
+                    float ph = (Time.unscaledTime * 0.5f) % 1f;
+                    _scanLine.transform.localPosition = new Vector3(0f, Mathf.Lerp(-_laneSize.y * 0.42f, _laneSize.y * 0.42f, ph), 0f);
+                    var c = _scanLine.color; c.a = 0.12f + 0.5f * Mathf.Sin(ph * Mathf.PI); _scanLine.color = c;
+                }
+            }
         }
 
         private IEnumerator ShakeRoutine(Action onDone)

@@ -19,10 +19,10 @@ Namespace: `Game.Services`
 | `IAdService.cs` | `IAdService`, `AdWatchResult` | Ad service interface; WatchRewardedAd(placementId, cb); ShowInterstitialIfEligible(stageId, suppress, cb) |
 | `AdMobService.cs` | `AdMobService` | DDOL singleton; implements IAdService; multi-placement rewarded ads + interstitial; SSV nonce set before Show() |
 | `AdEligibilityCache.cs` | `AdEligibilityCache` | DDOL singleton; GET /api/ad/eligibility on session start; IsEligible(placementId); OnInterstitialShown() |
-| `AdApiService.cs` | `AdApiService` | API client for ad operations: interstitial shown recording |
+| `AdApiService.cs` | `AdApiService` | API client for ad operations: interstitial shown recording; result-screen double-reward claim |
 | `NetworkService.cs` | `NetworkService` | DDOL singleton; centralised HTTP client; Get/Post; injects Application.version + authToken headers; configurable log level |
 | `BootstrapService.cs` | `BootstrapService` | DDOL singleton; pre-auth boot gate: GET `/api/bootstrap/config` → force-update / schema-mismatch / OTA meta-hash patch via `/api/data/bundle` + `CsvLoader.ApplyPatchAtomic`; uses raw `UnityWebRequest` (pre-auth, custom headers/timeout) |
-| `StageApiService.cs` | `StageApiService` | `POST /api/stages/{id}/clear` — server-authoritative stage-clear submit; syncs gold + returns best/rank/first-clear/chapter-chest/rewards |
+| `StageApiService.cs` | `StageApiService` | `POST /api/stages/{id}/start` — stage-entry unlock gate (STAGE_LOCKED on locked); `POST /api/stages/{id}/clear` — server-authoritative stage-clear submit; syncs gold + returns best/rank/first-clear/chapter-chest/rewards |
 | `RankingApiService.cs` | `RankingApiService` | Optional server ranking page/my-rank fetcher |
 | `CurrencyApiService.cs` | `CurrencyApiService` | Server soft currency fetch + spend; syncs `PlayerProgressService.Gold` on response |
 | `InventoryApiService.cs` | `InventoryApiService` | Server-backed items fetch + spend API client |
@@ -30,7 +30,8 @@ Namespace: `Game.Services`
 | `TutorialApiService.cs` | `TutorialApiService` | Server-backed tutorial progress fetch + complete API client |
 | `ErrorResponseJson.cs` | `ErrorResponseJson` | Serializable helper for server error code extraction |
 | `PlayerApiService.cs` | `PlayerApiService` | DDOL singleton; `GET /api/player/progress` fetch; deserializes to `PlayerProgressResponse` |
-| `CosmeticApiService.cs` | `CosmeticApiService` | DDOL singleton; `/api/cosmetics` list/unlock/active client; syncs gold on unlock |
+| `CosmeticApiService.cs` | `CosmeticApiService` | DDOL singleton; `/api/cosmetics` list/unlock/active client; syncs gold on unlock; caches active cosmetics into `CosmeticState` on Fetch/SetActive |
+| `CosmeticState.cs` | `CosmeticState` | Static session cache of active cosmetics (chip/lane/board skin + useCustomBoardSkin); `ResolveBoardSkin()` → active board skin or `board_default`; read by `InGameSceneBackgroundView` without re-fetch |
 | `AttendanceApiService.cs` | `AttendanceApiService` | DDOL singleton; `/api/attendance` status + claim client; syncs gold on claim |
 | `AchievementApiService.cs` | `AchievementApiService` | DDOL singleton; `/api/achievements` list + claim client; syncs gold on claim |
 | `DailyChallengeApiService.cs` | `DailyChallengeApiService` | DDOL singleton; `/api/daily-challenge` today/clear/ranking/streak client; syncs gold on clear |
@@ -67,6 +68,7 @@ Namespace: `Game.Services`
 | `LocalizationService.GetFont(Language)` | method | Returns TMP_FontAsset from FontLocalizationConfig; null if config missing |
 | `StageDataService.GetStage(int)` | method | Returns Stage or null |
 | `StageDataService.GetAll()` | method | Returns Stage[] |
+| `StageApiService.StartStage(int,onSuccess,onError)` | method | `POST /api/stages/{id}/start`; onError carries STAGE_LOCKED when unreachable; onSuccess carries server `MaxClearedStageId` |
 | `DynamicResourceService.Instance` | prop | DDOL singleton |
 | `DynamicResourceService.GetSprite(string)` | method | Loads Sprite via Resources.Load; caches result; returns null for non-Resources paths |
 | `CurrencyDataService.Instance` | prop | DDOL singleton |
@@ -106,10 +108,12 @@ Namespace: `Game.Services`
 | `AdEligibilityCache.OnInterstitialShown()` | method | Optimistically marks INTERSTITIAL_POST_STAGE ineligible until next Refresh |
 | `AdApiService.Instance` | prop | DDOL singleton |
 | `AdApiService.RecordInterstitialShown(int,Action,Action<string>)` | method | Records interstitial ad display on server |
-| `AdApiService.ClaimDoubleReward(...)` | method | **STUB** — immediately calls onError("DOUBLE_REWARD_NOT_SUPPORTED") |
+| `AdApiService.ClaimDoubleReward(stageId,attemptId,provider,adToken,onSuccess,onError)` | method | `POST /api/ad/double-reward`; parses `AdDoubleRewardGrantResponse` (granted/duplicate/rewards/currency); syncs gold via `CurrencyApiService.UpdateGold` |
 
 | `RankingApiService.FetchGlobalPage` | method | GET paged global ranking |
-| `RankingApiService.FetchMyGlobalRank` | method | GET current user's ranking card |
+| `RankingApiService.FetchMyGlobalRank` | method | GET current user's ranking card (`stage`/`perfect`) |
+| `RankingApiService.FetchWeeklyPage` | method | GET paged weekly ranking (`/api/rankings/weekly`) |
+| `RankingApiService.FetchMyWeeklyRank` | method | GET current user's weekly ranking card (`/api/rankings/weekly/me`) |
 | `RankingApiService.FetchMyStageRank` | method | GET current user's stage rank |
 | `CurrencyApiService.OnGoldChanged` | event | `Action<long, long>` (amount, delta); fires on any server-confirmed gold change |
 | `CurrencyApiService.UpdateGold` | method | Canonical gold setter: calls `PlayerProgressService.SetGold` + fires `OnGoldChanged`; call this from any service receiving `CurrencySnapshot` |

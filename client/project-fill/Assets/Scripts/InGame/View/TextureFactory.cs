@@ -84,25 +84,28 @@ namespace Game.InGame.View
             });
         }
 
-        // Soft outer glow (rounded, alpha falls off toward the edge). Tint via Image.color.
-        public static Sprite Glow(int size = 96, float cornerFrac = 0.30f)
+        // Soft radial glow: small bright core fading smoothly to fully transparent at the texture
+        // edge. Plain (NOT 9-sliced) so the radial falloff isn't stretched — WorldUtil scales the
+        // transform to fit. `coreFrac` = solid-core radius as a fraction of size; keep it small so the
+        // glow reads as a compact halo, not a hard block. Tint via SpriteRenderer.color.
+        public static Sprite Glow(int size = 96, float coreFrac = 0.14f)
         {
-            return Get($"gl_{size}_{cornerFrac}", () =>
+            return Get($"gl_{size}_{coreFrac}", () =>
             {
                 var tex = NewTex(size);
-                float r = size * cornerFrac;
-                float feather = size * 0.22f;
+                float c = size * 0.5f;
+                float edge = size * 0.5f - 1f; // alpha reaches 0 at the texture edge
+                float core = size * coreFrac;  // fully-bright inner radius
                 for (int y = 0; y < size; y++)
                 for (int x = 0; x < size; x++)
                 {
-                    float d = RoundedBoxSdf(x + 0.5f, y + 0.5f, size, r);
-                    // d<=0 inside → full; fade out over `feather` px outside.
-                    float a = Mathf.Clamp01(1f - Mathf.Max(d, 0f) / feather);
-                    a = a * a; // softer
+                    float dist = Mathf.Sqrt((x + 0.5f - c) * (x + 0.5f - c) + (y + 0.5f - c) * (y + 0.5f - c));
+                    float a = dist <= core ? 1f : Mathf.Clamp01(1f - (dist - core) / (edge - core));
+                    a = a * a; // soft quadratic falloff
                     tex.SetPixel(x, y, new Color(1f, 1f, 1f, a));
                 }
                 tex.Apply();
-                return Make9(tex, Mathf.CeilToInt(r) + Mathf.CeilToInt(feather) + 1);
+                return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f);
             });
         }
 
@@ -137,6 +140,49 @@ namespace Game.InGame.View
                     float dist = Mathf.Sqrt((x + 0.5f - c) * (x + 0.5f - c) + (y + 0.5f - c) * (y + 0.5f - c));
                     float ring = Mathf.Abs(dist - (rad - th * 0.5f)) - th * 0.5f;
                     tex.SetPixel(x, y, new Color(1f, 1f, 1f, Mathf.Clamp01(0.5f - ring)));
+                }
+                tex.Apply();
+                return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f);
+            });
+        }
+
+        // Padlock icon: rounded body + top shackle arc + keyhole punch. White/neutral so it can be
+        // tinted (the lane lock tints it to the UnlockType color → color = which signal opens it).
+        public static Sprite Padlock(int size = 64)
+        {
+            return Get($"lock_{size}", () =>
+            {
+                var tex = NewTex(size);
+                const float bx0 = 0.24f, bx1 = 0.76f, by0 = 0.06f, by1 = 0.52f, br = 0.08f; // body
+                const float scx = 0.5f, scy = 0.58f, sR = 0.17f, sT = 0.075f;               // shackle
+                for (int y = 0; y < size; y++)
+                for (int x = 0; x < size; x++)
+                {
+                    float u = (x + 0.5f) / size, v = (y + 0.5f) / size;
+
+                    // Body (rounded-rect SDF, normalized units).
+                    float bhx = (bx1 - bx0) * 0.5f - br, bhy = (by1 - by0) * 0.5f - br;
+                    float qx = Mathf.Abs(u - (bx0 + bx1) * 0.5f) - bhx;
+                    float qy = Mathf.Abs(v - (by0 + by1) * 0.5f) - bhy;
+                    float bd = Mathf.Sqrt(Mathf.Max(qx, 0f) * Mathf.Max(qx, 0f) + Mathf.Max(qy, 0f) * Mathf.Max(qy, 0f))
+                               + Mathf.Min(Mathf.Max(qx, qy), 0f) - br;
+                    float a = Mathf.Clamp01(0.5f - bd * size);
+
+                    // Shackle: top arc of an annulus + two legs reaching down to the body.
+                    float dd  = Mathf.Sqrt((u - scx) * (u - scx) + (v - scy) * (v - scy));
+                    float arc = (v >= scy) ? Mathf.Clamp01(0.5f - (Mathf.Abs(dd - sR) - sT * 0.5f) * size) : 0f;
+                    float leg = 0f;
+                    if (v <= scy && v >= by1 - 0.02f)
+                    {
+                        float l = Mathf.Min(Mathf.Abs(u - (scx - sR)), Mathf.Abs(u - (scx + sR))) - sT * 0.5f;
+                        leg = Mathf.Clamp01(0.5f - l * size);
+                    }
+                    a = Mathf.Max(a, Mathf.Max(arc, leg));
+
+                    // Keyhole: punch a small hole in the body face.
+                    if (Mathf.Sqrt((u - 0.5f) * (u - 0.5f) + (v - 0.30f) * (v - 0.30f)) < 0.055f) a = 0f;
+
+                    tex.SetPixel(x, y, new Color(1f, 1f, 1f, a));
                 }
                 tex.Apply();
                 return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f);

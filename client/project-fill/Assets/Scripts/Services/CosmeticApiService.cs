@@ -23,7 +23,9 @@ namespace Game.Services
             {
                 if (!ok) { onError?.Invoke(result); return; }
                 var json = JsonUtility.FromJson<CosmeticListResponseJson>(result);
-                onSuccess?.Invoke(json.ToContract());
+                var contract = json.ToContract();
+                CosmeticState.Set(contract.Active);
+                onSuccess?.Invoke(contract);
             });
         }
 
@@ -47,7 +49,9 @@ namespace Game.Services
             {
                 if (!ok) { onError?.Invoke(result); return; }
                 var json = JsonUtility.FromJson<SetActiveCosmeticResponseJson>(result);
-                onSuccess?.Invoke(json?.active?.ToContract() ?? new ActiveCosmeticsDto());
+                var dto = json?.active?.ToContract() ?? new ActiveCosmeticsDto();
+                CosmeticState.Set(dto);
+                onSuccess?.Invoke(dto);
             });
         }
 

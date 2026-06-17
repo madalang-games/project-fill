@@ -6,7 +6,7 @@ Namespace: `Game.OutGame.Settings`
 | file | class | role |
 |------|-------|------|
 | `SettingsPanelView.cs` | `SettingsPanelView` | Bottom-sheet popup: BGM/SFX/ScreenShake/Haptic toggles, language dropdown, version text |
-| `AccountPopupView.cs` | `AccountPopupView` | Nickname + PID (Copy → clipboard + toast); Privacy/Terms web links; guest → Link Account; OAuth → Switch Account. Avatar selection moved to Shop avatar section; achievements moved to lobby Achievement tab. Retains `_avatarSprites` + `GetAvatarSprite` (HeaderView/TutorialOverlay read equipped avatar sprite from this prefab) |
+| `AccountPopupView.cs` | `AccountPopupView` | Title ribbon (`popup.account.title`); `NicknameArea` (label+input+save); `PidArea` (PID label `popup.account.label_pid` + `_pidText` value + Copy→clipboard+toast); Privacy/Terms web links; guest → Link Account; OAuth → Switch Account. Avatar selection moved to Shop avatar section; achievements moved to lobby Achievement tab. Retains `_avatarSprites` + `GetAvatarSprite` (HeaderView/TutorialOverlay read equipped avatar sprite from this prefab). **`_pidText` value has NO LocalizedText stringId** — runtime `Awake` sets PID; a stringId would clobber it via `LocalizedText.OnEnable` |
 | `AccountRestartPopupView.cs` | `AccountRestartPopupView` | Inform popup: game restart required; single confirm → FadeToScene("Boot") |
 | `AccountConflictPopupView.cs` | `AccountConflictPopupView` | Shows local vs cloud SaveSnapshot; user picks keep-local or use-cloud |
 

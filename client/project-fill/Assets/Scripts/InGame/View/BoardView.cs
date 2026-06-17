@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Game.Core;
+using ProjectFill.Contracts.Rewards;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -51,6 +52,12 @@ namespace Game.InGame.View
         [Header("World Settings")]
         [SerializeField] private Camera _worldCamera;
 
+        [Header("Lane Layout (fixed size)")]
+        [SerializeField] private float _laneWidth  = 0.95f;   // fixed lane (and chip) width — never stretched
+        [SerializeField] private float _laneHeight = 3.2f;    // fits 4 stacked square chips
+        [SerializeField] private float _laneGap    = 0.18f;   // fixed world gap between lanes
+        [SerializeField] private int   _maxColumns = 6;       // wrap into rows past this; grid stays balanced
+
         private SpriteSet _sprites;
         private Board _board;
         private StageDefinition _def;
@@ -65,6 +72,7 @@ namespace Game.InGame.View
         private float _worldWidth;
         private float _panelWorldHeight;
         private float _lanesWorldHeight;
+        private float _lanesScale = 1f;   // uniform fit-shrink applied to _lanesContainer (flight FX must match)
 
         public bool IsInputBlocked => _inputBlocked;
 
@@ -261,21 +269,22 @@ namespace Game.InGame.View
             _laneViews.Clear();
 
             int n = _board.Lanes.Count;
-            float gap = containerWidth * 0.02f;
-            float maxLaneW = containerHeight * 0.30f;  // square-chip cap when lanes are few (#6)
-            float minLaneW = containerHeight * 0.16f;  // below this, wrap lanes into a grid row
+            float laneW = _laneWidth;
+            float laneH = _laneHeight;
+            float gap   = _laneGap;
 
-            // Columns that keep lane width >= minLaneW; overflow wraps into additional rows so a
-            // high lane count lays out as a balanced grid instead of one ultra-thin strip.
-            int maxCols = Mathf.Max(1, Mathf.FloorToInt((containerWidth - gap) / (minLaneW + gap)));
-            int cols = Mathf.Min(n, maxCols);
+            // Balanced grid by a FIXED column cap (not width-derived) so each lane keeps a constant size.
+            int cols = Mathf.Min(n, Mathf.Max(1, _maxColumns));
             int rows = Mathf.CeilToInt((float)n / cols);
             cols = Mathf.CeilToInt((float)n / rows);   // balance rows (e.g. 12 → 6×2, not 6+6 vs 7+5)
 
-            float laneW = Mathf.Min(maxLaneW, (containerWidth  - gap * (cols + 1)) / cols);
-            float laneH = (containerHeight - gap * (rows + 1)) / rows;
-
+            // Lanes never stretch: the fixed-size grid is uniformly shrunk (never enlarged) to fit the
+            // container. Chips + tap colliders are children, so they scale with the container.
+            float gridW = laneW * cols + gap * (cols - 1);
             float gridH = laneH * rows + gap * (rows - 1);
+            _lanesScale = Mathf.Min(1f, containerWidth / gridW, containerHeight / gridH);
+            _lanesContainer.localScale = Vector3.one * _lanesScale;
+
             float topY  = gridH * 0.5f - laneH * 0.5f; // center Y of the top row
 
             for (int i = 0; i < n; i++)
@@ -427,7 +436,7 @@ namespace Game.InGame.View
             ClearHighlights();
             var fromLv = _laneViews[from];
             var toLv   = _laneViews[to];
-            Vector2 size = toLv.ChipPixelSize();
+            Vector2 size = toLv.ChipPixelSize() * _lanesScale;  // flight layer is unscaled — match the shrunk board
             if (count < 1) count = 1;
             float dropH = size.y * 3f;
 
@@ -545,6 +554,7 @@ namespace Game.InGame.View
             }
 
             float total = dur + stagger * (nF - 1);
+            var landed = new bool[nF];
             float t = 0f;
             while (t < total)
             {
@@ -554,6 +564,14 @@ namespace Game.InGame.View
                     float p    = Mathf.Clamp01((t - k * stagger) / dur);
                     float fall = 1f - p * p;                          // ease-in: accelerate downward
                     flyers[k].Rt.position   = to[k] + Vector3.up * (dropH * fall);
+                    if (p >= 1f && !landed[k])                        // impact accent the instant it touches the slot
+                    {
+                        landed[k] = true;
+                        var col = flyers[k].Chip.Type.ToColor();
+                        // Impact: a flattened shockwave ring hugging the slot floor + a few motes kicked up.
+                        SpawnRing(to[k], col, size.x * 0.6f, size.x * 1.8f, 0.24f, flattenY: 0.35f);
+                        SpawnMotes(to[k], col, 3);
+                    }
                 }
                 t += Time.deltaTime;
                 yield return null;
@@ -596,8 +614,15 @@ namespace Game.InGame.View
             }
             foreach (var f in flyers) Destroy(f.gameObject);
 
+            // Register = "signal locked": double shockwave + pixel data-bit shards + a light pulse that
+            // propagates along the connector to the next node in the chain.
             _panel.PlayRegister(type);
-            SpawnBurst(nodePos, type.ToColor(), 14);
+            var col = type.ToColor();
+            SpawnRing(nodePos, col, size.x * 0.7f, size.x * 2.0f, 0.30f);   // inner crisp pulse
+            SpawnRing(nodePos, col, size.x * 1.1f, size.x * 2.9f, 0.44f);   // outer wide wave
+            SpawnShards(nodePos, col, 12);
+            if (_panel.TryGetTraceTarget(type, out var traceFrom, out var traceTo))
+                SpawnTrace(traceFrom, traceTo, col);
 
             yield return new WaitForSeconds(0.12f);
         }
@@ -615,18 +640,102 @@ namespace Game.InGame.View
             return fly;
         }
 
-        private void SpawnBurst(Vector3 worldPos, Color color, int count)
+        // Upward-kicked motes: a small cone of dust flicked up off the slot on landing (BurstParticle's
+        // built-in downward gravity arcs them back down for weight).
+        private void SpawnMotes(Vector3 worldPos, Color color, int count)
         {
             for (int i = 0; i < count; i++)
             {
-                float rSize = UnityEngine.Random.Range(0.08f, 0.20f);
-                var dot = WorldUtil.CreateSprite(_flightLayer, "P", _sprites.Disc, color, new Vector2(rSize, rSize), sliced: false);
-                var rt = dot.transform;
-                rt.position  = worldPos;
-                float ang = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
-                var dir = new Vector3(Mathf.Cos(ang), Mathf.Sin(ang), 0f) * UnityEngine.Random.Range(0.6f, 2.0f);
-                StartCoroutine(BurstParticle(dot, dir, UnityEngine.Random.Range(0.4f, 0.7f)));
+                float rSize = UnityEngine.Random.Range(0.05f, 0.10f);
+                var dot = WorldUtil.CreateSprite(_flightLayer, "Mote", _sprites.Disc, color, new Vector2(rSize, rSize), sliced: false, sortingOrder: 31);
+                dot.transform.position = worldPos;
+                float ang = Mathf.PI * 0.5f + UnityEngine.Random.Range(-0.5f, 0.5f); // up ± spread
+                var dir = new Vector3(Mathf.Cos(ang), Mathf.Sin(ang), 0f) * UnityEngine.Random.Range(0.8f, 1.6f);
+                StartCoroutine(BurstParticle(dot, dir, UnityEngine.Random.Range(0.35f, 0.55f)));
             }
+        }
+
+        // Pixel data-bit shards: small rounded squares that burst radially, spin, and fall — reads as
+        // bits of signal scattering when a set registers (used on node register only).
+        private void SpawnShards(Vector3 worldPos, Color color, int count)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                float rSize = UnityEngine.Random.Range(0.10f, 0.18f);
+                var sh = WorldUtil.CreateSprite(_flightLayer, "Shard", _sprites.Chip, color, new Vector2(rSize, rSize), sliced: false, sortingOrder: 31);
+                sh.transform.position = worldPos;
+                float ang  = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
+                var dir    = new Vector3(Mathf.Cos(ang), Mathf.Sin(ang), 0f) * UnityEngine.Random.Range(1.2f, 2.6f);
+                float spin = UnityEngine.Random.Range(-360f, 360f);
+                StartCoroutine(ShardParticle(sh, dir, spin, UnityEngine.Random.Range(0.45f, 0.7f)));
+            }
+        }
+
+        // Light pulse that runs along the connector from a registered node to the next node in the chain.
+        private void SpawnTrace(Vector3 from, Vector3 to, Color color)
+        {
+            float headSize = 0.30f;
+            var head = WorldUtil.CreateSprite(_flightLayer, "Trace", _sprites.Glow, color, new Vector2(headSize, headSize), sliced: false, sortingOrder: 32);
+            head.transform.position = from;
+            StartCoroutine(TraceRoutine(head, from, to, color));
+        }
+
+        // Expanding, fading ripple ring used as an impact accent (chip landing, node register).
+        // flattenY < 1 squashes it into a ground-hugging shockwave (used on landing).
+        private void SpawnRing(Vector3 worldPos, Color color, float startSize, float endSize, float life, float flattenY = 1f)
+        {
+            var ring = WorldUtil.CreateSprite(_flightLayer, "Ripple", _sprites.Ring, color, new Vector2(startSize, startSize), sliced: false, sortingOrder: 30);
+            ring.transform.position = worldPos;
+            StartCoroutine(RingRoutine(ring, startSize, endSize, life, flattenY));
+        }
+
+        private IEnumerator RingRoutine(SpriteRenderer sr, float startSize, float endSize, float life, float flattenY)
+        {
+            Vector3 baseScale = sr.transform.localScale; // WorldUtil already fit this to startSize
+            Color baseCol = sr.color;
+            float t = 0f;
+            while (t < life)
+            {
+                float p = t / life;
+                float f = Mathf.Lerp(startSize, endSize, p) / startSize;
+                sr.transform.localScale = new Vector3(baseScale.x * f, baseScale.y * f * flattenY, baseScale.z);
+                var c = baseCol; c.a = baseCol.a * (1f - p); sr.color = c;
+                t += Time.deltaTime;
+                yield return null;
+            }
+            Destroy(sr.gameObject);
+        }
+
+        private IEnumerator ShardParticle(SpriteRenderer sr, Vector3 dir, float spin, float life)
+        {
+            Vector3 start = sr.transform.position;
+            Vector3 baseScale = sr.transform.localScale;
+            float t = 0f;
+            while (t < life)
+            {
+                float p = t / life;
+                sr.transform.position      = start + dir * p + Vector3.down * (2.0f * p * p);
+                sr.transform.localScale    = baseScale * (1f - p);
+                sr.transform.localRotation = Quaternion.Euler(0f, 0f, spin * p);
+                if (sr) { var c = sr.color; c.a = 1f - p; sr.color = c; }
+                t += Time.deltaTime;
+                yield return null;
+            }
+            Destroy(sr.gameObject);
+        }
+
+        private IEnumerator TraceRoutine(SpriteRenderer head, Vector3 from, Vector3 to, Color color)
+        {
+            float life = 0.28f, t = 0f;
+            while (t < life)
+            {
+                float p = t / life;
+                head.transform.position = Vector3.Lerp(from, to, p);
+                var c = color; c.a = Mathf.Sin(p * Mathf.PI); head.color = c; // 0→1→0 streak
+                t += Time.deltaTime;
+                yield return null;
+            }
+            Destroy(head.gameObject);
         }
 
         private IEnumerator BurstParticle(SpriteRenderer sr, Vector3 dir, float life)
@@ -715,7 +824,7 @@ namespace Game.InGame.View
             Action shuf = () => { BlockInput(false); onShuffle?.Invoke(); };
 
             var v = UIManager.Instance != null
-                ? UIManager.Instance.ShowPopup<StuckPopupView>(p => p.Configure(addLaneAvailable, add, shuf, onGiveUp))
+                ? UIManager.Instance.ShowPopup<FailOverlayView>(p => p.Configure(addLaneAvailable, add, shuf, onGiveUp))
                 : null;
             if (v != null) return;
 
@@ -731,14 +840,18 @@ namespace Game.InGame.View
             AddOverlayButton(card, "Forfeit Stage", new Color(0.28f, 0.12f, 0.12f), y - 0.18f, () => { Destroy(scrim); onGiveUp?.Invoke(); });
         }
 
-        public void ShowClearPanel(Action onNext, Action onLobby)
+        public void ShowClearPanel(int stageId, string attemptId,
+            IReadOnlyList<GrantedRewardDto> rewards, bool canDouble, ClearSummary? summary, Action onNext, Action onLobby)
         {
             var v = UIManager.Instance != null
-                ? UIManager.Instance.ShowPopup<ClearPopupView>(p => p.Configure(_board.MoveCount, onNext, onLobby))
+                ? UIManager.Instance.ShowPopup<ResultOverlayView>(p => p.Configure(stageId, attemptId, rewards, canDouble, summary, onNext, onLobby))
                 : null;
             if (v != null) return;
 
-            var card = BuildRuntimeOverlay("STAGE CLEAR", $"MOVES  {_board.MoveCount}",
+            string body = summary.HasValue
+                ? $"MOVES  {summary.Value.Moves}   BEST  {summary.Value.Best}"
+                : $"MOVES  {_board.MoveCount}";
+            var card = BuildRuntimeOverlay("STAGE CLEAR", body,
                 new Color(0.07f, 0.16f, 0.11f, 0.98f), new Color(0.35f, 1f, 0.6f), out var scrim);
             AddOverlayButton(card, "Next Stage  ›", new Color(0.10f, 0.38f, 0.20f), 0.40f, () => { Destroy(scrim); onNext?.Invoke(); });
             AddOverlayButton(card, "Lobby", new Color(0.16f, 0.17f, 0.27f), 0.22f, () => { Destroy(scrim); onLobby?.Invoke(); });

@@ -25,6 +25,8 @@ namespace Game.OutGame.Lobby
         private readonly Dictionary<int, Vector2>  _stagePositions = new Dictionary<int, Vector2>();
         private Coroutine                    _guideOrbCoroutine;
         private Image                        _guideOrb;
+        private readonly List<Image>         _signalPulses    = new List<Image>();
+        private readonly List<Coroutine>     _pulseCoroutines = new List<Coroutine>();
         private Stage[]   _stages;
         private int       _currentStageId;
         private bool      _layoutBuilt    = false;
@@ -72,6 +74,7 @@ namespace Game.OutGame.Lobby
             else if (_builtPositions != null && _stages != null)
             {
                 StartGuideOrb(_builtPositions, _stages.Length);
+                StartSignalPulses(_builtPositions, _stages.Length);
             }
 
             _scrollRect.onValueChanged.AddListener(OnScrolled);
@@ -199,110 +202,42 @@ namespace Game.OutGame.Lobby
 
 
 
-            // 2. Compute raw coordinates using a serpentine winding layout
+            // 2. Compute deterministic serpentine (ㄹ-shape) grid coordinates.
+            //    Pattern repeats every 4 stages: a 3-node horizontal row followed
+            //    by a single connector node above its end. Horizontal direction
+            //    flips each cycle, so the trace winds like the ㄹ character.
             var positions = new Vector2[stageCount];
             float maxAllowedX = (viewportWidth * 0.5f) - 180f;
+            float colSpacing  = Mathf.Min(maxAllowedX, 320f); // X gap from the center column to a side column
+            float rowSpacing  = 330f;                          // Y gap between rows (keeps ≥300f node distance)
 
-            var oldRandomState = UnityEngine.Random.state;
-            UnityEngine.Random.InitState(1004); // Fixed seed for consistent layout rendering
-
-            // Start first node at the bottom-left/center area
-            bool goingRight = true;
-            positions[0] = new Vector2(UnityEngine.Random.Range(-maxAllowedX * 0.6f, -maxAllowedX * 0.2f), bottomPadding);
-
-            for (int i = 1; i < stageCount; i++)
+            for (int i = 0; i < stageCount; i++)
             {
-                Vector2 prevPos = positions[i - 1];
-                float stepDistance = UnityEngine.Random.Range(310f, 380f); // Spacing strictly between 300 and 400
+                int  cycle       = i / 4;          // one cycle = a 3-node row + a connector node
+                int  within      = i % 4;
+                bool leftToRight = (cycle % 2) == 0;
 
-                // Determine if we need to turn (transition to next tier)
-                bool needTurn = false;
-                if (goingRight && prevPos.x + 150f > maxAllowedX)
+                int   row;
+                float x;
+                if (within < 3)
                 {
-                    needTurn = true;
-                }
-                else if (!goingRight && prevPos.x - 150f < -maxAllowedX)
-                {
-                    needTurn = true;
-                }
-
-                if (needTurn)
-                {
-                    // Vertical step up to the next tier
-                    float angle = UnityEngine.Random.Range(75f, 105f) * Mathf.Deg2Rad; // Mostly vertical
-                    float testX = prevPos.x + Mathf.Cos(angle) * stepDistance;
-                    float testY = prevPos.y + Mathf.Sin(angle) * stepDistance;
-
-                    positions[i] = new Vector2(Mathf.Clamp(testX, -maxAllowedX, maxAllowedX), testY);
-                    goingRight = !goingRight; // Reverse direction
+                    // 3-node horizontal row (col index 0=left, 1=center, 2=right)
+                    row = cycle * 2;
+                    int colFromLeft = leftToRight ? within : (2 - within);
+                    x = (colFromLeft - 1) * colSpacing;
                 }
                 else
                 {
-                    // Horizontal step with Y undulations
-                    float angleDeg;
-                    if (goingRight)
-                    {
-                        // Angle range: -25 to 40 degrees (going right, slightly up/down/flat)
-                        angleDeg = UnityEngine.Random.Range(-25f, 40f);
-                    }
-                    else
-                    {
-                        // Angle range: 140 to 205 degrees (going left, slightly up/down/flat)
-                        angleDeg = UnityEngine.Random.Range(140f, 205f);
-                    }
-
-                    float angle = angleDeg * Mathf.Deg2Rad;
-                    float testX = prevPos.x + Mathf.Cos(angle) * stepDistance;
-                    float testY = prevPos.y + Mathf.Sin(angle) * stepDistance;
-                    testY = Mathf.Max(testY, bottomPadding);
-
-                    // Check if this step would overshoot the screen bounds. If so, force a turn instead!
-                    if (testX < -maxAllowedX || testX > maxAllowedX)
-                    {
-                        // Force a vertical turn step instead
-                        float turnAngle = UnityEngine.Random.Range(75f, 105f) * Mathf.Deg2Rad;
-                        testX = prevPos.x + Mathf.Cos(turnAngle) * stepDistance;
-                        testY = prevPos.y + Mathf.Sin(turnAngle) * stepDistance;
-                        testY = Mathf.Max(testY, bottomPadding);
-                        positions[i] = new Vector2(Mathf.Clamp(testX, -maxAllowedX, maxAllowedX), testY);
-                        goingRight = !goingRight;
-                    }
-                    else
-                    {
-                        positions[i] = new Vector2(testX, testY);
-                    }
+                    // Single connector node directly above the end of the 3-node row
+                    row = cycle * 2 + 1;
+                    int endColFromLeft = leftToRight ? 2 : 0;
+                    x = (endColFromLeft - 1) * colSpacing;
                 }
+
+                positions[i] = new Vector2(x, bottomPadding + row * rowSpacing);
             }
 
-            UnityEngine.Random.state = oldRandomState;
-
-            // 3. Deterministic relaxation pass to guarantee min distance (300f) between ALL nodes
-            float minDistance = 300f; // Minimum distance between all StageNodes is 300f
-            for (int iter = 0; iter < 18; iter++) // 18 iterations to ensure correct convergence
-            {
-                for (int i = 0; i < stageCount; i++)
-                {
-                    for (int j = i + 1; j < stageCount; j++)
-                    {
-                        float dist = Vector2.Distance(positions[i], positions[j]);
-                        if (dist < minDistance)
-                        {
-                            Vector2 dir = positions[i] - positions[j];
-                            if (dir.sqrMagnitude == 0f) dir = Vector2.up;
-                            dir.Normalize();
-                            float overlap = minDistance - dist;
-                            positions[i] += dir * (overlap * 0.5f);
-                            positions[j] -= dir * (overlap * 0.5f);
-                            
-                            // Keep X within responsive limits
-                            positions[i].x = Mathf.Clamp(positions[i].x, -maxAllowedX, maxAllowedX);
-                            positions[j].x = Mathf.Clamp(positions[j].x, -maxAllowedX, maxAllowedX);
-                        }
-                    }
-                }
-            }
-
-            // Find total height based on relaxed positions
+            // Find total height based on the laid-out positions
             float maxRelaxedY = 0f;
             for (int i = 0; i < stageCount; i++)
             {
@@ -311,7 +246,7 @@ namespace Game.OutGame.Lobby
             float totalHeight = maxRelaxedY + bottomPadding + 50f;
             _contentRoot.sizeDelta = new Vector2(_contentRoot.sizeDelta.x, totalHeight);
 
-            // Convert relaxed positions to anchor-top space (negative Y) and store
+            // Convert positions to anchor-top space (negative Y) and store
             for (int i = 0; i < stageCount; i++)
             {
                 float x = positions[i].x;
@@ -357,6 +292,7 @@ namespace Game.OutGame.Lobby
 
             BuildPath(positions, stageCount, totalHeight);
             StartGuideOrb(positions, stageCount);
+            StartSignalPulses(positions, stageCount);
             BuildChapterBackgrounds(positions, stageCount, totalHeight);
             RefreshChestNodes();
         }
@@ -734,7 +670,8 @@ namespace Game.OutGame.Lobby
                     chapterPts[s] = nodePositions[startIdx + s];
                 }
 
-                var curve = SampleCatmullRom(chapterPts, segCount, 12);
+                // Straight polyline through the nodes — no curve smoothing.
+                var curve = new List<Vector2>(chapterPts);
                 for (int s = 0; s < curve.Count; s++)
                 {
                     curve[s] = new Vector2(curve[s].x, curve[s].y + yOffset);
@@ -891,13 +828,66 @@ namespace Game.OutGame.Lobby
             }
         }
 
+        // Ambient signal pulses travelling along the cleared portion of the trace.
+        private void StartSignalPulses(Vector2[] positions, int count)
+        {
+            foreach (var c in _pulseCoroutines) if (c != null) StopCoroutine(c);
+            _pulseCoroutines.Clear();
+            foreach (var p in _signalPulses) if (p != null) Destroy(p.gameObject);
+            _signalPulses.Clear();
+
+            int maxIdx = _currentStageId - 1; // travel nodes 0..maxIdx (reached path)
+            if (maxIdx < 1 || maxIdx >= count) return;
+
+            var sprite = DynamicResourceService.Instance?.GetSprite("deco_pulse")
+                      ?? DynamicResourceService.Instance?.GetSprite("led_star");
+
+            const int pulseCount = 3;
+            for (int k = 0; k < pulseCount; k++)
+            {
+                var go = new GameObject($"SignalPulse{k}", typeof(Image));
+                go.transform.SetParent(_contentRoot, false);
+                var img = go.GetComponent<Image>();
+                img.raycastTarget = false;
+                img.sprite        = sprite;
+                var rt = go.GetComponent<RectTransform>();
+                rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 1f);
+                rt.pivot     = new Vector2(0.5f, 0.5f);
+                rt.sizeDelta = new Vector2(18f, 18f);
+                _signalPulses.Add(img);
+                _pulseCoroutines.Add(StartCoroutine(
+                    SignalPulseRoutine(img, positions, maxIdx, k / (float)pulseCount)));
+            }
+        }
+
+        private IEnumerator SignalPulseRoutine(Image img, Vector2[] positions, int maxIdx, float startOffset)
+        {
+            var   rt    = img.rectTransform;
+            const float speed = 320f; // px/sec along the trace
+            float prog  = startOffset * maxIdx; // progress in node-index space
+
+            while (true)
+            {
+                int     i    = Mathf.Clamp((int)prog, 0, maxIdx - 1);
+                Vector2 a    = positions[i];
+                Vector2 b    = positions[i + 1];
+                float   frac = prog - i;
+                rt.anchoredPosition = Vector2.Lerp(a, b, frac);
+
+                int   cid   = _stages[Mathf.Clamp(i, 0, _stages.Length - 1)].chapter_id;
+                Color col   = ChapterBgTheme.Get(cid).PathColor;
+                float edge  = Mathf.Clamp01(Mathf.Min(prog, maxIdx - prog)); // fade at trace ends
+                img.color   = new Color(col.r, col.g, col.b, edge);
+
+                float segLen = Vector2.Distance(a, b);
+                prog += segLen > 0.01f ? (speed * Time.deltaTime / segLen) : 1f;
+                if (prog >= maxIdx) prog -= maxIdx; // loop
+                yield return null;
+            }
+        }
+
         private IEnumerator OrbTravelRoutine(RectTransform rt, Vector2 start, Vector2 end)
         {
-            Vector2 mid = Vector2.Lerp(start, end, 0.5f);
-            Vector2 dir = (end - start).normalized;
-            Vector2 perp = new Vector2(-dir.y, dir.x) * 35f;
-            Vector2 curveControl = mid + perp;
-
             while (true)
             {
                 float t = 0f;
@@ -906,9 +896,8 @@ namespace Game.OutGame.Lobby
                     t += Time.deltaTime * 0.7f;
                     float tc = Mathf.Clamp01(t);
 
-                    Vector2 m1 = Vector2.Lerp(start, curveControl, tc);
-                    Vector2 m2 = Vector2.Lerp(curveControl, end, tc);
-                    rt.anchoredPosition = Vector2.Lerp(m1, m2, tc);
+                    // Straight-line travel between nodes (matches the straight path).
+                    rt.anchoredPosition = Vector2.Lerp(start, end, tc);
 
                     float s = 1.0f + 0.35f * Mathf.Sin(tc * Mathf.PI);
                     rt.localScale = new Vector3(s, s, 1f);
@@ -917,31 +906,6 @@ namespace Game.OutGame.Lobby
                 }
                 yield return new WaitForSeconds(0.4f);
             }
-        }
-
-        private List<Vector2> SampleCatmullRom(Vector2[] pts, int count, int steps)
-        {
-            var result = new List<Vector2>();
-            for (int i = 0; i < count - 1; i++)
-            {
-                var p0 = pts[Mathf.Max(0,         i - 1)];
-                var p1 = pts[i];
-                var p2 = pts[i + 1];
-                var p3 = pts[Mathf.Min(count - 1, i + 2)];
-                for (int s = 0; s < steps; s++)
-                    result.Add(CatmullRom(p0, p1, p2, p3, (float)s / steps));
-            }
-            result.Add(pts[count - 1]);
-            return result;
-        }
-
-        private static Vector2 CatmullRom(Vector2 p0, Vector2 p1, Vector2 p2, Vector2 p3, float t)
-        {
-            float t2 = t * t, t3 = t2 * t;
-            return 0.5f * (2f * p1
-                + (-p0 + p2) * t
-                + (2f * p0 - 5f * p1 + 4f * p2 - p3) * t2
-                + (-p0 + 3f * p1 - 3f * p2 + p3) * t3);
         }
 
         private void OnScrolled(Vector2 scrollVal)
@@ -1057,17 +1021,6 @@ namespace Game.OutGame.Lobby
                 transition.SlideUpToScene(InGameScene);
             else
                 UnityEngine.SceneManagement.SceneManager.LoadScene(InGameScene);
-        }
-
-        private static bool SegmentsIntersect(Vector2 p1, Vector2 p2, Vector2 p3, Vector2 p4)
-        {
-            float d = (p2.x - p1.x) * (p4.y - p3.y) - (p2.y - p1.y) * (p4.x - p3.x);
-            if (Mathf.Abs(d) < 0.0001f) return false;
-
-            float u = ((p3.x - p1.x) * (p4.y - p3.y) - (p3.y - p1.y) * (p4.x - p3.x)) / d;
-            float v = ((p3.x - p1.x) * (p2.y - p1.y) - (p3.y - p1.y) * (p2.x - p1.x)) / d;
-
-            return (u >= 0f && u <= 1f && v >= 0f && v <= 1f);
         }
     }
 }

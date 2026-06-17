@@ -25,6 +25,18 @@ namespace Game.Services
             DontDestroyOnLoad(gameObject);
         }
 
+        // Server validates the stage is reachable (unlocked) before play; STAGE_LOCKED on failure.
+        // onSuccess carries the server-authoritative max-cleared reach so the client can correct stale local unlock state.
+        public void StartStage(int stageId,
+            Action<StageStartResponse> onSuccess = null, Action<string> onError = null)
+        {
+            NetworkService.Instance.Post($"/api/stages/{stageId}/start", "{}", (ok, result) =>
+            {
+                if (!ok) { onError?.Invoke(result); return; }
+                onSuccess?.Invoke(JsonUtility.FromJson<StageStartResponseJson>(result).ToContract());
+            });
+        }
+
         // completedSignalTypes must equal the stage's {0..types-1} set (server-validated).
         public void ClearStage(int stageId, int movesUsed, IReadOnlyList<int> completedSignalTypes,
             Action<StageClearResponse> onSuccess = null, Action<string> onError = null)
@@ -48,6 +60,21 @@ namespace Game.Services
                     CurrencyApiService.Instance?.UpdateGold(response.Currency);
                 onSuccess?.Invoke(response);
             });
+        }
+
+        [Serializable]
+        private class StageStartResponseJson
+        {
+            public int stageId;
+            public int maxClearedStageId;
+            public int rulesetVersion;
+
+            public StageStartResponse ToContract() => new StageStartResponse
+            {
+                StageId = stageId,
+                MaxClearedStageId = maxClearedStageId,
+                RulesetVersion = rulesetVersion,
+            };
         }
 
         [Serializable]

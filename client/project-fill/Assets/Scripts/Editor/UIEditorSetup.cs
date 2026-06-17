@@ -89,8 +89,6 @@ namespace Game.Editor
             CreateProductCardPrefab();
             CreateShopCategoryHeader();
             CreateItemTooltip();
-            CreateStuckPopup();
-            CreateClearPopup();
 
             // OutGame systems popups (cosmetic/avatar sections + cells built inside SetupLobby)
             CreateCosmeticPreviewPopup();
@@ -149,9 +147,6 @@ namespace Game.Editor
         [MenuItem("Tools/UI Setup/Prefabs/IAPProductCard",  false, 117)]
         static void CreateIAPProductCardSingle() { EnsureDirs(); CreateProductCardPrefab(); AssetDatabase.Refresh(); }
 
-        [MenuItem("Tools/UI Setup/Prefabs/ClearPopup",       false, 135)]
-        static void CreateClearPopupSingle()     { EnsureDirs(); CreateClearPopup();    AssetDatabase.Refresh(); }
-
         [MenuItem("Tools/UI Setup/Prefabs/ForceUpdateView", false, 119)]
         static void CreateForceUpdateViewSingle() { EnsureDirs(); CreateForceUpdateView(); AssetDatabase.Refresh(); }
 
@@ -166,9 +161,6 @@ namespace Game.Editor
 
         [MenuItem("Tools/UI Setup/Prefabs/InGameSignalNode", false, 138)]
         static void CreateInGameSignalNodeSingle() { EnsureDirs(); CreateInGameSignalNode(); AssetDatabase.Refresh(); }
-
-        [MenuItem("Tools/UI Setup/Prefabs/StuckPopup",       false, 139)]
-        static void CreateStuckPopupSingle()     { EnsureDirs(); CreateStuckPopup();    AssetDatabase.Refresh(); }
 
         [MenuItem("Tools/UI Setup/Prefabs/ItemTooltip",      false, 120)]
         static void CreateItemTooltipSingle()     { EnsureDirs(); CreateItemTooltip();     AssetDatabase.Refresh(); }
@@ -514,7 +506,7 @@ namespace Game.Editor
             var shopContentRt = shopContentGo.GetComponent<RectTransform>();
             shopContentRt.anchorMin = new Vector2(0, 1); shopContentRt.anchorMax = new Vector2(1, 1);
             shopContentRt.pivot = new Vector2(0.5f, 1);
-            shopContentRt.sizeDelta = new Vector2(0, 1500); // height room
+            shopContentRt.sizeDelta = new Vector2(0, 0); // height driven by ContentSizeFitter below
             shopScroll.content = shopContentRt;
 
             var shopContentVlg = Comp<VerticalLayoutGroup>(shopContentGo);
@@ -524,6 +516,9 @@ namespace Game.Editor
             shopContentVlg.childControlWidth   = true;
             shopContentVlg.childControlHeight  = true;  // uses LayoutElement.preferredHeight per child
             shopContentVlg.childForceExpandHeight = false; // spacers define section gaps; don't force-fill
+            // Content height must track actual child sum (IAP cards + cosmetic 780 + avatar 380) — fixed height clipped the bottom.
+            var shopContentCsf = Comp<ContentSizeFitter>(shopContentGo);
+            shopContentCsf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
             // Cleanup only obsolete cards if they exist in the prefab (no longer created by editor script, but might be leftover)
             var leftover1 = shopContentGo.transform.Find("StarterPackCard");
@@ -625,12 +620,20 @@ namespace Game.Editor
 
             var rankingTab = Child(tabContent, "RankingTab"); Stretch(rankingTab); rankingTab.SetActive(false);
             var rankingView = Comp<RankingTabView>(rankingTab);
-            var starsTab = Btn(rankingTab, "StarsTabButton", new Vector2(-280, 700), new Vector2(260, 80), UI_PRIMARY, "Stage", LobbyRankingTabStages);
-            var maxStageTab = Btn(rankingTab, "MaxStageTabButton", new Vector2(0, 700), new Vector2(260, 80), UI_BG_MID, "Max Stage", LobbyRankingTabMaxStage);
-            var challengeTab = Btn(rankingTab, "ChallengeTabButton", new Vector2(280, 700), new Vector2(260, 80), UI_BG_MID, "Challenge", "ranking.tab.challenge");
+            // Legacy cleanup: old tab buttons replaced by the stage/perfect/weekly 3-tab redesign
+            foreach (var legacy in new[] { "StarsTabButton", "MaxStageTabButton", "ChallengeTabButton" })
+            {
+                var oldTab = rankingTab.transform.Find(legacy);
+                if (oldTab != null) Object.DestroyImmediate(oldTab.gameObject);
+            }
+            var stageTab = Btn(rankingTab, "StageTabButton", new Vector2(-280, 700), new Vector2(260, 80), UI_PRIMARY, "Stage", LobbyRankingTabStages);
+            var perfectTab = Btn(rankingTab, "PerfectTabButton", new Vector2(0, 700), new Vector2(260, 80), UI_BG_MID, "Perfect", LobbyRankingTabPerfect);
+            var weeklyTab = Btn(rankingTab, "WeeklyTabButton", new Vector2(280, 700), new Vector2(260, 80), UI_BG_MID, "Weekly", LobbyRankingTabWeekly);
 
-            var rankTitle = TMP(rankingTab, "TitleText", Center(0, 580, 760, 70), 30, UI_CTA, "Stage Ranking", LobbyRankingStagesTitle, TextCategory.Header);
-            var myRank = TMP(rankingTab, "MyRankText", Center(0, 490, 760, 80), 24, UI_TEXT, "My Rank: -", LobbyRankingMyRankEmpty, TextCategory.Normal);
+            var rankTitle = TMP(rankingTab, "TitleText", Center(0, 625, 760, 70), 30, UI_CTA, "Stage Ranking", LobbyRankingStagesTitle, TextCategory.Header);
+            // Per-tab description, placed directly below the tab row (above the my-rank line)
+            var rankDesc = TMP(rankingTab, "DescText", Center(0, 558, 820, 56), 22, UI_TEXT, "Pioneers who reached the farthest stage", LobbyRankingDescStage, TextCategory.Normal);
+            var myRank = TMP(rankingTab, "MyRankText", Center(0, 478, 760, 80), 24, UI_TEXT, "My Rank: -", LobbyRankingMyRankEmpty, TextCategory.Normal);
             var entries = TMP(rankingTab, "EntriesText", Center(0, -190, 820, 1220), 20, UI_TEXT, "Ranking unavailable", LobbyRankingUnavailable, TextCategory.Normal);
             entries.alignment = TextAlignmentOptions.TopLeft;
 
@@ -797,10 +800,11 @@ namespace Game.Editor
             soLobby.ApplyModifiedProperties();
 
             var soRanking = new SerializedObject(rankingView);
-            soRanking.FindProperty("_starsTabButton").objectReferenceValue = starsTab.GetComponent<Button>();
-            soRanking.FindProperty("_maxStageTabButton").objectReferenceValue = maxStageTab.GetComponent<Button>();
-            soRanking.FindProperty("_challengeTabButton").objectReferenceValue = challengeTab.GetComponent<Button>();
+            soRanking.FindProperty("_stageTabButton").objectReferenceValue = stageTab.GetComponent<Button>();
+            soRanking.FindProperty("_perfectTabButton").objectReferenceValue = perfectTab.GetComponent<Button>();
+            soRanking.FindProperty("_weeklyTabButton").objectReferenceValue = weeklyTab.GetComponent<Button>();
             soRanking.FindProperty("_titleText").objectReferenceValue = rankTitle;
+            soRanking.FindProperty("_descText").objectReferenceValue = rankDesc;
             soRanking.FindProperty("_myRankText").objectReferenceValue = myRank;
             soRanking.FindProperty("_entriesText").objectReferenceValue = entries;
             soRanking.FindProperty("_virtualizedScrollRect").objectReferenceValue = vScroll;
@@ -1161,67 +1165,6 @@ namespace Game.Editor
             AssetDatabase.SaveAssets();
             Debug.Log($"[UIEditorSetup] Saved Game Prefab → {path}");
         }
-
-        // ── Signal Sort popups (UIManager-shown; Backdrop DIM = scrim convention) ──
-
-        static void CreateStuckPopup()
-        {
-            var root = FullScreen("StuckPopupView");
-            Comp<StuckPopupView>(root); Comp<UIPanelAppear>(root); Comp<CanvasGroup>(root);
-
-            var backdrop = Child(root, "Backdrop"); Stretch(backdrop);
-            Img(backdrop, DIM).raycastTarget = true;
-
-            var panel = Panel(root, "Panel", new Vector2(880, 760), UI_BG_MID);
-            var title = TMP(panel, "TitleText", Center(0, 300, 760, 90), 48, Hex("FFB733"), "SIGNAL BLOCKED", null, TextCategory.Header);
-            var body  = TMP(panel, "BodyText", Center(0, 205, 760, 70), 24, Hex("A6B0C9"), "더 이상 이동 가능한 신호 칩이 없습니다", null, TextCategory.Normal);
-
-            var addLaneRow = Child(panel, "AddLaneRow"); Fixed(addLaneRow, new Vector2(0, 70), new Vector2(740, 160));
-            Img(addLaneRow, Color.clear);
-            var addLaneBtn = Btn(addLaneRow, "AddLaneButton", new Vector2(0, 0), new Vector2(720, 150), UI_SUCCESS, "ADD LANE  (Ad)");
-
-            var shuffleBtn = Btn(panel, "ShuffleButton", new Vector2(0, -110), new Vector2(720, 150), UI_PRIMARY, "SHUFFLE  100");
-            var forfeitBtn = Btn(panel, "ForfeitButton", new Vector2(0, -280), new Vector2(560, 110), UI_DANGER,  "Forfeit Stage");
-
-            var so = new SerializedObject(root.GetComponent<StuckPopupView>());
-            so.FindProperty("_titleText").objectReferenceValue    = title;
-            so.FindProperty("_bodyText").objectReferenceValue     = body;
-            so.FindProperty("_addLaneRow").objectReferenceValue   = addLaneRow;
-            so.FindProperty("_addLaneButton").objectReferenceValue = addLaneBtn.GetComponent<Button>();
-            so.FindProperty("_shuffleButton").objectReferenceValue = shuffleBtn.GetComponent<Button>();
-            so.FindProperty("_forfeitButton").objectReferenceValue = forfeitBtn.GetComponent<Button>();
-            so.ApplyModifiedProperties();
-
-            Save(root, "StuckPopupView");
-        }
-
-        static void CreateClearPopup()
-        {
-            var root = FullScreen("ClearPopupView");
-            Comp<ClearPopupView>(root); Comp<UIPanelAppear>(root); Comp<CanvasGroup>(root);
-
-            var backdrop = Child(root, "Backdrop"); Stretch(backdrop);
-            Img(backdrop, DIM).raycastTarget = true;
-
-            var panel = Panel(root, "Panel", new Vector2(880, 680), UI_BG_MID);
-            TMP(panel, "TitleText", Center(0, 250, 760, 90), 48, UI_SUCCESS, "STAGE CLEAR", null, TextCategory.Header);
-            TMP(panel, "MovesCaption", Center(0, 150, 760, 50), 22, Hex("A6B0C9"), "MOVES", null, TextCategory.Normal);
-            var movesText = TMP(panel, "MovesText", Center(0, 80, 760, 90), 56, UI_TEXT, "0", null, TextCategory.Header);
-
-            var nextBtn  = Btn(panel, "NextButton",  new Vector2(0, -60),  new Vector2(720, 150), UI_CTA,     "Next Stage  >");
-            var lobbyBtn = Btn(panel, "LobbyButton", new Vector2(0, -230), new Vector2(560, 120), UI_BG_DEEP, "Lobby");
-
-            var so = new SerializedObject(root.GetComponent<ClearPopupView>());
-            so.FindProperty("_titleText").objectReferenceValue  = panel.transform.Find("TitleText").GetComponent<TMP_Text>();
-            so.FindProperty("_movesText").objectReferenceValue   = movesText;
-            so.FindProperty("_nextButton").objectReferenceValue  = nextBtn.GetComponent<Button>();
-            so.FindProperty("_lobbyButton").objectReferenceValue = lobbyBtn.GetComponent<Button>();
-            so.ApplyModifiedProperties();
-
-            Save(root, "ClearPopupView");
-        }
-
-
 
         // ════════════════════════════════════════════════════════════════
         //  PREFAB BUILDERS
@@ -1600,9 +1543,17 @@ namespace Game.Editor
             var bar = Child(cell, "ProgressBar");
             Fixed(bar, new Vector2(-40, -52), new Vector2(420, 24));
             Img(bar, UI_BG_MID);
-            var fill = Child(bar, "Fill"); Stretch(fill);
+            // Sprite-free fill: width driven by anchorMax.x (no fillAmount/sprite). Left-anchored, starts empty.
+            var fill = Child(bar, "Fill");
+            var fillRt = RT(fill);
+            fillRt.anchorMin = new Vector2(0, 0); fillRt.anchorMax = new Vector2(0, 1); fillRt.pivot = new Vector2(0, 0.5f);
+            fillRt.offsetMin = Vector2.zero; fillRt.offsetMax = Vector2.zero;
             var fillImg = Img(fill, UI_SUCCESS);
-            fillImg.type = Image.Type.Filled; fillImg.fillMethod = Image.FillMethod.Horizontal; fillImg.fillOrigin = (int)Image.OriginHorizontal.Left; fillImg.fillAmount = 0.5f;
+            var barAnim = Comp<AnimatedProgressBar>(bar);
+            var soBar = new SerializedObject(barAnim);
+            soBar.FindProperty("_fill").objectReferenceValue = fillRt;
+            soBar.FindProperty("_fillImage").objectReferenceValue = fillImg;
+            soBar.ApplyModifiedProperties();
 
             TMP(cell, "ProgressText", new Rect(250, -52, 140, 36), 16, UI_TEXT, "0/10", null, TextCategory.Normal);
 
@@ -1826,6 +1777,24 @@ namespace Game.Editor
             var bestCsf = Comp<ContentSizeFitter>(best.gameObject);
             bestCsf.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
 
+            // Difficulty + signal-type count: text set at runtime (stringId null = font-only LocalizedText).
+            var difficulty = TMP(panel, "DifficultyText", Center(0, 60, 600, 50), 18, UI_TEXT, "Normal", null, TextCategory.Normal);
+            var types      = TMP(panel, "TypesText",      Center(0, 10, 600, 50), 18, UI_TEXT, "Signal Types: 4", null, TextCategory.Normal);
+
+            // Gimmick badge row: icon-only, long-press → ItemTooltipView. Inactive badges auto-collapse via HLG.
+            var gimmickRow = Child(panel, "GimmickRow");
+            Fixed(gimmickRow, new Vector2(0, -95), new Vector2(600, 110));
+            var hlg = Comp<HorizontalLayoutGroup>(gimmickRow);
+            hlg.spacing = 16; hlg.childAlignment = TextAnchor.MiddleCenter;
+            hlg.childControlWidth = false; hlg.childControlHeight = false;
+            hlg.childForceExpandWidth = false; hlg.childForceExpandHeight = false;
+
+            // Badge order = chapter intro order: Locked(Ch2) → Blind(Ch3) → Relay(Ch4) → Overload(Ch5).
+            var lockLaneBadge = MakeGimmickBadge(gimmickRow, "LockLaneBadge", "Assets/Sprites/UI/Icons/ui_locklane.png");
+            var blindLaneBadge= MakeGimmickBadge(gimmickRow, "BlindLaneBadge","Assets/Sprites/UI/Icons/ui_blindlane.png");
+            var relayBadge    = MakeGimmickBadge(gimmickRow, "RelayBadge",    "Assets/Sprites/UI/Icons/ui_relaynode.png");
+            var overloadBadge = MakeGimmickBadge(gimmickRow, "OverloadBadge", "Assets/Sprites/UI/Icons/ui_overloadchip.png");
+
             var play = Btn(panel, "PlayButton", new Vector2(0, -285), new Vector2(400, 80), UI_CTA, "Play", CommonBtnPlay);
 
             // Explicit square close button — top-right of panel (convention: all popups must have one)
@@ -1834,42 +1803,174 @@ namespace Game.Editor
             var so = new SerializedObject(root.GetComponent<StageInfoPopupView>());
             so.FindProperty("_stageTitle").objectReferenceValue       = title;
             so.FindProperty("_bestRecord").objectReferenceValue       = best;
+            so.FindProperty("_difficultyLabel").objectReferenceValue  = difficulty;
+            so.FindProperty("_typesLabel").objectReferenceValue       = types;
             so.FindProperty("_ribbonImage").objectReferenceValue      = ribbonImg;
             so.FindProperty("_playButton").objectReferenceValue       = play.GetComponent<Button>();
             so.FindProperty("_backdropButton").objectReferenceValue   = closeBtn;
+            so.FindProperty("_overloadBadge").objectReferenceValue    = overloadBadge;
+            so.FindProperty("_relayBadge").objectReferenceValue       = relayBadge;
+            so.FindProperty("_lockLaneBadge").objectReferenceValue    = lockLaneBadge;
+            so.FindProperty("_blindLaneBadge").objectReferenceValue   = blindLaneBadge;
             so.ApplyModifiedProperties();
 
             Save(root, "StageInfoPopupView");
         }
 
+        // Icon-only gimmick badge with a LongPressTooltipTrigger (icon sprite is the tooltip image).
+        static LongPressTooltipTrigger MakeGimmickBadge(GameObject parent, string name, string spritePath)
+        {
+            var go = Child(parent, name);
+            var rt = RT(go);
+            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.sizeDelta = new Vector2(96, 96);
+
+            var le = Comp<LayoutElement>(go);
+            le.preferredWidth = 96; le.preferredHeight = 96;
+
+            var img = Img(go, Color.white);
+            var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(spritePath);
+            if (sprite != null) { img.sprite = sprite; img.preserveAspect = true; }
+
+            var trig = Comp<LongPressTooltipTrigger>(go);
+            var tso = new SerializedObject(trig);
+            tso.FindProperty("_icon").objectReferenceValue = img;
+            tso.ApplyModifiedProperties();
+            return trig;
+        }
+
         static void CreateResultOverlay()
         {
-            var resMap = LoadDynamicResourceMap();
             var root = FullScreen("ResultOverlayView");
             Img(root, DIM); Comp<ResultOverlayView>(root); Comp<UIPanelAppear>(root); Comp<CanvasGroup>(root);
 
             var panel = Panel(root, "Panel", new Vector2(900, 900), UI_BG_MID);
-            RibbonTitle(panel, "TitleText", "Stage Clear!", PopupResultTitle);
+            var title = RibbonTitle(panel, "TitleText", "Stage Clear!", PopupResultTitle);
 
-            var retry = Btn(panel, "RetryButton", new Vector2(-270, -330), new Vector2(230, 90), UI_PRIMARY, "Retry",        CommonBtnRetry);
-            var next  = Btn(panel, "NextButton",  new Vector2(   0, -330), new Vector2(230, 90), UI_CTA,     "Next",         CommonBtnNext);
-            var map   = Btn(panel, "MapButton",   new Vector2( 270, -330), new Vector2(230, 90), UI_BG_DEEP, "Map",          CommonBtnMap);
-            var doubleReward = Btn(panel, "DoubleRewardButton", new Vector2(0, -250), new Vector2(380, 85), UI_PRIMARY, "Double Reward", PopupResultDoubleReward);
+            // Clear summary — moves / best moves (runtime-formatted) + a new-best badge (hidden by
+            // default, toggled on a personal best). Hidden entirely for the daily challenge.
+            var statsBlock = Child(panel, "StatsBlock");
+            Fixed(statsBlock, new Vector2(0, 250), new Vector2(700, 220));
+            Img(statsBlock, Color.clear);
+            var movesText = TMP(statsBlock, "MovesText", Center(0,  60, 640, 70), 30, UI_TEXT, "Moves: 0",      null, TextCategory.Normal);
+            var bestText  = TMP(statsBlock, "BestText",  Center(0,  -8, 640, 70), 30, UI_TEXT, "Best Moves: 0", null, TextCategory.Normal);
+            var newBestBadge = Child(statsBlock, "NewBestBadge");
+            Fixed(newBestBadge, new Vector2(0, -80), new Vector2(340, 64));
+            Img(newBestBadge, UI_CTA);
+            TMP(newBestBadge, "Label", Center(0, 0, 320, 56), 26, UI_TEXT, "New Best", PopupResultNewBest, TextCategory.Button);
+            // Left active in the prefab so it's positionable in the Final variant; runtime visibility
+            // is owned by RenderStats (SetActive(isNewBest)).
+
+            // Granted-reward cells — instantiated at runtime from the RewardItemCell prefab.
+            var rewardContainer = Child(panel, "RewardCellContainer");
+            Fixed(rewardContainer, new Vector2(0, 40), new Vector2(760, 170));
+            var hlg = Comp<HorizontalLayoutGroup>(rewardContainer);
+            hlg.childAlignment = TextAnchor.MiddleCenter;
+            hlg.spacing = 15;
+            hlg.childControlWidth = hlg.childControlHeight = false;
+
+            var doubleReward = Btn(panel, "DoubleRewardButton", new Vector2(0, -170), new Vector2(440, 100), UI_PRIMARY, "Double Reward", PopupResultDoubleReward);
+            var next = Btn(panel, "NextButton", new Vector2( 160, -320), new Vector2(280, 100), UI_CTA,     "Next", CommonBtnNext);
+            var map  = Btn(panel, "MapButton",  new Vector2(-160, -320), new Vector2(280, 100), UI_BG_DEEP, "Map",  CommonBtnMap);
+
+            var rewardCellPrefab = AssetDatabase.LoadAssetAtPath<GameObject>($"{BaseCommonPath}/RewardItemCell.prefab");
+
+            var so = new SerializedObject(root.GetComponent<ResultOverlayView>());
+            so.FindProperty("_titleText").objectReferenceValue          = title;
+            so.FindProperty("_statsBlock").objectReferenceValue         = statsBlock;
+            so.FindProperty("_movesText").objectReferenceValue          = movesText;
+            so.FindProperty("_bestText").objectReferenceValue           = bestText;
+            so.FindProperty("_newBestBadge").objectReferenceValue       = newBestBadge;
+            so.FindProperty("_rewardContainer").objectReferenceValue    = rewardContainer.transform;
+            so.FindProperty("_rewardCellPrefab").objectReferenceValue   = rewardCellPrefab;
+            so.FindProperty("_doubleRewardButton").objectReferenceValue = doubleReward.GetComponent<Button>();
+            so.FindProperty("_nextButton").objectReferenceValue         = next.GetComponent<Button>();
+            so.FindProperty("_mapButton").objectReferenceValue          = map.GetComponent<Button>();
+            so.ApplyModifiedProperties();
 
             Save(root, "ResultOverlayView");
         }
 
         static void CreateFailOverlay()
         {
+            var resMap = LoadDynamicResourceMap();
             var root = FullScreen("FailOverlayView");
             Img(root, DIM); Comp<FailOverlayView>(root); Comp<UIPanelAppear>(root); Comp<CanvasGroup>(root);
 
-            var panel = Panel(root, "Panel", new Vector2(700, 780), UI_BG_MID);
-            RibbonTitle(panel, "TitleText", "Just a bit more!", PopupResultFailed);
+            var panel = Panel(root, "Panel", new Vector2(760, 820), UI_BG_MID);
+            var title = RibbonTitle(panel, "TitleText", "Just a bit more!", PopupResultFailed);
 
-            var forfBtn = Btn(panel, "ForfeitButton",  new Vector2(0, -285), new Vector2(280, 96), UI_DANGER, "Give Up", PopupFailBtnForfeit);
+            // Add Lane (rewarded ad) — top priority; the row hides once Add Lane is used this stage.
+            var addLaneRow = Child(panel, "AddLaneRow"); Fixed(addLaneRow, new Vector2(0, 80), new Vector2(680, 150));
+            Img(addLaneRow, Color.clear);
+            var addLaneBtn = Btn(addLaneRow, "AddLaneButton", Vector2.zero, new Vector2(660, 140), UI_SUCCESS, "Add Lane", PopupFailBtnAddLane);
+            AddButtonIcon(addLaneBtn, "item_add_lane", resMap);
+            // "Watch Ad" badge — signals Add Lane is granted by a rewarded ad, not gold.
+            var adBadge = Child(addLaneBtn, "AdBadge");
+            Fixed(adBadge, new Vector2(235, 42), new Vector2(180, 56));
+            Img(adBadge, UI_CTA);
+            TMP(adBadge, "Label", Center(0, 0, 168, 52), 24, UI_TEXT, "Watch Ad", PopupFailWatchAd, TextCategory.Button);
+
+            // Shuffle (gold) — icon + live price label.
+            var shuffleBtn = Btn(panel, "ShuffleButton", new Vector2(0, -90), new Vector2(660, 140), UI_PRIMARY, "Shuffle", PopupFailBtnShuffle);
+            AddButtonIcon(shuffleBtn, "item_shuffle", resMap);
+            var costGo = Child(shuffleBtn, "ShuffleCost");
+            Fixed(costGo, new Vector2(210, 0), new Vector2(140, 60));
+            var costTmp = Comp<TextMeshProUGUI>(costGo);
+            ApplyAutoFontSize(costTmp, TextCategory.Button);
+            costTmp.color = UI_TEXT; costTmp.alignment = TextAlignmentOptions.Midline; costTmp.text = "0"; costTmp.raycastTarget = false;
+            Comp<LocalizedText>(costGo); Comp<UITextStyle>(costGo).ApplyStyle();
+            var goldIcon = Child(shuffleBtn, "CostIcon"); Fixed(goldIcon, new Vector2(285, 0), new Vector2(48, 48));
+            var goldImg = Img(goldIcon, Color.white); goldImg.preserveAspect = true; goldImg.raycastTarget = false;
+            if (resMap.TryGetValue("ui_gold_icon", out var goldPath))
+            {
+                var gs = AssetDatabase.LoadAssetAtPath<Sprite>(goldPath);
+                if (gs != null) goldImg.sprite = gs;
+            }
+
+            var forfeitBtn = Btn(panel, "ForfeitButton", new Vector2(0, -270), new Vector2(420, 110), UI_DANGER, "Give Up", PopupFailBtnForfeit);
+
+            // Shuffle spend confirm — in-panel modal (kept inside this popup, not a second UIManager
+            // popup, so closing never races on the popup stack). Hidden until Shuffle is tapped.
+            var confirmPanel = Child(root, "ShuffleConfirmPanel");
+            Stretch(confirmPanel);
+            Img(confirmPanel, DIM);
+            var confirmCard = Panel(confirmPanel, "ConfirmCard", new Vector2(640, 440), UI_BG_MID);
+            RibbonTitle(confirmCard, "TitleText", "Shuffle", PopupFailBtnShuffle);
+            var confirmBody = TMP(confirmCard, "BodyText", Center(0, 50, 560, 150), 28, UI_TEXT, "Spend 0 Gold to shuffle the board?", null, TextCategory.Normal);
+            var confirmYes = Btn(confirmCard, "ConfirmYesButton", new Vector2( 150, -130), new Vector2(260, 100), UI_CTA,     "Confirm", CommonBtnConfirm);
+            var confirmNo  = Btn(confirmCard, "ConfirmNoButton",  new Vector2(-150, -130), new Vector2(260, 100), UI_BG_DEEP, "Cancel",  CommonBtnCancel);
+            confirmPanel.transform.SetAsLastSibling();
+            // Left active in the prefab so the card/buttons are positionable in the Final variant;
+            // runtime visibility is owned by Configure (SetActive(false) on open, shown on Shuffle tap).
+
+            var so = new SerializedObject(root.GetComponent<FailOverlayView>());
+            so.FindProperty("_titleText").objectReferenceValue       = title;
+            so.FindProperty("_addLaneRow").objectReferenceValue      = addLaneRow;
+            so.FindProperty("_addLaneButton").objectReferenceValue   = addLaneBtn.GetComponent<Button>();
+            so.FindProperty("_shuffleButton").objectReferenceValue   = shuffleBtn.GetComponent<Button>();
+            so.FindProperty("_shuffleCostText").objectReferenceValue = costTmp;
+            so.FindProperty("_forfeitButton").objectReferenceValue   = forfeitBtn.GetComponent<Button>();
+            so.FindProperty("_shuffleConfirmPanel").objectReferenceValue = confirmPanel;
+            so.FindProperty("_shuffleConfirmBody").objectReferenceValue  = confirmBody;
+            so.FindProperty("_shuffleConfirmYes").objectReferenceValue   = confirmYes.GetComponent<Button>();
+            so.FindProperty("_shuffleConfirmNo").objectReferenceValue    = confirmNo.GetComponent<Button>();
+            so.ApplyModifiedProperties();
 
             Save(root, "FailOverlayView");
+        }
+
+        // Adds a left-aligned icon Image to a wide (non-square) button from a dynamic_resource key.
+        static void AddButtonIcon(GameObject btn, string key, Dictionary<string, string> resMap)
+        {
+            if (btn == null || resMap == null || !resMap.TryGetValue(key, out var path)) return;
+            var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+            if (sprite == null) return;
+            var icon = Child(btn, "Icon");
+            Fixed(icon, new Vector2(-250, 0), new Vector2(64, 64));
+            var img = Img(icon, Color.white);
+            img.sprite = sprite; img.preserveAspect = true; img.raycastTarget = false;
         }
 
         static void CreatePausePopup()
@@ -1958,10 +2059,7 @@ namespace Game.Editor
             Img(backdrop, DIM);
 
             var panel = Panel(root, "Panel", new Vector2(850, 720), UI_BG_MID);
-            var uidTxt = RibbonTitle(panel, "UserIdText", "Guest", CommonGuest);
-
-            // PID copy button — right of the user id ribbon; copies PID to clipboard
-            var copyBtn = Btn(panel, "CopyPidButton", new Vector2(250, 250), new Vector2(150, 96), UI_PRIMARY, "Copy", PopupAccountBtnCopyPid);
+            var titleTxt = RibbonTitle(panel, "TitleText", "Account", PopupAccountTitle);
 
             // Avatar selection + Achievements entry moved out (Shop avatar section / lobby Achievement tab).
 
@@ -2017,6 +2115,18 @@ namespace Game.Editor
 
             var saveBtn = Btn(nicknameAreaGo, "SaveNicknameButton", new Vector2(250, -30), new Vector2(160, 80), UI_CTA, "Save", PopupAccountBtnSave);
 
+            // 1b. PID Area (grouped in PidArea) — label + value text + copy button (mirrors NicknameArea)
+            var pidAreaGo = Child(panel, "PidArea");
+            Fixed(pidAreaGo, new Vector2(0, -20), new Vector2(800, 160));
+
+            var pidLabel = TMP(pidAreaGo, "PidLabel", Center(0, 45, 750, 50), 20, UI_TEXT, "PID", PopupAccountLabelPid, TextCategory.Normal);
+
+            // PID value: no stringId → LocalizedText stays inert so AccountPopupView.Awake controls the text
+            var pidValueTmp = TMP(pidAreaGo, "PidValueText", Center(-100, -30, 500, 60), 20, UI_TEXT, "Guest", null, TextCategory.Normal);
+
+            // PID copy button — right of the PID value; copies PID to clipboard
+            var copyBtn = Btn(pidAreaGo, "CopyPidButton", new Vector2(250, -30), new Vector2(160, 80), UI_PRIMARY, "Copy", PopupAccountBtnCopyPid);
+
             // 2. Platform Account Buttons (Link for guest / Switch for OAuth — only one shown at runtime)
             var linkBtn = Btn(panel, "LinkAccountButton",   new Vector2(0, -180), new Vector2(600, 96), UI_CTA, "Link Account",   PopupAccountBtnLink);
             var swBtn   = Btn(panel, "SwitchAccountButton", new Vector2(0, -180), new Vector2(600, 96), UI_CTA, "Switch Account", PopupAccountBtnSwitch);
@@ -2030,7 +2140,7 @@ namespace Game.Editor
             // 3. Serialize Object Wiring (avatar sprite mapping retained for HeaderView / TutorialOverlay)
             var resMap = LoadDynamicResourceMap();
             var so = new SerializedObject(root.GetComponent<AccountPopupView>());
-            so.FindProperty("_userIdText").objectReferenceValue          = uidTxt;
+            so.FindProperty("_pidText").objectReferenceValue             = pidValueTmp;
             so.FindProperty("_copyPidButton").objectReferenceValue       = copyBtn.GetComponent<Button>();
             so.FindProperty("_privacyButton").objectReferenceValue       = privacyBtn.GetComponent<Button>();
             so.FindProperty("_termsButton").objectReferenceValue         = termsBtn.GetComponent<Button>();
