@@ -119,13 +119,16 @@
         { "name": "total_cleared_at",       "type": "datetime", "null": true },
         { "name": "max_cleared_stage_id",   "type": "int32",    "null": false, "default": 0 },
         { "name": "max_stage_achieved_at",  "type": "datetime", "null": true },
+        { "name": "perfect_clears",         "type": "int32",    "null": false, "default": 0 },
+        { "name": "perfect_cleared_at",     "type": "datetime", "null": true },
         { "name": "win_streak",             "type": "int32",    "null": false, "default": 0 },
         { "name": "max_win_streak",         "type": "int32",    "null": false, "default": 0 },
         { "name": "updated_at",             "type": "datetime", "null": false }
       ],
       "indexes": [
         { "name": "idx_user_ranking_totals_cleared_stages", "columns": ["total_cleared_stages", "total_cleared_at"], "unique": false },
-        { "name": "idx_user_ranking_totals_max_stage", "columns": ["max_cleared_stage_id", "max_stage_achieved_at"], "unique": false }
+        { "name": "idx_user_ranking_totals_max_stage", "columns": ["max_cleared_stage_id", "max_stage_achieved_at"], "unique": false },
+        { "name": "idx_user_ranking_totals_perfect", "columns": ["perfect_clears", "perfect_cleared_at"], "unique": false }
       ]
     },
     {
@@ -311,6 +314,7 @@
         { "name": "user_id",          "type": "int64",    "pk": true, "null": false, "fk": "players.user_id" },
         { "name": "stage_id",         "type": "int32",    "pk": true, "null": false },
         { "name": "stage_clear",      "type": "bool",     "null": false, "default": false },
+        { "name": "is_perfect",       "type": "bool",     "null": false, "default": false },
         { "name": "best_moves_used",  "type": "int32",    "null": false, "default": 0 },
         { "name": "latest_moves_used","type": "int32",    "null": false, "default": 0 },
         { "name": "first_cleared_at", "type": "datetime", "null": true },

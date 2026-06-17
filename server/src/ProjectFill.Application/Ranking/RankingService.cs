@@ -190,12 +190,12 @@ public sealed class RankingService
         var totals = await _db.UserRankingTotals.FindAsync(userId, ct);
         if (totals is not null)
         {
-            if (totals.TotalClearedStages > 0)
-                await _redis.SortedSetAddAsync(GlobalKey(GlobalRankingType.ClearedStages), userId,
-                    ComposeGlobalScore(totals.TotalClearedStages, totals.TotalClearedAt));
             if (totals.MaxClearedStageId > 0)
-                await _redis.SortedSetAddAsync(GlobalKey(GlobalRankingType.MaxStage), userId,
+                await _redis.SortedSetAddAsync(GlobalKey(GlobalRankingType.Stage), userId,
                     ComposeGlobalScore(totals.MaxClearedStageId, totals.MaxStageAchievedAt));
+            if (totals.PerfectClears > 0)
+                await _redis.SortedSetAddAsync(GlobalKey(GlobalRankingType.Perfect), userId,
+                    ComposeGlobalScore(totals.PerfectClears, totals.PerfectClearedAt));
         }
 
         var progress = await _db.UserStageProgress.FindAsync(userId, stageId, ct);
@@ -211,23 +211,23 @@ public sealed class RankingService
     public async Task RebuildAllAsync(CancellationToken ct)
     {
         var totals = await _db.UserRankingTotals.Query().ToListAsync(ct);
-        await _redis.KeyDeleteAsync(GlobalKey(GlobalRankingType.ClearedStages));
-        await _redis.KeyDeleteAsync(GlobalKey(GlobalRankingType.MaxStage));
+        await _redis.KeyDeleteAsync(GlobalKey(GlobalRankingType.Stage));
+        await _redis.KeyDeleteAsync(GlobalKey(GlobalRankingType.Perfect));
 
         if (totals.Count > 0)
         {
             await _redis.SortedSetAddAsync(
-                GlobalKey(GlobalRankingType.ClearedStages),
-                totals
-                    .Where(x => x.TotalClearedStages > 0)
-                    .Select(x => new SortedSetEntry(x.UserId, ComposeGlobalScore(x.TotalClearedStages, x.TotalClearedAt)))
-                    .ToArray());
-
-            await _redis.SortedSetAddAsync(
-                GlobalKey(GlobalRankingType.MaxStage),
+                GlobalKey(GlobalRankingType.Stage),
                 totals
                     .Where(x => x.MaxClearedStageId > 0)
                     .Select(x => new SortedSetEntry(x.UserId, ComposeGlobalScore(x.MaxClearedStageId, x.MaxStageAchievedAt)))
+                    .ToArray());
+
+            await _redis.SortedSetAddAsync(
+                GlobalKey(GlobalRankingType.Perfect),
+                totals
+                    .Where(x => x.PerfectClears > 0)
+                    .Select(x => new SortedSetEntry(x.UserId, ComposeGlobalScore(x.PerfectClears, x.PerfectClearedAt)))
                     .ToArray());
         }
 
@@ -286,15 +286,15 @@ public sealed class RankingService
         if (userIds.Length == 0)
             return new Dictionary<long, RankingRow>();
 
-        if (type == GlobalRankingType.ClearedStages)
+        if (type == GlobalRankingType.Stage)
             return await _db.UserRankingTotals.Query()
                 .Where(x => userIds.Contains(x.UserId))
-                .Select(x => new RankingRow(x.UserId, x.Player!.DisplayName, x.Player!.AvatarId, x.TotalClearedStages))
+                .Select(x => new RankingRow(x.UserId, x.Player!.DisplayName, x.Player!.AvatarId, x.MaxClearedStageId))
                 .ToDictionaryAsync(x => x.UserId, ct);
 
         return await _db.UserRankingTotals.Query()
             .Where(x => userIds.Contains(x.UserId))
-            .Select(x => new RankingRow(x.UserId, x.Player!.DisplayName, x.Player!.AvatarId, x.MaxClearedStageId))
+            .Select(x => new RankingRow(x.UserId, x.Player!.DisplayName, x.Player!.AvatarId, x.PerfectClears))
             .ToDictionaryAsync(x => x.UserId, ct);
     }
 
@@ -316,7 +316,7 @@ public sealed class RankingService
         => limit <= 0 ? DefaultLimit : Math.Min(limit, MaxLimit);
 
     private static RedisKey GlobalKey(GlobalRankingType type)
-        => type == GlobalRankingType.ClearedStages ? "ranking:global:stages" : "ranking:global:max-stage";
+        => type == GlobalRankingType.Stage ? "ranking:global:stage" : "ranking:global:perfect";
 
     private static RedisKey WeeklyKey(string weekStart) => $"ranking:weekly:{weekStart}:stages";
 
@@ -325,13 +325,13 @@ public sealed class RankingService
     private static GlobalRankingType NormalizeGlobalType(string type)
         => type switch
         {
-            "stages" => GlobalRankingType.ClearedStages,
-            "max-stage" or "max_stage" => GlobalRankingType.MaxStage,
+            "stage" => GlobalRankingType.Stage,
+            "perfect" => GlobalRankingType.Perfect,
             _ => throw new GameApiException(ErrorCodes.InvalidRankingType, "Invalid ranking type."),
         };
 
     private static string ToContractType(GlobalRankingType type)
-        => type == GlobalRankingType.ClearedStages ? "stages" : "max-stage";
+        => type == GlobalRankingType.Stage ? "stage" : "perfect";
 
     private static string CurrentWeekStart()
     {

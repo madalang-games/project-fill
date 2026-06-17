@@ -4,6 +4,14 @@ using System.Collections.Generic;
 
 namespace ProjectFill.Contracts.Stage
 {
+    public sealed class StageStartResponse
+    {
+        public int StageId { get; set; }
+        public int MaxClearedStageId { get; set; }
+        public int RulesetVersion { get; set; }
+        public DateTimeOffset ServerTime { get; set; }
+    }
+
     public sealed class StageClearResponse
     {
         public int StageId { get; set; }

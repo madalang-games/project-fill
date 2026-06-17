@@ -46,6 +46,33 @@ public sealed class StageService
         _currency = currency;
     }
 
+    public async Task<StageStartResponse> StartStageAsync(long userId, int stageId, CancellationToken ct)
+    {
+        _ = _staticData.GetStage(stageId)
+            ?? throw new GameApiException(ErrorCodes.StageNotFound, $"Stage {stageId} not found.");
+
+        var maxClearedStageId = await ValidateUnlockedAsync(userId, stageId, ct);
+
+        return new StageStartResponse
+        {
+            StageId = stageId,
+            MaxClearedStageId = maxClearedStageId,
+            RulesetVersion = CurrentRulesetVersion,
+            ServerTime = DateTimeOffset.UtcNow,
+        };
+    }
+
+    // Campaign gating: stage 1 is always open; stage N requires the player to have first-cleared N-1
+    // (max_cleared_stage_id >= N-1). Server-authoritative — both stage entry and clear go through this.
+    private async Task<int> ValidateUnlockedAsync(long userId, int stageId, CancellationToken ct)
+    {
+        var totals = await _db.UserRankingTotals.FindAsync(userId, ct);
+        var maxClearedStageId = totals?.MaxClearedStageId ?? 0;
+        if (stageId > 1 && maxClearedStageId < stageId - 1)
+            throw new GameApiException(ErrorCodes.StageLocked, $"Stage {stageId} is locked.");
+        return maxClearedStageId;
+    }
+
     public async Task<StageClearResponse> ClearStageAsync(long userId, int stageId, StageClearRequest request, string correlationId, CancellationToken ct)
     {
         var stage = _staticData.GetStage(stageId)
@@ -56,6 +83,9 @@ public sealed class StageService
 
         if (request.MovesUsed < 1)
             throw new GameApiException(ErrorCodes.InvalidStageClear, "moves_used must be at least 1.");
+
+        // Reject clears for stages the player cannot legally reach (closes the start-validation bypass).
+        await ValidateUnlockedAsync(userId, stageId, ct);
 
         var expectedTypes = Enumerable.Range(0, stage.Types).ToHashSet();
         if (!expectedTypes.SetEquals(request.CompletedSignalTypes))
@@ -101,6 +131,13 @@ public sealed class StageService
         totals.WinStreak += 1;
         totals.MaxWinStreak = Math.Max(totals.MaxWinStreak, totals.WinStreak);
         totals.UpdatedAt = now;
+
+        if (stage.ParMoves > 0 && progress.BestMovesUsed <= stage.ParMoves && !progress.IsPerfect)
+        {
+            progress.IsPerfect = true;
+            totals.PerfectClears += 1;
+            totals.PerfectClearedAt = now;
+        }
 
         var weekly = await _db.UserWeeklyRanking.FindAsync(userId, ct);
         if (weekly is null)

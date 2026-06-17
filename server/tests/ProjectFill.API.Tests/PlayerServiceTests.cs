@@ -96,7 +96,7 @@ namespace ProjectFill.API.Tests
             };
 
             var ex = await Assert.ThrowsAsync<GameApiException>(() => service.UpdateProfileAsync(userId, req, "corr-id", default));
-            Assert.Equal("INVALID_DISPLAY_NAME", ex.Code);
+            Assert.Equal(ErrorCodes.InvalidDisplayNameChar, ex.Code);
         }
 
         [Fact]

@@ -15,6 +15,7 @@ public sealed class UserStageProgressRow
     public long UserId { get; set; }
     public int StageId { get; set; }
     public bool StageClear { get; set; }
+    public bool IsPerfect { get; set; }
     public int BestMovesUsed { get; set; }
     public int LatestMovesUsed { get; set; }
     public DateTimeOffset? FirstClearedAt { get; set; }
@@ -37,6 +38,10 @@ internal sealed class UserStageProgressDbConfiguration : IEntityTypeConfiguratio
             .IsRequired();
         builder.Property(e => e.StageClear)
             .HasColumnName(UserStageProgressDb.Schema.StageClear)
+            .HasDefaultValue(false)
+            .IsRequired();
+        builder.Property(e => e.IsPerfect)
+            .HasColumnName(UserStageProgressDb.Schema.IsPerfect)
             .HasDefaultValue(false)
             .IsRequired();
         builder.Property(e => e.BestMovesUsed)
@@ -72,6 +77,7 @@ public sealed class UserStageProgressDb
         public const string UserId = "user_id";
         public const string StageId = "stage_id";
         public const string StageClear = "stage_clear";
+        public const string IsPerfect = "is_perfect";
         public const string BestMovesUsed = "best_moves_used";
         public const string LatestMovesUsed = "latest_moves_used";
         public const string FirstClearedAt = "first_cleared_at";

@@ -35,45 +35,45 @@ public sealed class RankingServiceTests
     }
 
     [Fact]
-    public async Task GetMyGlobalRankAsync_Stages_ReturnsClearedStagesScore()
+    public async Task GetMyGlobalRankAsync_Stage_ReturnsMaxStageScore()
     {
         using var db = CreateDb();
         db.Players.Insert(new PlayersRow { UserId = 1, PlatformPid = "p1", DisplayName = "Alice", AvatarId = 2, AccountCreatedAt = DateTimeOffset.UtcNow, LastLoginAt = DateTimeOffset.UtcNow });
-        db.UserRankingTotals.Insert(new UserRankingTotalsRow { UserId = 1, TotalClearedStages = 42, MaxClearedStageId = 10, UpdatedAt = DateTimeOffset.UtcNow });
+        db.UserRankingTotals.Insert(new UserRankingTotalsRow { UserId = 1, MaxClearedStageId = 10, PerfectClears = 3, UpdatedAt = DateTimeOffset.UtcNow });
         await db.SaveAsync();
 
         var (service, redis) = CreateService(db);
         redis.Setup(r => r.SortedSetRankAsync(It.IsAny<RedisKey>(), It.IsAny<RedisValue>(), It.IsAny<Order>(), It.IsAny<CommandFlags>()))
              .ReturnsAsync(0L);
 
-        var result = await service.GetMyGlobalRankAsync(1L, "stages", CancellationToken.None);
+        var result = await service.GetMyGlobalRankAsync(1L, "stage", CancellationToken.None);
 
         Assert.NotNull(result.Entry);
         Assert.Equal(1, result.Entry!.Rank);
-        Assert.Equal(42, result.Entry.Score);
+        Assert.Equal(10, result.Entry.Score);
         Assert.Equal("Alice", result.Entry.DisplayName);
         Assert.Equal(2, result.Entry.AvatarId);
-        Assert.Equal("stages", result.RankingType);
+        Assert.Equal("stage", result.RankingType);
     }
 
     [Fact]
-    public async Task GetMyGlobalRankAsync_MaxStage_ReturnsMaxStageScore()
+    public async Task GetMyGlobalRankAsync_Perfect_ReturnsPerfectClearsScore()
     {
         using var db = CreateDb();
         db.Players.Insert(new PlayersRow { UserId = 2, PlatformPid = "p2", DisplayName = "Bob", AvatarId = 3, AccountCreatedAt = DateTimeOffset.UtcNow, LastLoginAt = DateTimeOffset.UtcNow });
-        db.UserRankingTotals.Insert(new UserRankingTotalsRow { UserId = 2, TotalClearedStages = 5, MaxClearedStageId = 99, UpdatedAt = DateTimeOffset.UtcNow });
+        db.UserRankingTotals.Insert(new UserRankingTotalsRow { UserId = 2, MaxClearedStageId = 99, PerfectClears = 17, UpdatedAt = DateTimeOffset.UtcNow });
         await db.SaveAsync();
 
         var (service, redis) = CreateService(db);
         redis.Setup(r => r.SortedSetRankAsync(It.IsAny<RedisKey>(), It.IsAny<RedisValue>(), It.IsAny<Order>(), It.IsAny<CommandFlags>()))
              .ReturnsAsync(2L);
 
-        var result = await service.GetMyGlobalRankAsync(2L, "max-stage", CancellationToken.None);
+        var result = await service.GetMyGlobalRankAsync(2L, "perfect", CancellationToken.None);
 
         Assert.NotNull(result.Entry);
         Assert.Equal(3, result.Entry!.Rank);
-        Assert.Equal(99, result.Entry.Score);
-        Assert.Equal("max-stage", result.RankingType);
+        Assert.Equal(17, result.Entry.Score);
+        Assert.Equal("perfect", result.RankingType);
     }
 
     [Fact]
@@ -84,9 +84,9 @@ public sealed class RankingServiceTests
         redis.Setup(r => r.SortedSetRankAsync(It.IsAny<RedisKey>(), It.IsAny<RedisValue>(), It.IsAny<Order>(), It.IsAny<CommandFlags>()))
              .ReturnsAsync((long?)null);
 
-        var result = await service.GetMyGlobalRankAsync(999L, "stages", CancellationToken.None);
+        var result = await service.GetMyGlobalRankAsync(999L, "stage", CancellationToken.None);
 
         Assert.Null(result.Entry);
-        Assert.Equal("stages", result.RankingType);
+        Assert.Equal("stage", result.RankingType);
     }
 }

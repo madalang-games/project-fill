@@ -8,8 +8,9 @@
 | `VersionCheckMiddlewareTests.cs` | `VersionCheckMiddlewareTests` | Verifies version/protocol gate behavior |
 | `AccountConflictTests.cs` | `AccountConflictTests` | Guest→Google link conflict and resolve-conflict flow |
 | `PlayerServiceTests.cs` | `PlayerServiceTests` | Player progress query (max cleared stage, best stars) |
-| `RankingServiceTests.cs` | `RankingServiceTests` | Global ranking page/my-rank (cleared-stages/max-stage) and Redis rebuild |
-| `StageServiceTests.cs` | `StageServiceTests` | Stage clear: first/re-clear, best-moves, chapter milestone chest, ruleset/types validation |
+| `RankingServiceTests.cs` | `RankingServiceTests` | Global ranking my-rank (stage/perfect) and not-in-redis null entry |
+| `StageServiceTests.cs` | `StageServiceTests` | Stage start unlock gate (stage1 open / locked / unlocked-after-clear / unknown) + clear-of-locked bypass guard; stage clear: first/re-clear, best-moves, chapter milestone chest, ruleset/types validation |
+| `AdDoubleRewardServiceTests.cs` | `AdDoubleRewardServiceTests` | Result 2x reward: verified grant + claim-state once, duplicate, SSV-pending, not-cleared/unknown-stage guards |
 | `TutorialServiceTests.cs` | `TutorialServiceTests` | Tutorial progress get/complete persistence |
 | `FakeStaticData.cs` | `FakeStaticData` | Shared `IStaticDataService` test fake; safe empty/null defaults, override per test |
 | `CosmeticServiceTests.cs` | `CosmeticServiceTests` | Cosmetic gold unlock, condition unlock, equip validation |

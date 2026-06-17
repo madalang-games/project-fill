@@ -92,6 +92,7 @@ builder.Services.AddScoped<TutorialService>();
 builder.Services.AddScoped<AdRewardService>();
 builder.Services.AddScoped<AdMobSsvCallbackService>();
 builder.Services.AddScoped<AdInterstitialService>();
+builder.Services.AddScoped<AdDoubleRewardService>();
 builder.Services.AddScoped<IapService>();
 builder.Services.AddScoped<CosmeticService>();
 builder.Services.AddScoped<AttendanceService>();

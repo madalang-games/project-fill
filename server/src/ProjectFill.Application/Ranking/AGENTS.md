@@ -8,7 +8,7 @@
 ## Symbols
 | symbol | kind | note |
 |--------|------|------|
-| `RankingService.GetGlobalPageAsync` | method | Paged global `stages` (cleared count) or `max-stage` ranking |
+| `RankingService.GetGlobalPageAsync` | method | Paged global `stage` (max reached stage) or `perfect` (perfect-clear count) ranking |
 | `RankingService.GetMyGlobalRankAsync` | method | Current user's global ranking card |
 | `RankingService.GetWeeklyPageAsync` | method | Paged current-week cleared-stage ranking (`ranking:weekly:{weekStart}:stages`) |
 | `RankingService.GetMyWeeklyRankAsync` | method | Current user's weekly ranking card |
@@ -18,9 +18,10 @@
 
 ## Rules
 - DB is source of truth; Redis is rebuildable cache/index. Ranking Redis writes happen post-commit.
-- Global `stages`/`max-stage` and `weekly` rankings: higher value better, deterministic tie-break by earlier achieved timestamp.
-- Stage ranking: fewer best moves better (ascending); missing key triggers lazy rebuild from `user_stage_progress`.
-- Global type strings: `stages` (cleared count), `max-stage`. Weekly key is the current Monday `yyyy-MM-dd`.
+- Global `stage`/`perfect` and `weekly` rankings: higher value better, deterministic tie-break by earlier achieved timestamp.
+- Per-stage ranking (`GetStageRankAsync`): fewer best moves better (ascending); missing key triggers lazy rebuild from `user_stage_progress`.
+- Global type strings: `stage` (max_cleared_stage_id), `perfect` (perfect_clears). Redis keys `ranking:global:stage` / `ranking:global:perfect`. Weekly key is the current Monday `yyyy-MM-dd`.
+- `perfect_clears` is incremented by `StageService` when a stage's `best_moves_used` first reaches `stage.par_moves` (idempotent via `user_stage_progress.is_perfect`).
 
 ## Cross-refs
 - Depends on: `ProjectFill.Infrastructure.Generated.AppDbContext`

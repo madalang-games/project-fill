@@ -8,7 +8,7 @@
 | `RewardsController.cs` | `RewardsController` | Generic reward source listing and claim endpoints |
 | `AdRewardsController.cs` | `AdRewardsController` | Generic rewarded-ad claim endpoint |
 | `AdSsvCallbackController.cs` | `AdSsvCallbackController` | `[AllowAnonymous]` GET `/api/ad/ssv-callback` — AdMob SSV callback |
-| `AdController.cs` | `AdController` | `/api/ad` eligibility, interstitial shown |
+| `AdController.cs` | `AdController` | `/api/ad` eligibility, interstitial shown, double-reward claim |
 | `AuthController.cs` | `AuthController` | `/api/auth` proxy endpoints for guest, google, refresh, logout |
 | `BootstrapController.cs` | `BootstrapController` | `/api/bootstrap/config` force-update + schema/meta-hash; `GET /api/data/bundle` OTA CSV bundle from `generated/data/client_bundle.json` |
 | `CurrencyController.cs` | `CurrencyController` | `GET /api/currency` balance fetch; `POST /api/currency/spend` soft currency deduct |
@@ -21,7 +21,7 @@
 | `AttendanceController.cs` | `AttendanceController` | `/api/attendance` daily status + claim endpoints |
 | `AchievementController.cs` | `AchievementController` | `/api/achievements` list + claim endpoints |
 | `DailyChallengeController.cs` | `DailyChallengeController` | `/api/daily-challenge` today/attempt/clear/ranking/me/streak endpoints |
-| `StageController.cs` | `StageController` | `POST /api/stages/{stageId}/clear` — Signal Sort campaign stage-clear submission |
+| `StageController.cs` | `StageController` | `POST /api/stages/{stageId}/start` — stage-entry unlock gate; `POST /api/stages/{stageId}/clear` — Signal Sort campaign stage-clear submission |
 
 ## Symbols
 | symbol | kind | note |
@@ -29,18 +29,20 @@
 | `ControllerBaseEx.PlayerId` | property | Reads internal `user_id` claim resolved from JWT `sub` |
 | `BootstrapController.GetConfig` | method | `GET /api/bootstrap/config`; compares `X-Client-Version`/`X-Protocol-Version` headers to `App.Allowed*` → `ForceUpdate`; returns schema version + meta hash |
 | `BootstrapController.GetBundle` | method | `GET /api/data/bundle`; serves `client_bundle.json` as `DataBundleResponse`; 404 if missing |
-| `RankingController.GetGlobal` | method | Paged `/api/rankings/global/{type}` list (`stages`, `max-stage`) |
+| `RankingController.GetGlobal` | method | Paged `/api/rankings/global/{type}` list (`stage`, `perfect`) |
 | `RankingController.GetMyGlobal` | method | Current user's global rank card |
 | `RankingController.GetWeekly` | method | `GET /api/rankings/weekly` — paged current-week cleared-stage ranking |
 | `RankingController.GetMyWeekly` | method | `GET /api/rankings/weekly/me` — current user's weekly rank card |
 | `RankingController.GetMyStageRank` | method | `GET /api/rankings/stages/{stageId}/me` — my best-moves rank for a stage |
 | `RankingController.Rebuild` | method | `POST /api/rankings/admin/rebuild`; auth-gated Redis rebuild trigger |
+| `StageController.Start` | method | `POST /api/stages/{stageId}/start` — validates stage reachable (`StageLocked` if not); returns `max_cleared_stage_id` + ruleset; no request body |
 | `StageController.Clear` | method | `POST /api/stages/{stageId}/clear` — submit clear; returns best/rank/first-clear/milestone |
 | `RewardsController.Claim` | method | Generic source claim |
 | `AdRewardsController.Claim` | method | Generic ad reward claim for supported placements |
 | `AdSsvCallbackController.SsvCallback` | method | `GET /api/ad/ssv-callback` — always returns 200 |
 | `AdController.GetEligibility` | method | `GET /api/ad/eligibility` — interstitial cooldown state |
 | `AdController.InterstitialShown` | method | `POST /api/ad/interstitial/shown` — records shown timestamp |
+| `AdController.DoubleReward` | method | `POST /api/ad/double-reward` — result-screen 2x reward claim via `AdDoubleRewardService` |
 | `CurrencyController.Get` | method | `GET /api/currency` — current soft currency balance |
 | `CurrencyController.Spend` | method | `POST /api/currency/spend` — deduct soft currency; 400 if insufficient |
 | `TutorialController.GetProgress` | method | `GET /api/tutorial/progress` — fetch user completed tutorial list |

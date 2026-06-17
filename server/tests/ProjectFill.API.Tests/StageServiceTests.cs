@@ -194,5 +194,67 @@ namespace ProjectFill.API.Tests
             var ex = await Assert.ThrowsAsync<GameApiException>(() => svc.ClearStageAsync(1, 999, Req(5), "corr", default));
             Assert.Equal(ErrorCodes.StageNotFound, ex.Code);
         }
+
+        [Fact]
+        public async Task Start_Stage1_AlwaysUnlocked()
+        {
+            using var db = CreateDb();
+            await SeedPlayerAsync(db, 1);
+            var svc = NewService(db, new FakeStageData());
+
+            var res = await svc.StartStageAsync(1, 1, default);
+
+            Assert.Equal(1, res.StageId);
+            Assert.Equal(0, res.MaxClearedStageId);
+            Assert.Equal(1, res.RulesetVersion);
+        }
+
+        [Fact]
+        public async Task Start_LockedStage_Throws()
+        {
+            using var db = CreateDb();
+            await SeedPlayerAsync(db, 1);
+            var svc = NewService(db, new FakeStageData());
+
+            var ex = await Assert.ThrowsAsync<GameApiException>(() => svc.StartStageAsync(1, 2, default));
+            Assert.Equal(ErrorCodes.StageLocked, ex.Code);
+        }
+
+        [Fact]
+        public async Task Start_UnlockedAfterPriorClear_Succeeds()
+        {
+            using var db = CreateDb();
+            await SeedPlayerAsync(db, 1);
+            var svc = NewService(db, new FakeStageData());
+
+            await svc.ClearStageAsync(1, 1, Req(5), "corr", default);
+            var res = await svc.StartStageAsync(1, 2, default);
+
+            Assert.Equal(2, res.StageId);
+            Assert.Equal(1, res.MaxClearedStageId);
+        }
+
+        [Fact]
+        public async Task Start_UnknownStage_Throws()
+        {
+            using var db = CreateDb();
+            await SeedPlayerAsync(db, 1);
+            var svc = NewService(db, new FakeStageData());
+
+            var ex = await Assert.ThrowsAsync<GameApiException>(() => svc.StartStageAsync(1, 999, default));
+            Assert.Equal(ErrorCodes.StageNotFound, ex.Code);
+        }
+
+        [Fact]
+        public async Task Clear_LockedStage_Throws()
+        {
+            using var db = CreateDb();
+            await SeedPlayerAsync(db, 1);
+            var svc = NewService(db, new FakeStageData());
+
+            // Stage 2 cannot be cleared before stage 1 — closes the start-validation bypass.
+            var ex = await Assert.ThrowsAsync<GameApiException>(() => svc.ClearStageAsync(1, 2, Req(5), "corr", default));
+            Assert.Equal(ErrorCodes.StageLocked, ex.Code);
+        }
     }
 }

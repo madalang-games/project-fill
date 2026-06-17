@@ -80,7 +80,7 @@ namespace ProjectFill.API.Controllers
                         ServerTime = DateTimeOffset.UtcNow
                     });
                 }
-                else if (pending.PlacementId == "DOUBLE_REWARD_STAGE_CLEAR")
+                else if (pending.PlacementId == AdPlacementKeys.DoubleRewardStageClear)
                 {
                     var reqData = JsonDocument.Parse(pending.RequestJson);
                     int stageId = reqData.RootElement.GetProperty("stageId").GetInt32();

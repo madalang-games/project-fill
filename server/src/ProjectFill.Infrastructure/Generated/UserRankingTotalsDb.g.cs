@@ -17,6 +17,8 @@ public sealed class UserRankingTotalsRow
     public DateTimeOffset? TotalClearedAt { get; set; }
     public int MaxClearedStageId { get; set; }
     public DateTimeOffset? MaxStageAchievedAt { get; set; }
+    public int PerfectClears { get; set; }
+    public DateTimeOffset? PerfectClearedAt { get; set; }
     public int WinStreak { get; set; }
     public int MaxWinStreak { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
@@ -47,6 +49,13 @@ internal sealed class UserRankingTotalsDbConfiguration : IEntityTypeConfiguratio
         builder.Property(e => e.MaxStageAchievedAt)
             .HasColumnName(UserRankingTotalsDb.Schema.MaxStageAchievedAt)
             .HasColumnType("datetime(6)");
+        builder.Property(e => e.PerfectClears)
+            .HasColumnName(UserRankingTotalsDb.Schema.PerfectClears)
+            .HasDefaultValue(0)
+            .IsRequired();
+        builder.Property(e => e.PerfectClearedAt)
+            .HasColumnName(UserRankingTotalsDb.Schema.PerfectClearedAt)
+            .HasColumnType("datetime(6)");
         builder.Property(e => e.WinStreak)
             .HasColumnName(UserRankingTotalsDb.Schema.WinStreak)
             .HasDefaultValue(0)
@@ -62,6 +71,7 @@ internal sealed class UserRankingTotalsDbConfiguration : IEntityTypeConfiguratio
 
         builder.HasIndex(e => new { e.TotalClearedStages, e.TotalClearedAt }).HasDatabaseName("idx_user_ranking_totals_cleared_stages");
         builder.HasIndex(e => new { e.MaxClearedStageId, e.MaxStageAchievedAt }).HasDatabaseName("idx_user_ranking_totals_max_stage");
+        builder.HasIndex(e => new { e.PerfectClears, e.PerfectClearedAt }).HasDatabaseName("idx_user_ranking_totals_perfect");
 
         builder.HasOne(e => e.Player)
             .WithMany()
@@ -80,6 +90,8 @@ public sealed class UserRankingTotalsDb
         public const string TotalClearedAt = "total_cleared_at";
         public const string MaxClearedStageId = "max_cleared_stage_id";
         public const string MaxStageAchievedAt = "max_stage_achieved_at";
+        public const string PerfectClears = "perfect_clears";
+        public const string PerfectClearedAt = "perfect_cleared_at";
         public const string WinStreak = "win_streak";
         public const string MaxWinStreak = "max_win_streak";
         public const string UpdatedAt = "updated_at";

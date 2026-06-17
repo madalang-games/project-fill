@@ -9,10 +9,12 @@ namespace ProjectFill.API.Controllers;
 public sealed class AdController : ControllerBaseEx
 {
     private readonly AdInterstitialService _interstitial;
+    private readonly AdDoubleRewardService _doubleReward;
 
-    public AdController(AdInterstitialService interstitial)
+    public AdController(AdInterstitialService interstitial, AdDoubleRewardService doubleReward)
     {
         _interstitial = interstitial;
+        _doubleReward = doubleReward;
     }
 
     [HttpGet("eligibility")]
@@ -22,4 +24,8 @@ public sealed class AdController : ControllerBaseEx
     [HttpPost("interstitial/shown")]
     public Task<AdInterstitialShownResponse> InterstitialShown([FromBody] AdInterstitialShownRequest request, CancellationToken ct)
         => _interstitial.RecordShownAsync(PlayerId, request.StageId, CorrelationId, ct);
+
+    [HttpPost("double-reward")]
+    public Task<AdDoubleRewardGrantResponse> DoubleReward([FromBody] AdDoubleRewardRequest request, CancellationToken ct)
+        => _doubleReward.ClaimAsync(PlayerId, request, CorrelationId, ct);
 }

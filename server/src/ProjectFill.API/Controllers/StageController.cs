@@ -15,6 +15,10 @@ public sealed class StageController : ControllerBaseEx
         _stage = stage;
     }
 
+    [HttpPost("{stageId:int}/start")]
+    public Task<StageStartResponse> Start(int stageId, CancellationToken ct)
+        => _stage.StartStageAsync(PlayerId, stageId, ct);
+
     [HttpPost("{stageId:int}/clear")]
     public Task<StageClearResponse> Clear(int stageId, [FromBody] StageClearRequest request, CancellationToken ct)
         => _stage.ClearStageAsync(PlayerId, stageId, request, CorrelationId, ct);

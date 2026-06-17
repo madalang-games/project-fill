@@ -4,11 +4,13 @@
 | file | class | role |
 |------|-------|------|
 | `StageRequests.cs` | `StageClearRequest` | Signal Sort campaign stage-clear submission DTO |
-| `StageResponses.cs` | `StageClearResponse` | Stage-clear result: best moves, rank, first-clear/milestone, granted rewards |
+| `StageResponses.cs` | `StageStartResponse`, `StageClearResponse` | Stage-start gate result (max-cleared reach + ruleset); stage-clear result: best moves, rank, first-clear/milestone, granted rewards |
 
 ## Symbols
 | symbol | kind | note |
 |--------|------|------|
+| `StageStartResponse.MaxClearedStageId` | property | Server-authoritative campaign reach; client calls `ApplyMaxClearedStage` to correct stale local unlock state |
+| `StageStartResponse.RulesetVersion` | property | Current server ruleset version returned at stage entry |
 | `StageClearRequest.RulesetVersion` | property | Static stage ruleset version; server rejects on mismatch |
 | `StageClearRequest.MovesUsed` | property | Moves used this clear; >=1; ranking-only, no reward effect |
 | `StageClearRequest.CompletedSignalTypes` | property | Distinct completed signal-type indices; must equal stage's `types` set (cheat shape check) |
@@ -21,6 +23,7 @@
 ## Rules
 - `netstandard2.1` only; DTOs only, no logic.
 - Reuses `Rewards.GrantedRewardDto` and `Currency.CurrencySnapshot`.
+- Stage entry (`StageStartResponse`) is sessionless — no attempt token; the server only confirms the stage is unlocked and echoes `max_cleared_stage_id` + ruleset. Unlock is re-checked on clear too.
 - Server trusts submitted moves (MVP, per social-ranking design); validates ruleset version + completed-type set shape only.
 
 ## Cross-refs

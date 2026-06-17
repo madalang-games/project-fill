@@ -41,6 +41,19 @@ API -> Infrastructure
 - CancellationToken passed through all async methods
 - Column names mapped to snake_case in `OnModelCreating`
 
+## Build/Test Verification
+Both gates must pass (**exit code 0**) for server work — run them separately:
+
+| Gate | Command | Verifies |
+|------|---------|----------|
+| **Build** | `tools/server_generator.bat` | `docker compose --build` of dev stack: compiles server image + brings containers up |
+| **Unit tests** | `tools/server_test.bat` | `dotnet test` of `tests/ProjectFill.API.Tests` (xUnit) |
+
+- Always run **both**; `server_test.bat` is independent of `server_generator.bat` (no Docker needed, just the .NET SDK).
+- `server_generator.bat` prereqs: Docker running + `.env.dev`; ends with interactive `pause`.
+- `server_test.bat` honors `GEN_BATCH_NO_PAUSE=1` to skip its pause for non-interactive/CI runs.
+- Completion Gate #1 (new endpoint → add test) still applies; `server_test.bat` is how those tests are run.
+
 ## Enum Policy
 NEVER define `private enum` or inline enum inside a class or service file.
 

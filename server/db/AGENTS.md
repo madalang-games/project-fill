@@ -16,7 +16,7 @@ CMD:  `npm run gen:orm` - validates schema, generates migration SQL, optionally 
 - Column type changes are warned but NOT auto-executed; alter manually.
 - `dry_run=true` (default): SQL file generated only, DB not touched.
 - `dry_run=false`: SQL generated AND executed on connected DB.
-- No changes detected: gen-orm skips SQL file creation (no empty migration files).
+- No executable changes: gen-orm skips SQL file creation (no empty/comment-only migration files). Deferred drops/modifies (commented unless `--allow-drops`) are logged to console, not written.
 - Project Fill does not maintain `sessions.active`; platform-auth owns session revocation.
 
 ## Conflict Resolution
@@ -37,8 +37,8 @@ Fix: Add `"conflict": "ignore"` to the table in `schema.json`; gen:orm generates
 ## Ranking Tables
 | table | role |
 |-------|------|
-| `user_ranking_totals` | Global ranking aggregates (total_cleared_stages, max_cleared_stage_id) for Redis rebuild |
-| `user_stage_progress` | Per-player per-stage clear state + best/latest moves; source for stage-moves ranking |
+| `user_ranking_totals` | Global ranking aggregates (max_cleared_stage_id → `stage`, perfect_clears → `perfect`) for Redis rebuild |
+| `user_stage_progress` | Per-player per-stage clear state + best/latest moves + is_perfect; source for stage-moves ranking |
 | `user_weekly_ranking` | Per-player weekly cleared-stage count; resets Monday 00:00 UTC |
 
 ## Currency Audit Table
