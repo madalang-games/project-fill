@@ -12,12 +12,14 @@ public sealed class ProjectFillConfiguration
     public required AdRewardOptions AdReward { get; init; }
     public required AppOptions App { get; init; }
     public required RateLimitOptions RateLimit { get; init; }
+    public required DevOptions Dev { get; init; }
 
     public static ProjectFillConfiguration Load(IConfiguration configuration)
     {
+        var gameEnvironment = EnvRequired("GAME_ENV");
         var loaded = new ProjectFillConfiguration
         {
-            GameEnvironment = EnvRequired("GAME_ENV"),
+            GameEnvironment = gameEnvironment,
             LogLevel = EnvOptional("LOG_LEVEL") ?? "Information",
             Database = new DatabaseOptions
             {
@@ -53,6 +55,11 @@ public sealed class ProjectFillConfiguration
             {
                 StageStartPerHour      = ConfigIntOptional(configuration, "RateLimit:StageStartPerHour")      ?? 720,
                 TransactionalPerMinute = ConfigIntOptional(configuration, "RateLimit:TransactionalPerMinute") ?? 30
+            },
+            Dev = new DevOptions
+            {
+                Enabled = string.Equals(gameEnvironment, "dev", StringComparison.OrdinalIgnoreCase),
+                CheatWhitelist = EnvCsvOptional("DEV_CHEAT_WHITELIST")
             }
         };
 
@@ -119,6 +126,15 @@ public sealed class ProjectFillConfiguration
         public required int TransactionalPerMinute { get; init; }
     }
 
+    public sealed class DevOptions
+    {
+        // True only when GAME_ENV == dev. Gates the cheat endpoints (404 otherwise).
+        public required bool Enabled { get; init; }
+
+        // Platform PIDs allowed to use cheats. Empty => allow all (local dev convenience).
+        public required IReadOnlyList<string> CheatWhitelist { get; init; }
+    }
+
     private static string EnvRequired(string key)
     {
         var value = Environment.GetEnvironmentVariable(key);
@@ -133,6 +149,17 @@ public sealed class ProjectFillConfiguration
     private static string? EnvOptional(string key)
     {
         return Environment.GetEnvironmentVariable(key);
+    }
+
+    private static IReadOnlyList<string> EnvCsvOptional(string key)
+    {
+        var value = Environment.GetEnvironmentVariable(key);
+        if (string.IsNullOrWhiteSpace(value))
+            return Array.Empty<string>();
+
+        return value
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .ToArray();
     }
 
     private static int EnvIntRequired(string key)
