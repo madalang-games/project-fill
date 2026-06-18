@@ -1,0 +1,123 @@
+<en-US>
+Welcome to PopBack — pop, sort, and clear colorful puzzles!
+
+• Hundreds of handcrafted stages to master
+• Simple one-tap controls, deep brain-teasing fun
+• Earn daily rewards and unlock achievements
+• Collect avatars and cosmetics to make it your own
+</en-US>
+<ko-KR>
+PopBack에 오신 것을 환영합니다 — 색을 터뜨리고 정리해 퍼즐을 클리어하세요!
+
+• 직접 디자인한 수백 개의 스테이지
+• 한 번의 터치로 즐기는 깊이 있는 두뇌 퍼즐
+• 매일 보상 획득과 업적 달성
+• 아바타와 코스메틱을 모아 나만의 스타일로
+</ko-KR>
+<zh-CN>
+欢迎来到 PopBack —— 消除、分类，清空彩色拼图！
+
+• 数百个精心设计的关卡等你挑战
+• 单指轻点操作，烧脑乐趣无穷
+• 领取每日奖励，解锁成就
+• 收集头像与装扮，打造专属风格
+</zh-CN>
+<zh-TW>
+歡迎來到 PopBack —— 消除、分類，清空彩色拼圖！
+
+• 數百個精心設計的關卡等你挑戰
+• 單指輕點操作，燒腦樂趣無窮
+• 領取每日獎勵，解鎖成就
+• 收集頭像與裝扮，打造專屬風格
+</zh-TW>
+<ja-JP>
+PopBack へようこそ — 色を弾いて並べ、パズルをクリアしよう！
+
+• 手作りの数百ステージを攻略
+• ワンタップ操作で奥深い頭脳パズル
+• デイリー報酬の獲得と実績の解放
+• アバターや着せ替えを集めて自分だけのスタイルに
+</ja-JP>
+<ru-RU>
+Добро пожаловать в PopBack — лопайте, сортируйте и проходите красочные головоломки!
+
+• Сотни вручную созданных уровней
+• Простое управление в одно касание, глубокий вызов для ума
+• Ежедневные награды и открытие достижений
+• Коллекционируйте аватары и косметику в своём стиле
+</ru-RU>
+<es-ES>
+¡Bienvenido a PopBack: revienta, ordena y resuelve coloridos rompecabezas!
+
+• Cientos de niveles diseñados a mano
+• Controles de un solo toque, diversión que pone a prueba tu mente
+• Consigue recompensas diarias y desbloquea logros
+• Colecciona avatares y cosméticos a tu estilo
+</es-ES>
+<pt-PT>
+Bem-vindo ao PopBack — rebenta, organiza e resolve puzzles coloridos!
+
+• Centenas de níveis feitos à mão
+• Controlo com um só toque, diversão que desafia a mente
+• Ganha recompensas diárias e desbloqueia conquistas
+• Coleciona avatares e cosméticos ao teu estilo
+</pt-PT>
+<fr-FR>
+Bienvenue dans PopBack — éclatez, triez et résolvez des casse-tête colorés !
+
+• Des centaines de niveaux conçus à la main
+• Commandes en un seul tap, défi cérébral garanti
+• Gagnez des récompenses quotidiennes et débloquez des succès
+• Collectionnez avatars et cosmétiques à votre image
+</fr-FR>
+<de-DE>
+Willkommen bei PopBack – knallen, sortieren und bunte Rätsel lösen!
+
+• Hunderte handgemachte Level zum Meistern
+• Einfache Ein-Tipp-Steuerung, tiefer Knobelspaß
+• Tägliche Belohnungen erhalten und Erfolge freischalten
+• Avatare und Kosmetik sammeln – ganz nach deinem Stil
+</de-DE>
+<th>
+ยินดีต้อนรับสู่ PopBack — กด จัดเรียง และเคลียร์ปริศนาสีสันสดใส!
+
+• ด่านที่ออกแบบด้วยมือหลายร้อยด่าน
+• ควบคุมด้วยการแตะเพียงครั้งเดียว สนุกท้าทายสมอง
+• รับรางวัลรายวันและปลดล็อกความสำเร็จ
+• สะสมอวตารและไอเทมแต่งตัวในสไตล์ของคุณ
+</th>
+<ar>
+مرحبًا بك في PopBack — فرقع ورتّب وأكمل الألغاز الملونة!
+
+• مئات المراحل المصممة يدويًا
+• تحكم بلمسة واحدة ومتعة ذهنية عميقة
+• احصل على مكافآت يومية وافتح الإنجازات
+• اجمع الصور الرمزية والتجميلات بأسلوبك الخاص
+</ar>
+<it-IT>
+Benvenuto in PopBack — fai scoppiare, ordina e completa colorati rompicapo!
+
+• Centinaia di livelli creati a mano
+• Controlli con un solo tocco, divertimento che sfida la mente
+• Ottieni ricompense giornaliere e sblocca obiettivi
+• Colleziona avatar e cosmetici a tuo stile
+</it-IT>
+<tr-TR>
+PopBack'e hoş geldin — patlat, sırala ve renkli bulmacaları temizle!
+
+• Elle tasarlanmış yüzlerce bölüm
+• Tek dokunuşla kontrol, zihni zorlayan derin eğlence
+• Günlük ödüller kazan ve başarıların kilidini aç
+• Avatarları ve kozmetikleri toplayıp kendi tarzını oluştur
+</tr-TR>
+<id>
+Selamat datang di PopBack — pecahkan, sortir, dan selesaikan teka-teki warna-warni!
+
+• Ratusan level rancangan tangan untuk ditaklukkan
+• Kontrol satu ketukan, keseruan mengasah otak
+• Dapatkan hadiah harian dan buka pencapaian
+• Kumpulkan avatar dan kosmetik sesuai gayamu
+</id>
+
+---
+Commit: 90380c130761f5cee622f9af76f9febfcd951053
