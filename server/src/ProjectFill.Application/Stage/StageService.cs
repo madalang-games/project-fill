@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using ProjectFill.Application.Achievement;
 using ProjectFill.Application.Common;
 using ProjectFill.Application.Currency;
+using ProjectFill.Application.Event;
 using ProjectFill.Application.Logging;
 using ProjectFill.Application.Ranking;
 using ProjectFill.Application.Rewards;
@@ -15,6 +16,7 @@ using ProjectFill.Contracts.GameTypes;
 using ProjectFill.Contracts.Stage;
 using ProjectFill.Domain.Interfaces;
 using ProjectFill.Infrastructure.Generated;
+using StackExchange.Redis;
 
 namespace ProjectFill.Application.Stage;
 
@@ -22,29 +24,40 @@ public sealed class StageService
 {
     private const int CurrentRulesetVersion = 1;
     private const int RewardVersion = 1;
+    private static readonly TimeSpan StageSessionTtl = TimeSpan.FromHours(1);
 
     private readonly AppDbContext _db;
     private readonly IStaticDataService _staticData;
     private readonly RewardService _reward;
     private readonly AchievementService _achievement;
+    private readonly WeeklyMissionService _weeklyMission;
     private readonly RankingService _ranking;
     private readonly CurrencyService _currency;
+    private readonly IDatabase _redis;
 
     public StageService(
         AppDbContext db,
         IStaticDataService staticData,
         RewardService reward,
         AchievementService achievement,
+        WeeklyMissionService weeklyMission,
         RankingService ranking,
-        CurrencyService currency)
+        CurrencyService currency,
+        IConnectionMultiplexer redis)
     {
         _db = db;
         _staticData = staticData;
         _reward = reward;
         _achievement = achievement;
+        _weeklyMission = weeklyMission;
         _ranking = ranking;
         _currency = currency;
+        _redis = redis.GetDatabase();
     }
+
+    // Per-start attempt token. Issued on start, validated+consumed on clear, so a clear cannot be
+    // posted without a fresh start (closes the start-skip bypass, e.g. result-screen "Next").
+    private static string SessionKey(long userId, int stageId) => $"stage_session:{userId}:{stageId}";
 
     public async Task<StageStartResponse> StartStageAsync(long userId, int stageId, CancellationToken ct)
     {
@@ -53,11 +66,16 @@ public sealed class StageService
 
         var maxClearedStageId = await ValidateUnlockedAsync(userId, stageId, ct);
 
+        // Issue a fresh single-use attempt token; the matching clear must echo it back.
+        var sessionId = Guid.NewGuid().ToString("N");
+        await _redis.StringSetAsync(SessionKey(userId, stageId), sessionId, StageSessionTtl);
+
         return new StageStartResponse
         {
             StageId = stageId,
             MaxClearedStageId = maxClearedStageId,
             RulesetVersion = CurrentRulesetVersion,
+            SessionId = sessionId,
             ServerTime = DateTimeOffset.UtcNow,
         };
     }
@@ -90,6 +108,14 @@ public sealed class StageService
         var expectedTypes = Enumerable.Range(0, stage.Types).ToHashSet();
         if (!expectedTypes.SetEquals(request.CompletedSignalTypes))
             throw new GameApiException(ErrorCodes.InvalidStageClear, "completed_signal_types do not match the stage definition.");
+
+        // Validate+consume the start-issued attempt token: a clear must follow a matching start. A
+        // missing key means the token never existed or its TTL expired — both reject as invalid.
+        var sessionKey = SessionKey(userId, stageId);
+        var storedSession = await _redis.StringGetAsync(sessionKey);
+        if (storedSession.IsNullOrEmpty || storedSession != request.SessionId)
+            throw new GameApiException(ErrorCodes.InvalidStageAttempt, "Stage session missing, mismatched, or expired.");
+        await _redis.KeyDeleteAsync(sessionKey);
 
         var now = DateTimeOffset.UtcNow;
         var weekStart = CurrentWeekStart();
@@ -132,9 +158,11 @@ public sealed class StageService
         totals.MaxWinStreak = Math.Max(totals.MaxWinStreak, totals.WinStreak);
         totals.UpdatedAt = now;
 
+        var isNewPerfect = false;
         if (stage.ParMoves > 0 && progress.BestMovesUsed <= stage.ParMoves && !progress.IsPerfect)
         {
             progress.IsPerfect = true;
+            isNewPerfect = true;
             totals.PerfectClears += 1;
             totals.PerfectClearedAt = now;
         }
@@ -194,6 +222,19 @@ public sealed class StageService
             await _achievement.ReportCountAsync(userId, AchievementConditionType.BestMovesRenewCount, 1, ct);
         if (response.ChapterCompleted)
             await _achievement.ReportCountAsync(userId, AchievementConditionType.ChapterComplete, 1, ct);
+        if (!request.BoostersUsed)
+            await _achievement.ReportCountAsync(userId, AchievementConditionType.BoosterlessClearCount, 1, ct);
+
+        // Weekly Mission Event progress (same seam as the achievement reports; campaign-play aggregate).
+        await _weeklyMission.ReportProgressAsync(userId, WeeklyMissionConditionType.StageClearCount, 1, ct);
+        if (isFirstClear)
+            await _weeklyMission.ReportProgressAsync(userId, WeeklyMissionConditionType.ChapterProgress, 1, ct);
+        if (isNewBest && hadBest)
+            await _weeklyMission.ReportProgressAsync(userId, WeeklyMissionConditionType.BestMovesRenew, 1, ct);
+        if (isNewPerfect)
+            await _weeklyMission.ReportProgressAsync(userId, WeeklyMissionConditionType.PerfectClearCount, 1, ct);
+        if (!request.BoostersUsed)
+            await _weeklyMission.ReportProgressAsync(userId, WeeklyMissionConditionType.BoosterlessClear, 1, ct);
 
         await tx.CommitAsync(ct);
 

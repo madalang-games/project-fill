@@ -6,6 +6,7 @@
 | `RankingEnums.cs` | `GlobalRankingType` | Internal ranking type discriminator |
 | `AdEnums.cs` | `AdPlacementKeys` | Named ad placement key constants |
 | `PlayerEnums.cs` | `AvatarUnlockTypes`, `AvatarClaimKeys` | Avatar unlock type constants and claim key prefix |
+| `CheatEnums.cs` | `CheatDomain`, `CheatAction` | Dev cheat domain + verb discriminators (token strings live in `CheatCommandCatalog`) |
 
 ## Symbols
 | symbol | kind | note |

@@ -22,6 +22,10 @@ public partial interface IStaticDataService
     IReadOnlyList<DailyLoginMilestoneData> GetAllDailyLoginMilestones();
     DailyLoginRewardData? GetDailyLoginReward(int id);
     IReadOnlyList<DailyLoginRewardData> GetAllDailyLoginRewards();
+    WeeklyMissionPoolData? GetWeeklyMissionPool(string mission_id);
+    IReadOnlyList<WeeklyMissionPoolData> GetAllWeeklyMissionPools();
+    WeeklyMissionTrackData? GetWeeklyMissionTrack(int ep_threshold);
+    IReadOnlyList<WeeklyMissionTrackData> GetAllWeeklyMissionTracks();
     ItemData? GetItem(int id);
     IReadOnlyList<ItemData> GetAllItems();
     RewardGroupData? GetRewardGroup(int reward_group_id);

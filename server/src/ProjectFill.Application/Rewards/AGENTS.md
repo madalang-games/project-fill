@@ -29,6 +29,7 @@
 - `AD_REWARD_VERIFY_MODE=mock`: `AdMobSsvVerifier` accepts nonblank provider/adToken and creates bounded mock provider tx id.
 - `AD_REWARD_VERIFY_MODE=ssv`: `AdMobSsvVerifier` requires a nonce stored by AdMob SSV callback in Redis.
 - `VerifyAsync` consumes the nonce (GETDEL); non-200 responses from SSV callback trigger Google retry.
+- `ProcessAsync` signed message = query (excl. `signature`/`key_id`) with values `Uri.UnescapeDataString`-decoded — Google signs the URL-decoded query, not the raw percent-encoded form; ECDSA verified as DER (`Rfc3279DerSequence`).
 
 ## Cross-refs
 - Depends on: `shared/datas/reward/reward_source.csv`

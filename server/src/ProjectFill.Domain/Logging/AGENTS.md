@@ -11,6 +11,7 @@
 | `EventLogIds.StageAttemptStarted` | constant | Stage attempt start event |
 | `EventLogIds.StageAttemptReplaced` | constant | Existing attempt discarded by new start |
 | `EventLogIds.AdRewardClaimed` | constant | Common rewarded-ad claim event |
+| `EventLogIds.CheatGold`..`CheatAttendance` | constants | Dev cheat audit events `9001`–`9008` |
 
 ## Rules
 - Keep values aligned with `server/db/event_log_definitions.json`.

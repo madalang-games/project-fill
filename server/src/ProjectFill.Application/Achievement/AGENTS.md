@@ -15,10 +15,10 @@
 
 ## Rules
 - Derived (auto-evaluated on read) condition types: `TotalLoginDays`, `LoginStreak`, `AvatarUnlockCount`, `CosmeticUnlockCount` — computed from existing DB state.
-- All other condition types are gameplay/challenge-sourced — updated only via `ReportValueAsync`/`ReportCountAsync` (called from InGame / DailyChallengeService; InGame wiring not included here).
+- All other condition types are gameplay-sourced — updated via `ReportValueAsync`/`ReportCountAsync` from the stage-clear flow (`StageService`: `StageClearCount`, `BestMovesRenewCount`, `ChapterComplete`, `BoosterlessClearCount`) and `WeeklyMissionService` (`WeeklyMissionComplete` on full track). `WeeklyRankFirst`/`ChallengeBreakClearCount`/`MoveTopPercentileCount`/`ShufflelessWeek` seams are not yet wired.
 - Cosmetic rewards are pull-based: `ClaimAsync` calls `CosmeticService.UnlockByConditionAsync(achievement_id)`.
 
 ## Cross-refs
 - Depends on: `shared/datas/achievement/achievement.csv`, `RewardService`, `CosmeticService`
 - Depends on: `ProjectFill.Infrastructure.Generated.UserAchievementsRow`
-- Consumed by: `ProjectFill.API.Controllers.AchievementController`, `ProjectFill.Application.DailyChallenge.DailyChallengeService`
+- Consumed by: `ProjectFill.API.Controllers.AchievementController`, `ProjectFill.Application.Stage.StageService`, `ProjectFill.Application.Event.WeeklyMissionService`

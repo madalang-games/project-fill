@@ -6,6 +6,7 @@
 | `CorrelationIdMiddleware.cs` | `CorrelationIdMiddleware` | Creates or propagates per-request correlation id |
 | `ApiExceptionMiddleware.cs` | `ApiExceptionMiddleware` | Converts application and DB exceptions to `ErrorResponse` |
 | `UserIdResolutionMiddleware.cs` | `UserIdResolutionMiddleware` | Resolves JWT `sub` platform PID to internal `user_id` claim |
+| `DevOnlyMiddleware.cs` | `DevOnlyMiddleware` | Dev cheat 1st gate: 404s `/api/dev/*` before auth when `GAME_ENV != dev` |
 | `VersionCheckMiddleware.cs` | `VersionCheckMiddleware` | Rejects unsupported client/protocol versions |
 
 ## Symbols

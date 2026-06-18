@@ -268,43 +268,38 @@
       ]
     },
     {
-      "name": "daily_challenges",
-      "comment": "One shared daily challenge puzzle per UTC date. Seed and params only, board generation is client/InGame.",
+      "name": "weekly_mission_sets",
+      "comment": "One global Weekly Mission Event mission set per week (Monday 00:00 UTC). Deterministically seeded from week_start_date. mission_ids holds the assigned 5 mission_id values.",
       "columns": [
-        { "name": "challenge_date",    "type": "string(10)", "pk": true, "null": false },
-        { "name": "stage_seed",        "type": "string(64)", "null": false },
-        { "name": "signal_type_count", "type": "int32",      "null": false },
-        { "name": "lane_count",        "type": "int32",      "null": false },
-        { "name": "gimmick_id",        "type": "int32",      "null": true },
-        { "name": "created_at",        "type": "datetime",   "null": false }
+        { "name": "week_start_date", "type": "string(10)",  "pk": true, "null": false },
+        { "name": "mission_ids",     "type": "string(256)", "null": false },
+        { "name": "created_at",      "type": "datetime",    "null": false }
       ]
     },
     {
-      "name": "user_daily_challenge_records",
-      "comment": "Per-player daily challenge attempt result, ranking source for the date.",
-      "columns": [
-        { "name": "user_id",            "type": "int64",      "pk": true, "null": false, "fk": "players.user_id" },
-        { "name": "challenge_date",     "type": "string(10)", "pk": true, "null": false },
-        { "name": "moves_used",         "type": "int32",      "null": false, "default": 0 },
-        { "name": "clear_time_seconds", "type": "int32",      "null": false, "default": 0 },
-        { "name": "is_cleared",         "type": "bool",       "null": false, "default": false },
-        { "name": "streak_at_clear",    "type": "int32",      "null": false, "default": 0 },
-        { "name": "reward_claimed",     "type": "bool",       "null": false, "default": false },
-        { "name": "updated_at",         "type": "datetime",   "null": false }
-      ],
-      "indexes": [
-        { "name": "idx_challenge_records_ranking", "columns": ["challenge_date", "moves_used", "clear_time_seconds"], "unique": false }
-      ]
-    },
-    {
-      "name": "user_challenge_streaks",
-      "comment": "Per-player daily challenge consecutive-clear streak.",
+      "name": "user_weekly_missions",
+      "comment": "Per-player per-week mission progress. Aggregated in the stage-clear flow with no submit endpoint.",
       "columns": [
         { "name": "user_id",         "type": "int64",      "pk": true, "null": false, "fk": "players.user_id" },
-        { "name": "current_streak",  "type": "int32",      "null": false, "default": 0 },
-        { "name": "best_streak",     "type": "int32",      "null": false, "default": 0 },
-        { "name": "last_clear_date", "type": "string(10)", "null": true },
+        { "name": "week_start_date", "type": "string(10)", "pk": true, "null": false },
+        { "name": "mission_id",      "type": "string(32)", "pk": true, "null": false },
+        { "name": "progress",        "type": "int32",      "null": false, "default": 0 },
+        { "name": "is_completed",    "type": "bool",       "null": false, "default": false },
         { "name": "updated_at",      "type": "datetime",   "null": false }
+      ],
+      "indexes": [
+        { "name": "idx_user_weekly_missions_week", "columns": ["user_id", "week_start_date"], "unique": false }
+      ]
+    },
+    {
+      "name": "user_weekly_mission_state",
+      "comment": "Per-player per-week Weekly Mission Event state: cumulative EP + claimed milestone thresholds (CSV).",
+      "columns": [
+        { "name": "user_id",            "type": "int64",       "pk": true, "null": false, "fk": "players.user_id" },
+        { "name": "week_start_date",    "type": "string(10)",  "pk": true, "null": false },
+        { "name": "total_ep",           "type": "int32",       "null": false, "default": 0 },
+        { "name": "claimed_thresholds", "type": "string(128)", "null": true },
+        { "name": "updated_at",         "type": "datetime",    "null": false }
       ]
     },
     {

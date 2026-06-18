@@ -9,6 +9,7 @@ namespace ProjectFill.Contracts.Stage
         public int StageId { get; set; }
         public int MaxClearedStageId { get; set; }
         public int RulesetVersion { get; set; }
+        public string SessionId { get; set; } = string.Empty;
         public DateTimeOffset ServerTime { get; set; }
     }
 

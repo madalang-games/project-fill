@@ -114,12 +114,78 @@
     },
     {
       "tr_id": 8301,
-      "name": "ChallengeCleared",
+      "name": "WeeklyMissionClaimed",
       "params": {
-        "challenge_date": "challenge date UTC",
-        "moves_used": "moves used",
-        "clear_time_seconds": "clear time seconds",
-        "streak": "streak at clear"
+        "week_start_date": "week start date UTC",
+        "ep_threshold": "claimed EP milestone threshold",
+        "reward_group_id": "reward group granted"
+      }
+    },
+    {
+      "tr_id": 9001,
+      "name": "CheatGold",
+      "params": {
+        "command": "raw cheat command",
+        "balance_after": "soft gold balance after change"
+      }
+    },
+    {
+      "tr_id": 9002,
+      "name": "CheatItem",
+      "params": {
+        "command": "raw cheat command",
+        "target": "item id or 'all'"
+      }
+    },
+    {
+      "tr_id": 9003,
+      "name": "CheatStage",
+      "params": {
+        "command": "raw cheat command",
+        "highest_stage_after": "max_cleared_stage_id after change"
+      }
+    },
+    {
+      "tr_id": 9004,
+      "name": "CheatTutorial",
+      "params": {
+        "command": "raw cheat command",
+        "target": "tutorial id or 'all'",
+        "seen": "true|false"
+      }
+    },
+    {
+      "tr_id": 9005,
+      "name": "CheatAd",
+      "params": {
+        "command": "raw cheat command",
+        "bypass": "true|false"
+      }
+    },
+    {
+      "tr_id": 9006,
+      "name": "CheatCosmetic",
+      "params": {
+        "command": "raw cheat command",
+        "target": "cosmetic id or 'all'",
+        "unlock": "true|false"
+      }
+    },
+    {
+      "tr_id": 9007,
+      "name": "CheatAchievement",
+      "params": {
+        "command": "raw cheat command",
+        "target": "achievement id or 'all'",
+        "complete": "true|false"
+      }
+    },
+    {
+      "tr_id": 9008,
+      "name": "CheatAttendance",
+      "params": {
+        "command": "raw cheat command",
+        "day_after": "attendance current_day after change, 0 on reset"
       }
     }
   ]

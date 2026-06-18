@@ -41,5 +41,9 @@ namespace ProjectFill.API.Tests
         public virtual IReadOnlyList<DailyLoginMilestoneData> GetAllDailyLoginMilestones() => new List<DailyLoginMilestoneData>();
         public virtual AchievementData? GetAchievement(string achievement_id) => null;
         public virtual IReadOnlyList<AchievementData> GetAllAchievements() => new List<AchievementData>();
+        public virtual WeeklyMissionPoolData? GetWeeklyMissionPool(string mission_id) => null;
+        public virtual IReadOnlyList<WeeklyMissionPoolData> GetAllWeeklyMissionPools() => new List<WeeklyMissionPoolData>();
+        public virtual WeeklyMissionTrackData? GetWeeklyMissionTrack(int ep_threshold) => null;
+        public virtual IReadOnlyList<WeeklyMissionTrackData> GetAllWeeklyMissionTracks() => new List<WeeklyMissionTrackData>();
     }
 }

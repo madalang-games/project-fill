@@ -17,13 +17,18 @@
 | `TutorialTriggerType.FirstLaunch` | enum value | 0 |
 | `TutorialTriggerType.GimmickAppear` | enum value | 1 |
 | `TutorialTriggerType.FailRepeat` | enum value | 2 |
+| `TutorialTriggerType.Manual` | enum value | 3; never auto-fires (Pause "How to play" recap) |
 | `TutorialContentType.FingerOverlay` | enum value | 0 |
 | `TutorialContentType.Tooltip` | enum value | 1 |
 | `TutorialContentType.HighlightOnly` | enum value | 2 |
+| `TutorialContentType.DragPointer` | enum value | 3; ui_drag_pointer line target_ui_id→target_ui_id_to |
+| `TutorialAdvanceMode.Tap/Select/Move` | enum | 0/1/2; how a step advances — overlay tap vs real board select/move |
 | `TargetSpaceType.UI` | enum value | 0 |
 | `TargetSpaceType.World` | enum value | 1 |
 | `CosmeticCategory.Chip/Lane/Board` | enum | 0/1/2; cosmetic skin slot |
 | `CosmeticUnlockType.Default/Gold/Achievement/Attendance/Challenge` | enum | 0–4; cosmetic unlock method |
+| `AchievementConditionType` | enum | 0–12; achievement progress drivers (incl. `WeeklyRankFirst`=5, `WeeklyMissionComplete`=6) |
+| `WeeklyMissionConditionType.StageClearCount/PerfectClearCount/BoosterlessClear/ChapterProgress/BestMovesRenew` | enum | 0–4; Weekly Mission Event mission aggregate types (stage-clear-flow seam) |
 
 ## Rules
 - Namespace: `ProjectFill.Contracts.GameTypes`

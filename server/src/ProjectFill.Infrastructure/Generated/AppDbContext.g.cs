@@ -26,9 +26,9 @@ public sealed partial class AppDbContext : DbContext
     internal DbSet<UserActiveCosmeticsRow> _UserActiveCosmetics => Set<UserActiveCosmeticsRow>();
     internal DbSet<UserLoginAttendanceRow> _UserLoginAttendance => Set<UserLoginAttendanceRow>();
     internal DbSet<UserAchievementsRow> _UserAchievements => Set<UserAchievementsRow>();
-    internal DbSet<DailyChallengesRow> _DailyChallenges => Set<DailyChallengesRow>();
-    internal DbSet<UserDailyChallengeRecordsRow> _UserDailyChallengeRecords => Set<UserDailyChallengeRecordsRow>();
-    internal DbSet<UserChallengeStreaksRow> _UserChallengeStreaks => Set<UserChallengeStreaksRow>();
+    internal DbSet<WeeklyMissionSetsRow> _WeeklyMissionSets => Set<WeeklyMissionSetsRow>();
+    internal DbSet<UserWeeklyMissionsRow> _UserWeeklyMissions => Set<UserWeeklyMissionsRow>();
+    internal DbSet<UserWeeklyMissionStateRow> _UserWeeklyMissionState => Set<UserWeeklyMissionStateRow>();
     internal DbSet<UserStageProgressRow> _UserStageProgress => Set<UserStageProgressRow>();
     internal DbSet<UserWeeklyRankingRow> _UserWeeklyRanking => Set<UserWeeklyRankingRow>();
 
@@ -49,9 +49,9 @@ public sealed partial class AppDbContext : DbContext
     public UserActiveCosmeticsDb UserActiveCosmetics { get; }
     public UserLoginAttendanceDb UserLoginAttendance { get; }
     public UserAchievementsDb UserAchievements { get; }
-    public DailyChallengesDb DailyChallenges { get; }
-    public UserDailyChallengeRecordsDb UserDailyChallengeRecords { get; }
-    public UserChallengeStreaksDb UserChallengeStreaks { get; }
+    public WeeklyMissionSetsDb WeeklyMissionSets { get; }
+    public UserWeeklyMissionsDb UserWeeklyMissions { get; }
+    public UserWeeklyMissionStateDb UserWeeklyMissionState { get; }
     public UserStageProgressDb UserStageProgress { get; }
     public UserWeeklyRankingDb UserWeeklyRanking { get; }
 
@@ -74,9 +74,9 @@ public sealed partial class AppDbContext : DbContext
         UserActiveCosmetics = new UserActiveCosmeticsDb(this);
         UserLoginAttendance = new UserLoginAttendanceDb(this);
         UserAchievements = new UserAchievementsDb(this);
-        DailyChallenges = new DailyChallengesDb(this);
-        UserDailyChallengeRecords = new UserDailyChallengeRecordsDb(this);
-        UserChallengeStreaks = new UserChallengeStreaksDb(this);
+        WeeklyMissionSets = new WeeklyMissionSetsDb(this);
+        UserWeeklyMissions = new UserWeeklyMissionsDb(this);
+        UserWeeklyMissionState = new UserWeeklyMissionStateDb(this);
         UserStageProgress = new UserStageProgressDb(this);
         UserWeeklyRanking = new UserWeeklyRankingDb(this);
     }
@@ -103,9 +103,9 @@ public sealed partial class AppDbContext : DbContext
         mb.ApplyConfiguration(new UserActiveCosmeticsDbConfiguration());
         mb.ApplyConfiguration(new UserLoginAttendanceDbConfiguration());
         mb.ApplyConfiguration(new UserAchievementsDbConfiguration());
-        mb.ApplyConfiguration(new DailyChallengesDbConfiguration());
-        mb.ApplyConfiguration(new UserDailyChallengeRecordsDbConfiguration());
-        mb.ApplyConfiguration(new UserChallengeStreaksDbConfiguration());
+        mb.ApplyConfiguration(new WeeklyMissionSetsDbConfiguration());
+        mb.ApplyConfiguration(new UserWeeklyMissionsDbConfiguration());
+        mb.ApplyConfiguration(new UserWeeklyMissionStateDbConfiguration());
         mb.ApplyConfiguration(new UserStageProgressDbConfiguration());
         mb.ApplyConfiguration(new UserWeeklyRankingDbConfiguration());
     }

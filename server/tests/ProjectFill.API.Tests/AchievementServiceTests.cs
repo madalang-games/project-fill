@@ -33,7 +33,7 @@ namespace ProjectFill.API.Tests
             {
                 new AchievementData { AchievementId = "login_30", Category = AchievementCategory.Dedication, Tier = AchievementTier.Silver, RewardGroupId = 6018, ConditionType = AchievementConditionType.TotalLoginDays, ConditionValue = 30, SortOrder = 1 },
                 new AchievementData { AchievementId = "login_100", Category = AchievementCategory.Dedication, Tier = AchievementTier.Platinum, RewardGroupId = 6018, ConditionType = AchievementConditionType.TotalLoginDays, ConditionValue = 100, SortOrder = 2 },
-                new AchievementData { AchievementId = "chal_7", Category = AchievementCategory.Dedication, Tier = AchievementTier.Silver, RewardGroupId = 6015, ConditionType = AchievementConditionType.ChallengeClearStreak, ConditionValue = 7, SortOrder = 3 },
+                new AchievementData { AchievementId = "chal_7", Category = AchievementCategory.Dedication, Tier = AchievementTier.Silver, RewardGroupId = 6015, ConditionType = AchievementConditionType.WeeklyMissionComplete, ConditionValue = 7, SortOrder = 3 },
             };
             private readonly Dictionary<string, CosmeticItemData> _cosmetics = new()
             {
@@ -106,7 +106,7 @@ namespace ProjectFill.API.Tests
             using var db = CreateDbContext();
             var svc = NewService(db, new FakeAchievementData());
 
-            await svc.ReportValueAsync(1, AchievementConditionType.ChallengeClearStreak, 7, default);
+            await svc.ReportValueAsync(1, AchievementConditionType.WeeklyMissionComplete, 7, default);
 
             var list = await svc.GetListAsync(1, default);
             Assert.Contains(list.Achievements, a => a.AchievementId == "chal_7" && a.IsCompleted);

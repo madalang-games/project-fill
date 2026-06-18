@@ -9,14 +9,18 @@
 | `AccountConflictTests.cs` | `AccountConflictTests` | Guest→Google link conflict and resolve-conflict flow |
 | `PlayerServiceTests.cs` | `PlayerServiceTests` | Player progress query (max cleared stage, best stars) |
 | `RankingServiceTests.cs` | `RankingServiceTests` | Global ranking my-rank (stage/perfect) and not-in-redis null entry |
-| `StageServiceTests.cs` | `StageServiceTests` | Stage start unlock gate (stage1 open / locked / unlocked-after-clear / unknown) + clear-of-locked bypass guard; stage clear: first/re-clear, best-moves, chapter milestone chest, ruleset/types validation |
+| `StageServiceTests.cs` | `StageServiceTests` | Stage start unlock gate (stage1 open / locked / unlocked-after-clear / unknown) + start issues `SessionId`; clear-of-locked bypass guard + attempt-token validation (missing / mismatched → `InvalidStageAttempt`); stage clear: first/re-clear, best-moves, chapter milestone chest, ruleset/types validation |
 | `AdDoubleRewardServiceTests.cs` | `AdDoubleRewardServiceTests` | Result 2x reward: verified grant + claim-state once, duplicate, SSV-pending, not-cleared/unknown-stage guards |
 | `TutorialServiceTests.cs` | `TutorialServiceTests` | Tutorial progress get/complete persistence |
 | `FakeStaticData.cs` | `FakeStaticData` | Shared `IStaticDataService` test fake; safe empty/null defaults, override per test |
 | `CosmeticServiceTests.cs` | `CosmeticServiceTests` | Cosmetic gold unlock, condition unlock, equip validation |
 | `AttendanceServiceTests.cs` | `AttendanceServiceTests` | Attendance cycle/streak advance, duplicate guard, milestone cosmetic unlock |
 | `AchievementServiceTests.cs` | `AchievementServiceTests` | Derived progress, claim + cosmetic unlock, report-progress seam |
-| `DailyChallengeServiceTests.cs` | `DailyChallengeServiceTests` | Deterministic challenge, clear/streak, duplicate guard, ranking order |
+| `WeeklyMissionServiceTests.cs` | `WeeklyMissionServiceTests` | Status shape, progress/EP accrual, milestone claim + duplicate/below/invalid guards, full-track achievement seam |
+| `CheatCommandParserTests.cs` | `CheatCommandParserTests` | Parser valid/malformed (INVALID_COMMAND), catalog domain coverage, docs HTML render |
+| `CheatGateTests.cs` | `CheatGateTests` | `CheatWhitelistFilter` allow/403, `DevOnlyMiddleware` 404/passthrough |
+| `CheatServiceTests.cs` | `CheatServiceTests` | gold clamp, item single/all/clamp/unknown, stage set/trim, tutorial set/clear/all-true guard, ad redis toggle, cosmetic unlock/all/lock/unknown, achievement complete/all/reset/unknown, attendance setday-clamp/reset, dispatcher integration |
+| `TestConfig.cs` | `TestConfig` | Shared `ProjectFillConfiguration` builder varying dev-gate knobs |
 
 ## Rules
 - Keep tests deterministic and engine-free

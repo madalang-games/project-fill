@@ -22,5 +22,15 @@ public static class EventLogIds
     public const int CosmeticEquipped = 8002;
     public const int AttendanceClaimed = 8101;
     public const int AchievementClaimed = 8201;
-    public const int ChallengeCleared = 8301;
+    public const int WeeklyMissionClaimed = 8301;
+
+    // Dev cheat audit (dev-only).
+    public const int CheatGold = 9001;
+    public const int CheatItem = 9002;
+    public const int CheatStage = 9003;
+    public const int CheatTutorial = 9004;
+    public const int CheatAd = 9005;
+    public const int CheatCosmetic = 9006;
+    public const int CheatAchievement = 9007;
+    public const int CheatAttendance = 9008;
 }

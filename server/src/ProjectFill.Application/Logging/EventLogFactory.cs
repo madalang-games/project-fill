@@ -64,6 +64,30 @@ public static class EventLogFactory
     public static EventLogsRow AchievementClaimed(long userId, string correlationId, string achievementId, int rewardGroupId)
         => Create(userId, EventLogIds.AchievementClaimed, correlationId, new { achievement_id = achievementId, reward_group_id = rewardGroupId });
 
-    public static EventLogsRow ChallengeCleared(long userId, string correlationId, string challengeDate, int movesUsed, int clearTimeSeconds, int streak)
-        => Create(userId, EventLogIds.ChallengeCleared, correlationId, new { challenge_date = challengeDate, moves_used = movesUsed, clear_time_seconds = clearTimeSeconds, streak });
+    public static EventLogsRow WeeklyMissionClaimed(long userId, string correlationId, string weekStartDate, int epThreshold, int rewardGroupId)
+        => Create(userId, EventLogIds.WeeklyMissionClaimed, correlationId, new { week_start_date = weekStartDate, ep_threshold = epThreshold, reward_group_id = rewardGroupId });
+
+    public static EventLogsRow CheatGold(long userId, string correlationId, string command, long balanceAfter)
+        => Create(userId, EventLogIds.CheatGold, correlationId, new { command, balance_after = balanceAfter });
+
+    public static EventLogsRow CheatItem(long userId, string correlationId, string command, string target)
+        => Create(userId, EventLogIds.CheatItem, correlationId, new { command, target });
+
+    public static EventLogsRow CheatStage(long userId, string correlationId, string command, int highestStageAfter)
+        => Create(userId, EventLogIds.CheatStage, correlationId, new { command, highest_stage_after = highestStageAfter });
+
+    public static EventLogsRow CheatTutorial(long userId, string correlationId, string command, string target, bool seen)
+        => Create(userId, EventLogIds.CheatTutorial, correlationId, new { command, target, seen });
+
+    public static EventLogsRow CheatAd(long userId, string correlationId, string command, bool bypass)
+        => Create(userId, EventLogIds.CheatAd, correlationId, new { command, bypass });
+
+    public static EventLogsRow CheatCosmetic(long userId, string correlationId, string command, string target, bool unlock)
+        => Create(userId, EventLogIds.CheatCosmetic, correlationId, new { command, target, unlock });
+
+    public static EventLogsRow CheatAchievement(long userId, string correlationId, string command, string target, bool complete)
+        => Create(userId, EventLogIds.CheatAchievement, correlationId, new { command, target, complete });
+
+    public static EventLogsRow CheatAttendance(long userId, string correlationId, string command, int dayAfter)
+        => Create(userId, EventLogIds.CheatAttendance, correlationId, new { command, day_after = dayAfter });
 }

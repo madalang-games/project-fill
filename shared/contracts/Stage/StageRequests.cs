@@ -7,6 +7,8 @@ namespace ProjectFill.Contracts.Stage
     {
         public int RulesetVersion { get; set; }
         public int MovesUsed { get; set; }
+        public string SessionId { get; set; } = string.Empty;
         public List<int> CompletedSignalTypes { get; set; } = new List<int>();
+        public bool BoostersUsed { get; set; }
     }
 }

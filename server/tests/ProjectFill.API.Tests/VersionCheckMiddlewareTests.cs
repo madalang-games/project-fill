@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using System;
+using Microsoft.AspNetCore.Http;
 using ProjectFill.API;
 using ProjectFill.API.Middleware;
 using Xunit;
@@ -77,6 +78,11 @@ public sealed class VersionCheckMiddlewareTests
             {
                 StageStartPerHour = 720,
                 TransactionalPerMinute = 60,
+            },
+            Dev = new ProjectFillConfiguration.DevOptions
+            {
+                Enabled = false,
+                CheatWhitelist = Array.Empty<string>(),
             },
         };
 }

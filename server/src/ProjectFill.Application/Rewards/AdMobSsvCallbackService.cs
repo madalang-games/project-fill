@@ -52,8 +52,9 @@ public sealed class AdMobSsvCallbackService
                     break;
             }
 
+            // Google signs the URL-decoded query values, not the raw percent-encoded form received in transit.
             if (msgBuilder.Length > 0) msgBuilder.Append('&');
-            msgBuilder.Append(pair);
+            msgBuilder.Append(key).Append('=').Append(val);
         }
 
         if (sig is null || !hasKeyId || nonce is null || txId is null) return false;
@@ -66,7 +67,7 @@ public sealed class AdMobSsvCallbackService
 
         using var ecdsa = ECDsa.Create();
         ecdsa.ImportSubjectPublicKeyInfo(keyBytes, out _);
-        if (!ecdsa.VerifyData(Encoding.UTF8.GetBytes(msgBuilder.ToString()), sigBytes, HashAlgorithmName.SHA256))
+        if (!ecdsa.VerifyData(Encoding.UTF8.GetBytes(msgBuilder.ToString()), sigBytes, HashAlgorithmName.SHA256, DSASignatureFormat.Rfc3279DerSequence))
             return false;
 
         await _redis.StringSetAsync($"ssv:{nonce}", txId, NonceTtl);

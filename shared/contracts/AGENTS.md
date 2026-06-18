@@ -28,7 +28,8 @@ Consumed by:
 | `Cosmetic/` | Cosmetic catalog, unlock, and active-equip DTOs |
 | `Attendance/` | Daily attendance status + claim DTOs |
 | `Achievement/` | Achievement list + claim DTOs |
-| `DailyChallenge/` | Daily challenge today/clear/ranking/streak DTOs |
+| `Event/` | Weekly Mission Event status + milestone claim DTOs |
+| `Cheat/` | Dev cheat command request/response DTOs |
 
 ## Rules
 - `netstandard2.1` only; no C# 10+ features, no nullable reference types at project level (use `#nullable enable` per file).

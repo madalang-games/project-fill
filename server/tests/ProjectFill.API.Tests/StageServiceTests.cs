@@ -10,6 +10,7 @@ using ProjectFill.Application.Achievement;
 using ProjectFill.Application.Common;
 using ProjectFill.Application.Cosmetic;
 using ProjectFill.Application.Currency;
+using ProjectFill.Application.Event;
 using ProjectFill.Application.Inventory;
 using ProjectFill.Application.Ranking;
 using ProjectFill.Application.Rewards;
@@ -57,27 +58,37 @@ namespace ProjectFill.API.Tests
             public override IReadOnlyList<ChapterData> GetAllChapters() => _chapters.Values.ToList();
         }
 
-        private static StageService NewService(AppDbContext db, FakeStageData data)
+        // Token the clear-side Redis read returns. Default matches Req()'s SessionId so existing
+        // clear tests pass; pass null to simulate a missing/expired attempt token.
+        private const string ValidSession = "test-session";
+
+        private static StageService NewService(AppDbContext db, FakeStageData data, string? storedSession = ValidSession)
         {
             var currency = new CurrencyService(db);
             var inventory = new InventoryService(db, currency, data);
             var reward = new RewardService(db, currency, inventory);
             var cosmetic = new CosmeticService(db, currency, data);
             var achievement = new AchievementService(db, reward, cosmetic, data);
+            var weeklyMission = new WeeklyMissionService(db, data, reward, achievement);
 
             var redisMock = new Mock<IDatabase>();
             redisMock.Setup(r => r.KeyExistsAsync(It.IsAny<RedisKey>(), It.IsAny<CommandFlags>())).ReturnsAsync(true);
             redisMock.Setup(r => r.SortedSetAddAsync(It.IsAny<RedisKey>(), It.IsAny<RedisValue>(), It.IsAny<double>(), It.IsAny<CommandFlags>())).ReturnsAsync(true);
             redisMock.Setup(r => r.SortedSetRankAsync(It.IsAny<RedisKey>(), It.IsAny<RedisValue>(), It.IsAny<Order>(), It.IsAny<CommandFlags>())).ReturnsAsync(0L);
+            // Stage attempt-token store: start writes, clear reads + consumes.
+            redisMock.Setup(r => r.StringSetAsync(It.IsAny<RedisKey>(), It.IsAny<RedisValue>(), It.IsAny<TimeSpan?>(), It.IsAny<bool>(), It.IsAny<When>(), It.IsAny<CommandFlags>())).ReturnsAsync(true);
+            redisMock.Setup(r => r.StringGetAsync(It.IsAny<RedisKey>(), It.IsAny<CommandFlags>()))
+                .ReturnsAsync(storedSession is null ? RedisValue.Null : (RedisValue)storedSession);
+            redisMock.Setup(r => r.KeyDeleteAsync(It.IsAny<RedisKey>(), It.IsAny<CommandFlags>())).ReturnsAsync(true);
             var mux = new Mock<IConnectionMultiplexer>();
             mux.Setup(m => m.GetDatabase(It.IsAny<int>(), It.IsAny<object?>())).Returns(redisMock.Object);
             var ranking = new RankingService(db, mux.Object, NullLogger<RankingService>.Instance);
 
-            return new StageService(db, data, reward, achievement, ranking, currency);
+            return new StageService(db, data, reward, achievement, weeklyMission, ranking, currency, mux.Object);
         }
 
-        private static StageClearRequest Req(int moves, int types = 3)
-            => new StageClearRequest { RulesetVersion = 1, MovesUsed = moves, CompletedSignalTypes = Enumerable.Range(0, types).ToList() };
+        private static StageClearRequest Req(int moves, int types = 3, string sessionId = ValidSession)
+            => new StageClearRequest { RulesetVersion = 1, MovesUsed = moves, SessionId = sessionId, CompletedSignalTypes = Enumerable.Range(0, types).ToList() };
 
         private static async Task SeedPlayerAsync(AppDbContext db, long userId)
         {
@@ -207,6 +218,7 @@ namespace ProjectFill.API.Tests
             Assert.Equal(1, res.StageId);
             Assert.Equal(0, res.MaxClearedStageId);
             Assert.Equal(1, res.RulesetVersion);
+            Assert.False(string.IsNullOrEmpty(res.SessionId));
         }
 
         [Fact]
@@ -255,6 +267,30 @@ namespace ProjectFill.API.Tests
             // Stage 2 cannot be cleared before stage 1 — closes the start-validation bypass.
             var ex = await Assert.ThrowsAsync<GameApiException>(() => svc.ClearStageAsync(1, 2, Req(5), "corr", default));
             Assert.Equal(ErrorCodes.StageLocked, ex.Code);
+        }
+
+        [Fact]
+        public async Task Clear_MissingSession_Throws()
+        {
+            using var db = CreateDb();
+            await SeedPlayerAsync(db, 1);
+            // storedSession null → Redis read returns no token (never started / expired).
+            var svc = NewService(db, new FakeStageData(), storedSession: null);
+
+            var ex = await Assert.ThrowsAsync<GameApiException>(() => svc.ClearStageAsync(1, 1, Req(5), "corr", default));
+            Assert.Equal(ErrorCodes.InvalidStageAttempt, ex.Code);
+        }
+
+        [Fact]
+        public async Task Clear_MismatchedSession_Throws()
+        {
+            using var db = CreateDb();
+            await SeedPlayerAsync(db, 1);
+            var svc = NewService(db, new FakeStageData(), storedSession: "server-token");
+
+            var ex = await Assert.ThrowsAsync<GameApiException>(
+                () => svc.ClearStageAsync(1, 1, Req(5, sessionId: "client-token"), "corr", default));
+            Assert.Equal(ErrorCodes.InvalidStageAttempt, ex.Code);
         }
     }
 }

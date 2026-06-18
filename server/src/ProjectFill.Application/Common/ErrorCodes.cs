@@ -88,8 +88,12 @@ public static class ErrorCodes
     public const string AchievementNotCompleted  = "ACHIEVEMENT_NOT_COMPLETED";
     public const string AchievementAlreadyClaimed = "ACHIEVEMENT_ALREADY_CLAIMED";
 
-    // --- Daily Challenge ---
-    public const string ChallengeNotFound        = "CHALLENGE_NOT_FOUND";
-    public const string ChallengeAlreadyPlayed   = "CHALLENGE_ALREADY_PLAYED";
-    public const string ChallengeNotPlayed       = "CHALLENGE_NOT_PLAYED";
+    // --- Weekly Mission Event ---
+    public const string WeeklyMissionInvalidThreshold     = "WEEKLY_MISSION_INVALID_THRESHOLD";
+    public const string WeeklyMissionThresholdNotReached  = "WEEKLY_MISSION_THRESHOLD_NOT_REACHED";
+    public const string WeeklyMissionAlreadyClaimed       = "WEEKLY_MISSION_ALREADY_CLAIMED";
+
+    // --- Dev Cheat (dev-only; never surfaced to prod clients — endpoint is 404 in prod) ---
+    public const string InvalidCommand = "INVALID_COMMAND";
+    public const string Forbidden      = "FORBIDDEN";
 }

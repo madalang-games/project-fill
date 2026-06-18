@@ -10,6 +10,7 @@
 |--------|------|------|
 | `EventLogFactory.StageAttemptReplaced` | method | Logs `replaced_by_new_attempt` |
 | `EventLogFactory.AdRewardClaimed` | method | Logs common ad reward transaction result |
+| `EventLogFactory.CheatGold`..`CheatAttendance` | methods | Dev cheat audit rows (one per cheat command) |
 
 ## Note
 Currency mutations are NOT logged via EventLogFactory. They write directly to `currency_logs` table via `CurrencyService`.

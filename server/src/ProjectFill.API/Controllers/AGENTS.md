@@ -20,8 +20,9 @@
 | `CosmeticController.cs` | `CosmeticController` | `/api/cosmetics` list, gold unlock, and active equip endpoints |
 | `AttendanceController.cs` | `AttendanceController` | `/api/attendance` daily status + claim endpoints |
 | `AchievementController.cs` | `AchievementController` | `/api/achievements` list + claim endpoints |
-| `DailyChallengeController.cs` | `DailyChallengeController` | `/api/daily-challenge` today/attempt/clear/ranking/me/streak endpoints |
+| `WeeklyMissionController.cs` | `WeeklyMissionController` | `/api/events/weekly-mission` status + `claim/{threshold}` endpoints |
 | `StageController.cs` | `StageController` | `POST /api/stages/{stageId}/start` — stage-entry unlock gate; `POST /api/stages/{stageId}/clear` — Signal Sort campaign stage-clear submission |
+| `DevCheatController.cs` | `DevCheatController` | Dev-only `POST /api/dev/cheat/command` + `GET /api/dev/cheat/docs`; `[ServiceFilter(CheatWhitelistFilter)]` |
 
 ## Symbols
 | symbol | kind | note |
@@ -61,10 +62,10 @@
 | `AttendanceController.Claim` | method | `POST /api/attendance/claim` — claim today's attendance reward |
 | `AchievementController.Get` | method | `GET /api/achievements` — list with progress + claim state |
 | `AchievementController.Claim` | method | `POST /api/achievements/{id}/claim` — claim completed achievement |
-| `DailyChallengeController.Today` | method | `GET /api/daily-challenge/today` — today's puzzle seed + my state |
-| `DailyChallengeController.Clear` | method | `POST /api/daily-challenge/today/clear` — submit result, streak + rewards |
-| `DailyChallengeController.Ranking` | method | `GET /api/daily-challenge/today/ranking` — paged global ranking |
-| `DailyChallengeController.Streak` | method | `GET /api/daily-challenge/streak` — my streak |
+| `WeeklyMissionController.Get` | method | `GET /api/events/weekly-mission` — this week's 5 missions + progress + cumulative EP + track claim state |
+| `WeeklyMissionController.Claim` | method | `POST /api/events/weekly-mission/claim/{threshold}` — claim a reached EP milestone reward |
+| `DevCheatController.Command` | method | `POST /api/dev/cheat/command` — parse + dispatch a cheat for the caller's own `PlayerId` |
+| `DevCheatController.Docs` | method | `GET /api/dev/cheat/docs` — gated `text/html` command reference (no static-file bypass) |
 
 ## Rules
 - Do not accept `user_id` from request bodies; use `ControllerBaseEx.PlayerId`.

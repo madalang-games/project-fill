@@ -20,6 +20,7 @@ namespace ProjectFill.Contracts.GameTypes
         FirstLaunch   = 0,
         GimmickAppear = 1,
         FailRepeat    = 2,
+        Manual        = 3, // never auto-fires; triggered on demand (e.g. Pause "How to play" recap)
     }
 
     public enum TutorialContentType
@@ -27,6 +28,16 @@ namespace ProjectFill.Contracts.GameTypes
         FingerOverlay  = 0,
         Tooltip        = 1,
         HighlightOnly  = 2,
+        DragPointer    = 3, // ui_drag_pointer line animated from target_ui_id → target_ui_id_to
+    }
+
+    // How a step advances. Tap = overlay tap (informational). Select/Move = real board action
+    // (interactive: overlay lets the tap through to the board, advances when the action happens).
+    public enum TutorialAdvanceMode
+    {
+        Tap    = 0,
+        Select = 1,
+        Move   = 2,
     }
 
     public enum TargetSpaceType
@@ -80,13 +91,22 @@ namespace ProjectFill.Contracts.GameTypes
         BoosterlessClearCount    = 2,
         BestMovesRenewCount      = 3,
         MoveTopPercentileCount   = 4,
-        ChallengeRankFirst       = 5,
-        ChallengeClearStreak     = 6,
+        WeeklyRankFirst          = 5,
+        WeeklyMissionComplete    = 6,
         ChallengeBreakClearCount = 7,
         LoginStreak              = 8,
         ShufflelessWeek          = 9,
         TotalLoginDays           = 10,
         AvatarUnlockCount        = 11,
         CosmeticUnlockCount      = 12,
+    }
+
+    public enum WeeklyMissionConditionType
+    {
+        StageClearCount   = 0,
+        PerfectClearCount = 1,
+        BoosterlessClear  = 2,
+        ChapterProgress   = 3,
+        BestMovesRenew    = 4,
     }
 }

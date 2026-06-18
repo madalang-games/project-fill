@@ -173,12 +173,12 @@ public sealed class PlayersDb
         => Query().Join(_db._UserAchievements, l => l.UserId, r => r.UserId,
             (l, r) => ValueTuple.Create(l, r));
 
-    public IQueryable<(PlayersRow Player, UserDailyChallengeRecordsRow UserDailyChallengeRecord)> JoinWithUserDailyChallengeRecords()
-        => Query().Join(_db._UserDailyChallengeRecords, l => l.UserId, r => r.UserId,
+    public IQueryable<(PlayersRow Player, UserWeeklyMissionsRow UserWeeklyMission)> JoinWithUserWeeklyMissions()
+        => Query().Join(_db._UserWeeklyMissions, l => l.UserId, r => r.UserId,
             (l, r) => ValueTuple.Create(l, r));
 
-    public IQueryable<(PlayersRow Player, UserChallengeStreaksRow UserChallengeStreak)> JoinWithUserChallengeStreaks()
-        => Query().Join(_db._UserChallengeStreaks, l => l.UserId, r => r.UserId,
+    public IQueryable<(PlayersRow Player, UserWeeklyMissionStateRow UserWeeklyMissionState)> JoinWithUserWeeklyMissionState()
+        => Query().Join(_db._UserWeeklyMissionState, l => l.UserId, r => r.UserId,
             (l, r) => ValueTuple.Create(l, r));
 
     public IQueryable<(PlayersRow Player, UserStageProgressRow UserStageProgress)> JoinWithUserStageProgress()

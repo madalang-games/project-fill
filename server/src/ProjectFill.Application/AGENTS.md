@@ -16,7 +16,8 @@
 | `Cosmetic/` | Cosmetic catalog, gold unlock, equip, condition-based unlock | `Cosmetic/AGENTS.md` |
 | `Attendance/` | Daily attendance status + claim, milestone rewards | `Attendance/AGENTS.md` |
 | `Achievement/` | Achievement progress, claim, derived evaluation + report seams | `Achievement/AGENTS.md` |
-| `DailyChallenge/` | Daily challenge today/clear/ranking/streak | `DailyChallenge/AGENTS.md` |
+| `Event/` | Weekly Mission Event: mission-set assignment, status, progress seam, milestone claim | `Event/AGENTS.md` |
+| `Cheat/` | Dev-only cheat state forcing (gold/item/stage/tutorial/ad), reuses domain services | `Cheat/AGENTS.md` |
 
 ## Rules
 - Use-case layer: persistence via direct `AppDbContext` injection.

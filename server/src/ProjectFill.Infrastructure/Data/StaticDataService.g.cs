@@ -15,6 +15,8 @@ public partial class StaticDataService
     private IReadOnlyDictionary<int, CurrencyData> _currencys = new Dictionary<int, CurrencyData>();
     private IReadOnlyDictionary<int, DailyLoginMilestoneData> _dailyLoginMilestones = new Dictionary<int, DailyLoginMilestoneData>();
     private IReadOnlyDictionary<int, DailyLoginRewardData> _dailyLoginRewards = new Dictionary<int, DailyLoginRewardData>();
+    private IReadOnlyDictionary<string, WeeklyMissionPoolData> _weeklyMissionPools = new Dictionary<string, WeeklyMissionPoolData>();
+    private IReadOnlyDictionary<int, WeeklyMissionTrackData> _weeklyMissionTracks = new Dictionary<int, WeeklyMissionTrackData>();
     private IReadOnlyDictionary<int, ItemData> _items = new Dictionary<int, ItemData>();
     private IReadOnlyDictionary<int, RewardGroupData> _rewardGroups = new Dictionary<int, RewardGroupData>();
     private IReadOnlyDictionary<int, RewardItemData> _rewardItems = new Dictionary<int, RewardItemData>();
@@ -32,6 +34,7 @@ public partial class StaticDataService
         var cosmeticPath = System.IO.Path.Combine(dataRoot, "cosmetic");
         var currencyPath = System.IO.Path.Combine(dataRoot, "currency");
         var dailyLoginPath = System.IO.Path.Combine(dataRoot, "daily_login");
+        var eventPath = System.IO.Path.Combine(dataRoot, "event");
         var itemPath = System.IO.Path.Combine(dataRoot, "item");
         var rewardPath = System.IO.Path.Combine(dataRoot, "reward");
         var shopPath = System.IO.Path.Combine(dataRoot, "shop");
@@ -109,6 +112,23 @@ public partial class StaticDataService
                 Id = r.id,
                 CycleType = r.cycle_type,
                 Day = r.day,
+                RewardGroupId = r.reward_group_id,
+                SortOrder = r.sort_order,
+            });
+        _weeklyMissionPools = WeeklyMissionPoolLoader.LoadAll(System.IO.Path.Combine(eventPath, "weekly_mission_pool.csv"))
+            .ToDictionary(r => r.mission_id, r => new WeeklyMissionPoolData
+            {
+                MissionId = r.mission_id,
+                ConditionType = r.condition_type,
+                ConditionValue = r.condition_value,
+                EpReward = r.ep_reward,
+                NameKey = r.name_key,
+                DescKey = r.desc_key,
+            });
+        _weeklyMissionTracks = WeeklyMissionTrackLoader.LoadAll(System.IO.Path.Combine(eventPath, "weekly_mission_track.csv"))
+            .ToDictionary(r => r.ep_threshold, r => new WeeklyMissionTrackData
+            {
+                EpThreshold = r.ep_threshold,
                 RewardGroupId = r.reward_group_id,
                 SortOrder = r.sort_order,
             });
@@ -215,6 +235,10 @@ public partial class StaticDataService
     public IReadOnlyList<DailyLoginMilestoneData> GetAllDailyLoginMilestones() => _dailyLoginMilestones.Values.ToList();
     public DailyLoginRewardData? GetDailyLoginReward(int id) => _dailyLoginRewards.GetValueOrDefault(id);
     public IReadOnlyList<DailyLoginRewardData> GetAllDailyLoginRewards() => _dailyLoginRewards.Values.ToList();
+    public WeeklyMissionPoolData? GetWeeklyMissionPool(string mission_id) => _weeklyMissionPools.GetValueOrDefault(mission_id);
+    public IReadOnlyList<WeeklyMissionPoolData> GetAllWeeklyMissionPools() => _weeklyMissionPools.Values.ToList();
+    public WeeklyMissionTrackData? GetWeeklyMissionTrack(int ep_threshold) => _weeklyMissionTracks.GetValueOrDefault(ep_threshold);
+    public IReadOnlyList<WeeklyMissionTrackData> GetAllWeeklyMissionTracks() => _weeklyMissionTracks.Values.ToList();
     public ItemData? GetItem(int id) => _items.GetValueOrDefault(id);
     public IReadOnlyList<ItemData> GetAllItems() => _items.Values.ToList();
     public RewardGroupData? GetRewardGroup(int reward_group_id) => _rewardGroups.GetValueOrDefault(reward_group_id);
