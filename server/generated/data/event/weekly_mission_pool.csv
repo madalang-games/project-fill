@@ -1,0 +1,6 @@
+mission_id,condition_type,condition_value,ep_reward,name_key,desc_key
+wm_stage10,StageClearCount,10,200,event.wm.stage10.name,event.wm.stage10.desc
+wm_perfect3,PerfectClearCount,3,300,event.wm.perfect3.name,event.wm.perfect3.desc
+wm_noboost5,BoosterlessClear,5,300,event.wm.noboost5.name,event.wm.noboost5.desc
+wm_progress5,ChapterProgress,5,200,event.wm.progress5.name,event.wm.progress5.desc
+wm_best5,BestMovesRenew,5,200,event.wm.best5.name,event.wm.best5.desc
