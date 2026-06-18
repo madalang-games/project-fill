@@ -155,7 +155,7 @@ namespace Game.OutGame.Boot
             UIManager.Instance?.ShowPopup<Core.UI.ConfirmDialogView>(v => v.Init(
                 title:        LocalizationService.Instance.Get("popup.boot.continue_as_guest_title"),
                 body:         LocalizationService.Instance.Get("popup.boot.continue_as_guest_body"),
-                confirmLabel: LocalizationService.Instance.Get("popup.fail.btn_continue"),
+                confirmLabel: LocalizationService.Instance.Get("common.btn_confirm"),
                 onConfirm:    OnContinueAsGuestConfirmed,
                 cancelLabel:  LocalizationService.Instance.Get("common.btn_cancel"),
                 danger:       false));
