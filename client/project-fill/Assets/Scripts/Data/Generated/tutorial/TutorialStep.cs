@@ -11,14 +11,15 @@ namespace ProjectFill.Data.Generated
         public const string ResourcePath = "data/tutorial/tutorial_step";
 
         public int info_id;
+        public int group_id;
         public TutorialTriggerType trigger_type;
         public string trigger_value;
         public int step_index;
         public TutorialContentType content_type;
+        public TutorialAdvanceMode advance_mode;
         public string target_ui_id;
+        public string target_ui_id_to;
         public TargetSpaceType target_space;
         public string text_key;
-        public float auto_advance_sec;
-        public bool is_blocking;
     }
 }

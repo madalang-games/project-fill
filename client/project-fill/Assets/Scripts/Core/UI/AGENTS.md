@@ -32,6 +32,7 @@ Namespace: `Game.Core.UI`
 | `TutorialTarget.cs` | `TutorialTarget` | Attach to any scene/UI GameObject; registers itself by `_targetId` so TutorialOverlay resolves targets without name coupling |
 | `UIPulseGlowEffect.cs` | `UIPulseGlowEffect` | Visual micro-animation component handling scale pulsing and rotational glow |
 | `UIVerticalGradient.cs` | `UIVerticalGradient` | MaskableGraphic 2-color vertical gradient via vertex colors; `SetColors(top,bottom)` |
+| `UILineStrip.cs` | `UILineStrip` | MaskableGraphic polyline mesh (chapter map path): textured/scrolling/outlined/procedural-dash; `SetPoints`/`SetTexture`. `activeLength`+`inactiveColor` fade the locked tail (HomeTabView lights the trace only up to the furthest unlocked node) |
 
 ## Scene Background Symbols
 | symbol | kind | note |
@@ -74,6 +75,7 @@ Namespace: `Game.Core.UI`
 | `TutorialOverlay.Init(TutorialStepSequencer)` | method | Hooks up sequencer events and displays the first/current tutorial step |
 | `TutorialTarget._targetIds` | SerializeField | String array; each entry must match a `target_ui_id` in tutorial_step.csv — one component, multiple ids |
 | `TutorialTarget.Find(string)` | static method | Returns registered TutorialTarget for given id; null if not registered |
+| `TutorialTarget.SetIds(params string[])` | method | Runtime id (re)assignment + re-register; BoardView tags each lane `slot_lane_{n}` on spawn |
 
 ## Rules
 - Attach `UIButtonAnimator` to every tappable button
@@ -81,6 +83,7 @@ Namespace: `Game.Core.UI`
 - `LoadingOverlayView` auto-calls `UIManager.ShowNetworkError` after 10s — do not add separate timeout
 - `ChapterUnlockOverlayView.Play` blocks interaction via GraphicRaycaster disable; restores on complete
 - Instantiate `TutorialOverlay` prefab and call `Init(sequencer)` to start/display a tutorial sequence overlay
+- `TutorialOverlay` behavior keys on `step.advance_mode`: **Tap** (info) = `_dimLayer.raycastTarget=true` + `_fullscreenDismissButton` active → tap advances + scene blocked; **Select/Move** (action) = dim raycast OFF + dismiss OFF so the real board tap passes through, advances via `TutorialManager.NotifyAction` from the controller. World scene input gated by `TutorialManager.BoardInputBlocked` (true only on Tap steps). Spotlight resolves the target via `TutorialTarget` (UI RectTransform or World transform→`Camera.main` projection: Collider2D bounds for lanes, else **encapsulated child-renderer bounds** so a multi-part target like the whole Signal Panel is fully covered). Highlight is a **dim-hole** — 4 runtime border quads (`CreateDimBorders`) frame the target so it shows through the dim (no yellow glow pulse; legacy `_spotlightCutout`/`_spotlightGlow` forced off). `BlinkHole` does a quick 3× reveal blink (`_holeScale`) on each step appear, then holds open; no-target steps use the full `_dimLayer`. `DragPointer` content reuses `_fingerOverlay` (sprite swapped to `ui_drag_pointer`, loaded via `DynamicResourceService`) sliding `target_ui_id`→`target_ui_id_to`. Tooltip auto-places on the freer side, never overlapping the hole, clamped on-screen (`PlaceTooltip`).
 - `TutorialTarget`: attach to Board, TurnsBubble, ProgressContainer etc. with `_targetId` matching CSV `target_ui_id`; lookup order in TutorialOverlay: TutorialTarget registry → board_cell_ parse → board protector/core/obstacle scan
 - Attach `UIPulseGlowEffect` to active reward buttons (e.g. claimable chest glow) to animate pulses and highlight claimability
 

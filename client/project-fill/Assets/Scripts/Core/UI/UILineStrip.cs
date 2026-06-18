@@ -10,6 +10,12 @@ namespace Game.Core.UI
         public float lineWidth = 12f;
         public float textureTiling = 1f;
         public float scrollSpeed = 0f;
+
+        [Header("Partial Activation")]
+        // -1 = whole line active. Otherwise the run beyond this arc-length (same units as the
+        // points) fades to inactiveColor — used to keep the locked tail of a chapter path unlit.
+        public float activeLength = -1f;
+        public Color inactiveColor = new Color(0.4f, 0.4f, 0.4f, 0.10f);
         
         [Header("Outline Settings")]
         public bool useOutline = true;
@@ -104,6 +110,14 @@ namespace Game.Core.UI
 
                 Color cA = drawColor;
                 Color cB = drawColor;
+
+                // Fade the locked tail: vertices past activeLength use inactiveColor (boundary
+                // segment cross-fades via vertex interpolation). Main line only — outline stays.
+                if (!isOutline && activeLength >= 0f)
+                {
+                    if (lengths[i]     > activeLength) cA = inactiveColor;
+                    if (lengths[i + 1] > activeLength) cB = inactiveColor;
+                }
 
                 // Procedural dash effect (applied to main line only when no custom texture)
                 if (!isOutline && useProceduralDashes && (_customTexture == null || _customTexture == Texture2D.whiteTexture))

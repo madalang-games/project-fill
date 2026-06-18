@@ -11,15 +11,16 @@ namespace ProjectFill.Generated.Data
     public sealed class TutorialStep
     {
         public int info_id { get; set; }
+        public int group_id { get; set; }
         public TutorialTriggerType trigger_type { get; set; }
         public string trigger_value { get; set; } = "";
         public int step_index { get; set; }
         public TutorialContentType content_type { get; set; }
+        public TutorialAdvanceMode advance_mode { get; set; }
         public string target_ui_id { get; set; } = "";
+        public string target_ui_id_to { get; set; } = "";
         public TargetSpaceType target_space { get; set; }
         public string text_key { get; set; } = "";
-        public float auto_advance_sec { get; set; }
-        public bool is_blocking { get; set; }
     }
 
     public static class TutorialStepLoader
@@ -42,15 +43,16 @@ namespace ProjectFill.Generated.Data
                 result.Add(new TutorialStep
                 {
                     info_id = idx.TryGetValue("info_id", out var i0) && i0 < cols.Length && !string.IsNullOrEmpty(cols[i0]) ? int.Parse(cols[i0]) : default,
-                    trigger_type = idx.TryGetValue("trigger_type", out var i1) && i1 < cols.Length && !string.IsNullOrEmpty(cols[i1]) ? Enum.Parse<TutorialTriggerType>(cols[i1]) : default,
-                    trigger_value = idx.TryGetValue("trigger_value", out var i2) && i2 < cols.Length ? (cols[i2] ?? "") : "",
-                    step_index = idx.TryGetValue("step_index", out var i3) && i3 < cols.Length && !string.IsNullOrEmpty(cols[i3]) ? int.Parse(cols[i3]) : default,
-                    content_type = idx.TryGetValue("content_type", out var i4) && i4 < cols.Length && !string.IsNullOrEmpty(cols[i4]) ? Enum.Parse<TutorialContentType>(cols[i4]) : default,
-                    target_ui_id = idx.TryGetValue("target_ui_id", out var i5) && i5 < cols.Length ? (cols[i5] ?? "") : "",
-                    target_space = idx.TryGetValue("target_space", out var i6) && i6 < cols.Length && !string.IsNullOrEmpty(cols[i6]) ? Enum.Parse<TargetSpaceType>(cols[i6]) : default,
-                    text_key = idx.TryGetValue("text_key", out var i7) && i7 < cols.Length ? (cols[i7] ?? "") : "",
-                    auto_advance_sec = idx.TryGetValue("auto_advance_sec", out var i8) && i8 < cols.Length && !string.IsNullOrEmpty(cols[i8]) ? float.Parse(cols[i8], System.Globalization.CultureInfo.InvariantCulture) : default,
-                    is_blocking = idx.TryGetValue("is_blocking", out var i9) && i9 < cols.Length && cols[i9] == "true",
+                    group_id = idx.TryGetValue("group_id", out var i1) && i1 < cols.Length && !string.IsNullOrEmpty(cols[i1]) ? int.Parse(cols[i1]) : default,
+                    trigger_type = idx.TryGetValue("trigger_type", out var i2) && i2 < cols.Length && !string.IsNullOrEmpty(cols[i2]) ? Enum.Parse<TutorialTriggerType>(cols[i2]) : default,
+                    trigger_value = idx.TryGetValue("trigger_value", out var i3) && i3 < cols.Length ? (cols[i3] ?? "") : "",
+                    step_index = idx.TryGetValue("step_index", out var i4) && i4 < cols.Length && !string.IsNullOrEmpty(cols[i4]) ? int.Parse(cols[i4]) : default,
+                    content_type = idx.TryGetValue("content_type", out var i5) && i5 < cols.Length && !string.IsNullOrEmpty(cols[i5]) ? Enum.Parse<TutorialContentType>(cols[i5]) : default,
+                    advance_mode = idx.TryGetValue("advance_mode", out var i6) && i6 < cols.Length && !string.IsNullOrEmpty(cols[i6]) ? Enum.Parse<TutorialAdvanceMode>(cols[i6]) : default,
+                    target_ui_id = idx.TryGetValue("target_ui_id", out var i7) && i7 < cols.Length ? (cols[i7] ?? "") : "",
+                    target_ui_id_to = idx.TryGetValue("target_ui_id_to", out var i8) && i8 < cols.Length ? (cols[i8] ?? "") : "",
+                    target_space = idx.TryGetValue("target_space", out var i9) && i9 < cols.Length && !string.IsNullOrEmpty(cols[i9]) ? Enum.Parse<TargetSpaceType>(cols[i9]) : default,
+                    text_key = idx.TryGetValue("text_key", out var i10) && i10 < cols.Length ? (cols[i10] ?? "") : "",
                 });
             }
             return result;

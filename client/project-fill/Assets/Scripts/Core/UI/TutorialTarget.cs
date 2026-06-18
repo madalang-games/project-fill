@@ -28,6 +28,22 @@ namespace Game.Core.UI
                         _registry.Remove(id);
         }
 
+        // Runtime id assignment (e.g. BoardView tags each lane slot_lane_{n} as it spawns).
+        // Re-registers immediately so a component added after Awake still resolves.
+        public void SetIds(params string[] ids)
+        {
+            foreach (var id in _targetIds)
+                if (!string.IsNullOrEmpty(id) && _registry.TryGetValue(id, out var t) && t == this)
+                    _registry.Remove(id);
+
+            _targetIds = ids ?? System.Array.Empty<string>();
+
+            if (isActiveAndEnabled)
+                foreach (var id in _targetIds)
+                    if (!string.IsNullOrEmpty(id))
+                        _registry[id] = this;
+        }
+
         public static TutorialTarget Find(string id)
         {
             if (string.IsNullOrEmpty(id)) return null;
