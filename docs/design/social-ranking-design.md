@@ -53,17 +53,11 @@ Redis 키: `ranking:stage:{stageId}:moves`
 
 ## 5. 글로벌 랭킹 탭 구성
 
-랭킹 탭은 **4가지 페이지**를 노출합니다.
+랭킹 탭은 **3가지 페이지**를 노출합니다.
 
-### 5.1. 챌린지 (Daily Challenge) 탭 — 기본 노출 탭
-
-- **콘텐츠**: 오늘의 데일리 챌린지 이동 횟수 기반 글로벌 랭킹.
-- **점수**: `moves_used` 오름차순. 동점 시 `clear_time_seconds` 오름차순.
-- **갱신**: 매일 00:00 UTC 초기화.
-- **보관**: 당일 종료 후 아카이빙. 내 역대 챌린지 기록 조회 가능.
-- **비참여자**: 목록에 표시되지 않음. "오늘의 챌린지 풀기" CTA 버튼 표시.
-
-Redis 키: `ranking:daily_challenge:{date}:moves`
+> **챌린지(Daily Challenge) 탭 제거됨** (2026-06-18). 데일리 챌린지 폐지(`daily-challenge-design.md` superseded → `weekly-mission-event-design.md`)에 따라 챌린지 랭킹 탭/엔드포인트/Redis 키(`ranking:daily_challenge:*`)를 제거한다. 주간 경쟁은 아래 Weekly 탭이 담당. 기본 노출 탭은 Weekly로 이동.
+>
+> NOTE(synced to impl 2026-06-18): 현재 구현 랭킹 탭은 `stage`(최대 도달)/`perfect`(퍼펙트 클리어 수)/`weekly` 3종이다. 아래 5.2~5.4 분류와 일부 드리프트 존재(impl이 all-time-stages/max-stage를 `stage` 탭으로 통합, `perfect` 탭 신설) — 별도 동기화 작업에서 정리.
 
 ### 5.2. 이번 주 (Weekly) 탭
 
@@ -98,8 +92,6 @@ Redis 키: `ranking:global:max-stage`
 - `weekly_cleared_count` (이번 주 클리어 수 반영 후)
 
 랭킹 API:
-- `GET /api/rankings/daily-challenge/today?offset=&limit=` (챌린지 랭킹)
-- `GET /api/rankings/daily-challenge/today/me` (내 오늘 챌린지 순위) → `daily-challenge-design.md §8`과 통합
 - `GET /api/rankings/weekly?offset=&limit=` (이번 주 랭킹)
 - `GET /api/rankings/weekly/me` (내 이번 주 순위)
 - `GET /api/rankings/global/stages?offset=&limit=`

@@ -1,7 +1,6 @@
 id,resource_key,sprite_path,category,comment
 1,item_add_lane,Assets/Resources/Sprites/Items/Item_add_lane.png,Item,AddLane item icon
 2,item_shuffle,Assets/Resources/Sprites/Items/Item_shuffle.png,Item,Shuffle item icon
-3,item_hint,Assets/Resources/Sprites/Items/Item_hint.png,Item,Hint item icon
 4,item_undo,Assets/Resources/Sprites/Items/Item_undo.png,Item,Undo item icon
 42,chest_inactive,Assets/Sprites/UI/Chest/chest_inactive.png,Chest,Inactive chest icon
 43,chest_active,Assets/Sprites/UI/Chest/chest_active.png,Chest,Active chest icon
@@ -34,7 +33,7 @@ id,resource_key,sprite_path,category,comment
 71,avatar_23,Assets/Sprites/UI/Avatar/avatar_23.png,Avatar,Legendary Avatar Portait 3
 72,avatar_24,Assets/Sprites/UI/Avatar/avatar_24.png,Avatar,Legendary Avatar Portait 4
 73,avatar_25,Assets/Sprites/UI/Avatar/avatar_25.png,Avatar,Legendary Avatar Portait 5
-74,ui_drag_pointer,Assets/Sprites/UI/Tutorial/ui_drag_pointer.png,UI,Drag line and pointer sprite
+74,ui_drag_pointer,Assets/Resources/Sprites/UI/Tutorial/ui_drag_pointer.png,UI,Drag line and pointer sprite
 76,star_filled,Assets/Sprites/UI/Stars/star_filled.png,Star,Star filled sprite
 77,star_empty,Assets/Sprites/UI/Stars/star_empty.png,Star,Star empty (outline) sprite
 82,ui_pause_icon,Assets/Sprites/UI/Icons/ui_pause_icon.png,UI,Pause button icon
@@ -43,9 +42,13 @@ id,resource_key,sprite_path,category,comment
 86,ui_flag_icon,Assets/Sprites/UI/Icons/ui_flag_icon.png,UI,Flag icon
 88,ui_settings_icon,Assets/Sprites/UI/Icons/ui_settings_icon.png,UI,Settings icon
 91,ui_toggle_on,Assets/Sprites/UI/Icons/ui_toggle_on.png,UI,Toggle switch on sprite
-104,ui_iap_no_ads,Assets/Resources/Sprites/UI/ui_iap_no_ads.png,UI,No Ads product icon
-105,ui_iap_starter,Assets/Resources/Sprites/UI/ui_iap_starter.png,UI,Starter pack product icon
-106,ui_iap_master,Assets/Resources/Sprites/UI/ui_iap_master.png,UI,Master bundle product icon
+104,ui_iap_no_ads,Assets/Resources/Sprites/UI/IAP/ui_iap_no_ads.png,UI,No Ads product icon
+105,ui_iap_starter,Assets/Resources/Sprites/UI/IAP/ui_iap_starter.png,UI,Starter pack product icon
+107,ui_iap_bundle_small,Assets/Resources/Sprites/UI/IAP/ui_iap_bundle_small.png,UI,Small bundle product icon
+108,ui_iap_bundle_normal,Assets/Resources/Sprites/UI/IAP/ui_iap_bundle_normal.png,UI,Normal bundle product icon
+109,ui_iap_bundle_large,Assets/Resources/Sprites/UI/IAP/ui_iap_bundle_large.png,UI,Large bundle product icon
+116,ui_badge_daily_login,Assets/Resources/Sprites/UI/Badge/ui_badge_daily_login.png,Badge,Daily login event badge icon
+117,ui_badge_weekly_mission,Assets/Resources/Sprites/UI/Badge/ui_badge_weekly_mission.png,Badge,Weekly mission event badge icon
 110,led_star,Assets/Resources/Sprites/Decoration/led_star.png,Decoration,Blinking LED star for chapter background
 111,deco_mote,Assets/Resources/Sprites/Decoration/deco_mote.png,Decoration,Drifting glow mote particle (chapter bg)
 112,deco_pulse,Assets/Resources/Sprites/Decoration/deco_pulse.png,Decoration,Signal pulse dot travelling along the stage path

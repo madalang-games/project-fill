@@ -11,13 +11,13 @@ prg_06,Progression,ach.prg_06.name,ach.prg_06.desc,Gold,6006,StageClearCount,100
 skl_01,Skill,ach.skl_01.name,ach.skl_01.desc,Bronze,6007,BoosterlessClearCount,1,1
 skl_02,Skill,ach.skl_02.name,ach.skl_02.desc,Silver,6008,BoosterlessClearCount,5,2
 skl_03,Skill,ach.skl_03.name,ach.skl_03.desc,Gold,6009,BoosterlessClearCount,20,3
-skl_04,Skill,ach.skl_04.name,ach.skl_04.desc,Platinum,6010,ChallengeRankFirst,1,4
+skl_04,Skill,ach.skl_04.name,ach.skl_04.desc,Platinum,6010,WeeklyRankFirst,1,4
 skl_05,Skill,ach.skl_05.name,ach.skl_05.desc,Silver,6011,BestMovesRenewCount,10,5
 skl_06,Skill,ach.skl_06.name,ach.skl_06.desc,Gold,6012,MoveTopPercentileCount,10,6
 ded_01,Dedication,ach.ded_01.name,ach.ded_01.desc,Bronze,6013,LoginStreak,7,1
 ded_02,Dedication,ach.ded_02.name,ach.ded_02.desc,Silver,6014,LoginStreak,30,2
-ded_03,Dedication,ach.ded_03.name,ach.ded_03.desc,Silver,6015,ChallengeClearStreak,7,3
-ded_04,Dedication,ach.ded_04.name,ach.ded_04.desc,Gold,6016,ChallengeClearStreak,30,4
+ded_03,Dedication,ach.ded_03.name,ach.ded_03.desc,Silver,6015,WeeklyMissionComplete,1,3
+ded_04,Dedication,ach.ded_04.name,ach.ded_04.desc,Gold,6016,WeeklyMissionComplete,4,4
 ded_05,Dedication,ach.ded_05.name,ach.ded_05.desc,Silver,6017,ShufflelessWeek,7,5
 ded_06,Dedication,ach.ded_06.name,ach.ded_06.desc,Platinum,6018,TotalLoginDays,100,6
 col_01,Collection,ach.col_01.name,ach.col_01.desc,Bronze,6019,AvatarUnlockCount,1,1

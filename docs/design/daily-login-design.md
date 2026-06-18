@@ -54,7 +54,7 @@
 
 | 누적 출석일 (비연속 허용) | 특별 보상 |
 | :---: | :--- |
-| 30일 | 500 골드 + **Circuit Board Theme** (코스메틱) |
+| 30일 | 500 골드 + **Circuit Board Theme** + **Daily Mark Chip Skin** (`chip_daily`, 한정) |
 | 60일 | 800 골드 + Avatar #10 |
 | 100일 | 1,500 골드 + **Vintage Terminal Board Skin** (코스메틱, 한정) |
 

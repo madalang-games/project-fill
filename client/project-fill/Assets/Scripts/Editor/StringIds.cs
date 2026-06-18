@@ -83,6 +83,7 @@ namespace Game.Editor
         public const string PopupResultRank = "popup.result.rank";
         public const string PopupResultNewBest = "popup.result.new_best";
         public const string PopupStuckBtnAddLaneAd = "popup.stuck.btn_add_lane_ad";
+        public const string PopupPauseBtnHowToPlay = "popup.pause.btn_how_to_play";
         public const string PopupAccountBtnSave = "popup.account.btn_save";
         public const string PopupAccountLabelNickname = "popup.account.label_nickname";
         public const string PopupAccountLabelSelectAvatar = "popup.account.label_select_avatar";
@@ -119,13 +120,6 @@ namespace Game.Editor
         public const string PopupAttendanceDayFmt = "popup.attendance.day_fmt";
         public const string PopupAttendanceStreakFmt = "popup.attendance.streak_fmt";
         public const string PopupAchievementTitle = "popup.achievement.title";
-        public const string PopupChallengeTitle = "popup.challenge.title";
-        public const string PopupChallengeBtnStart = "popup.challenge.btn_start";
-        public const string PopupChallengeBtnRanking = "popup.challenge.btn_ranking";
-        public const string PopupChallengeStreakFmt = "popup.challenge.streak_fmt";
-        public const string PopupChallengeParticipantsFmt = "popup.challenge.participants_fmt";
-        public const string PopupChallengeMyRankFmt = "popup.challenge.my_rank_fmt";
-        public const string PopupChallengeMovesFmt = "popup.challenge.moves_fmt";
         public const string PopupAccountBtnCopyPid = "popup.account.btn_copy_pid";
         public const string PopupAccountBtnPrivacy = "popup.account.btn_privacy";
         public const string PopupAccountBtnTerms = "popup.account.btn_terms";
@@ -139,6 +133,17 @@ namespace Game.Editor
         public const string PopupFailBtnShuffle = "popup.fail.btn_shuffle";
         public const string PopupResultRewards = "popup.result.rewards";
         public const string PopupFailShuffleConfirmFmt = "popup.fail.shuffle_confirm_fmt";
+        public const string PopupSessionInvalidTitle = "popup.session_invalid.title";
+        public const string PopupSessionInvalidBody = "popup.session_invalid.body";
+        public const string PopupWeeklyMissionTitle = "popup.weekly_mission.title";
+        public const string PopupWeeklyMissionEpFmt = "popup.weekly_mission.ep_fmt";
+        public const string PopupWeeklyMissionDaysLeftFmt = "popup.weekly_mission.days_left_fmt";
+        public const string PopupWeeklyMissionProgressFmt = "popup.weekly_mission.progress_fmt";
+        public const string PopupWeeklyMissionBtnClaimFmt = "popup.weekly_mission.btn_claim_fmt";
+        public const string PopupWeeklyMissionClaimed = "popup.weekly_mission.claimed";
+        public const string PopupWeeklyMissionLocked = "popup.weekly_mission.locked";
+        public const string PopupBoosterBuyTitle = "popup.booster_buy.title";
+        public const string PopupBoosterBuyBodyFmt = "popup.booster_buy.body_fmt";
 
         // toast
         public const string ToastAccountAlreadyActive = "toast.account_already_active";
@@ -175,6 +180,8 @@ namespace Game.Editor
         public const string ToastIapLimitReached = "toast.iap_limit_reached";
         public const string ToastAchievementUnlockedFmt = "toast.achievement_unlocked_fmt";
         public const string ToastPidCopied = "toast.pid_copied";
+        public const string ToastBoosterNeedPurchase = "toast.booster_need_purchase";
+        public const string ToastNoSolution = "toast.no_solution";
 
         // lobby
         public const string LobbyRankingStagesTitle = "lobby.ranking.stages_title";
@@ -210,8 +217,6 @@ namespace Game.Editor
         public const string ItemDescAddLane = "item.desc.add_lane";
         public const string ItemNameShuffle = "item.name.shuffle";
         public const string ItemDescShuffle = "item.desc.shuffle";
-        public const string ItemNameHint = "item.name.hint";
-        public const string ItemDescHint = "item.desc.hint";
         public const string ItemNameUndo = "item.name.undo";
         public const string ItemDescUndo = "item.desc.undo";
 
@@ -222,8 +227,14 @@ namespace Game.Editor
         public const string TutSignalPanelExplain = "tut.signal_panel_explain";
         public const string TutFreeSort = "tut.free_sort";
         public const string TutLockedLaneWhat = "tut.locked_lane_what";
+        public const string TutBlindLaneWhat = "tut.blind_lane_what";
         public const string TutFrozenChipWhat = "tut.frozen_chip_what";
         public const string TutRelayNodeWhat = "tut.relay_node_what";
+        public const string TutLockedLaneIntro = "tut.locked_lane_intro";
+        public const string TutBlindLaneReveal = "tut.blind_lane_reveal";
+        public const string TutRelayFirstNode = "tut.relay_first_node";
+        public const string TutRelayNextNode = "tut.relay_next_node";
+        public const string TutOverloadChipIntro = "tut.overload_chip_intro";
         public const string TutOverloadChipWhat = "tut.overload_chip_what";
         public const string TutBoosterHintPrompt = "tut.booster_hint_prompt";
 
@@ -271,6 +282,18 @@ namespace Game.Editor
         public const string ShopCosmeticLockedAchievement = "shop.cosmetic.locked_achievement";
         public const string ShopCosmeticLockedAttendance = "shop.cosmetic.locked_attendance";
         public const string ShopCosmeticLockedChallenge = "shop.cosmetic.locked_challenge";
+        public const string ShopTabProduct = "shop.tab.product";
+        public const string ShopTabSkin = "shop.tab.skin";
+        public const string ShopTabAvatar = "shop.tab.avatar";
+        public const string ShopIapBundleSmallTitle = "shop.iap.bundle_small.title";
+        public const string ShopIapBundleSmallDesc = "shop.iap.bundle_small.desc";
+        public const string ShopIapBundleSmallPrice = "shop.iap.bundle_small.price";
+        public const string ShopIapBundleNormalTitle = "shop.iap.bundle_normal.title";
+        public const string ShopIapBundleNormalDesc = "shop.iap.bundle_normal.desc";
+        public const string ShopIapBundleNormalPrice = "shop.iap.bundle_normal.price";
+        public const string ShopIapBundleLargeTitle = "shop.iap.bundle_large.title";
+        public const string ShopIapBundleLargeDesc = "shop.iap.bundle_large.desc";
+        public const string ShopIapBundleLargePrice = "shop.iap.bundle_large.price";
 
         // cosmetic
         public const string CosmeticChipDefaultName = "cosmetic.chip_default.name";
@@ -317,10 +340,14 @@ namespace Game.Editor
         public const string CosmeticBoardCollectorDesc = "cosmetic.board_collector.desc";
         public const string CosmeticBoardChallengeName = "cosmetic.board_challenge.name";
         public const string CosmeticBoardChallengeDesc = "cosmetic.board_challenge.desc";
+        public const string CosmeticBoardSpectrumName = "cosmetic.board_spectrum.name";
+        public const string CosmeticBoardSpectrumDesc = "cosmetic.board_spectrum.desc";
+        public const string CosmeticChipPrismName = "cosmetic.chip_prism.name";
+        public const string CosmeticChipPrismDesc = "cosmetic.chip_prism.desc";
 
         // home
         public const string HomeBadgeAttendance = "home.badge.attendance";
-        public const string HomeBadgeChallenge = "home.badge.challenge";
+        public const string HomeBadgeWeeklyMission = "home.badge.weekly_mission";
 
         // achievement
         public const string AchievementTabProgression = "achievement.tab.progression";
@@ -379,9 +406,6 @@ namespace Game.Editor
         public const string AchCol05Name = "ach.col_05.name";
         public const string AchCol05Desc = "ach.col_05.desc";
 
-        // ranking
-        public const string RankingTabChallenge = "ranking.tab.challenge";
-
         // gimmick
         public const string GimmickLockedLaneName = "gimmick.locked_lane.name";
         public const string GimmickLockedLaneDesc = "gimmick.locked_lane.desc";
@@ -391,6 +415,18 @@ namespace Game.Editor
         public const string GimmickRelayNodeDesc = "gimmick.relay_node.desc";
         public const string GimmickOverloadChipName = "gimmick.overload_chip.name";
         public const string GimmickOverloadChipDesc = "gimmick.overload_chip.desc";
+
+        // event
+        public const string EventWmStage10Name = "event.wm.stage10.name";
+        public const string EventWmStage10Desc = "event.wm.stage10.desc";
+        public const string EventWmPerfect3Name = "event.wm.perfect3.name";
+        public const string EventWmPerfect3Desc = "event.wm.perfect3.desc";
+        public const string EventWmNoboost5Name = "event.wm.noboost5.name";
+        public const string EventWmNoboost5Desc = "event.wm.noboost5.desc";
+        public const string EventWmProgress5Name = "event.wm.progress5.name";
+        public const string EventWmProgress5Desc = "event.wm.progress5.desc";
+        public const string EventWmBest5Name = "event.wm.best5.name";
+        public const string EventWmBest5Desc = "event.wm.best5.desc";
     }
 }
 #endif

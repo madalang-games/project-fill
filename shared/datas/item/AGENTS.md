@@ -15,7 +15,7 @@
 | `Item.price` | column | Gold price for instant purchase |
 
 ## Rules
-- Current boosters are `Add Lane`, `Shuffle`, `Hint`, and `Undo`.
+- Current boosters are `Add Lane`, `Shuffle`, and `Undo` (item ids 1/2/4; id 3 `Hint` removed from spec).
 - Do not add turn, bomb, rocket, cell-clear items for Signal Sort.
 
 ## Cross-refs

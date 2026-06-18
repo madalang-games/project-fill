@@ -16,6 +16,7 @@
 | `cosmetic/` | Cosmetic catalog (chip/lane/board skins) |
 | `daily_login/` | Daily attendance reward + milestone tables |
 | `achievement/` | Achievement catalog (tier/category/condition/reward) |
+| `event/` | Weekly Mission Event pool + EP reward track |
 
 ## CSV Format
 ```
@@ -50,13 +51,16 @@ Row 5+: data
 | `1001–1999` | IAP products | `shop/iap_product` |
 | `101–199` | Tutorial group 1 (FirstLaunch stage 1) | `tutorial/tutorial_step` |
 | `201–299` | Tutorial group 2 (FirstLaunch stage 2) | `tutorial/tutorial_step` |
+| `301–699` | Tutorial groups 3–6 (GimmickAppear: Locked/Blind/Relay/Overload) | `tutorial/tutorial_step` |
+| `701–799` | Tutorial group 7 (FailRepeat) | `tutorial/tutorial_step` |
+| `801–899` | Tutorial group 8 (Manual "How to play" recap) | `tutorial/tutorial_step` |
 | `2001–2999` | Stage-clear reward groups | `reward/reward_group` |
 | `3001–3999` | Chapter-chest reward groups | `reward/reward_group` |
 | `4001–4099` | Daily-login day reward groups | `reward/reward_group` |
 | `4101–4199` | Daily-login milestone reward groups | `reward/reward_group` |
 | `5001–5999` | IAP reward groups | `reward/reward_group` |
 | `6001–6099` | Achievement reward groups | `reward/reward_group` |
-| `7001–7199` | Daily-challenge base + streak reward groups | `reward/reward_group` |
+| `7001–7099` | Weekly-mission EP track milestone reward groups | `reward/reward_group` |
 
 ### Tables pending range design (currently sequential `id`)
 `avatar`, `item`, `currency`, `iap_category`, `ad_placement`, `reward_source` — assign ranges before adding new rows.

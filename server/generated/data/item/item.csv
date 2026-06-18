@@ -1,5 +1,4 @@
 id,name_key,desc_key,price
-1,item.name.add_lane,item.desc.add_lane,500
+1,item.name.add_lane,item.desc.add_lane,1000
 2,item.name.shuffle,item.desc.shuffle,300
-3,item.name.hint,item.desc.hint,200
-4,item.name.undo,item.desc.undo,100
+4,item.name.undo,item.desc.undo,0

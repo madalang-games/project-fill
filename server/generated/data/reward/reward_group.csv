@@ -8,7 +8,9 @@ reward_group_id,version,display_key,is_enabled
 3004,1,reward.chapter_4_chest,true
 5001,1,reward.iap.no_ads,true
 5002,1,reward.iap.starter_pack,true
-5003,1,reward.iap.master_bundle,true
+5004,1,reward.iap.bundle_small,true
+5005,1,reward.iap.bundle_normal,true
+5006,1,reward.iap.bundle_large,true
 4001,1,reward.daily.first_d1,true
 4002,1,reward.daily.first_d2,true
 4003,1,reward.daily.first_d3,true
@@ -49,8 +51,7 @@ reward_group_id,version,display_key,is_enabled
 6021,1,reward.ach.col_03,true
 6022,1,reward.ach.col_04,true
 6023,1,reward.ach.col_05,true
-7001,1,reward.challenge.base,true
-7003,1,reward.challenge.streak_3,true
-7007,1,reward.challenge.streak_7,true
-7030,1,reward.challenge.streak_30,true
-7100,1,reward.challenge.streak_100,true
+7001,1,reward.weekly_mission.ms_200,true
+7002,1,reward.weekly_mission.ms_500,true
+7003,1,reward.weekly_mission.ms_900,true
+7004,1,reward.weekly_mission.ms_1200,true

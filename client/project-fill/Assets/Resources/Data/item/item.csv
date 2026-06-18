@@ -1,5 +1,4 @@
 id,name_key,desc_key,icon_name,price
-1,item.name.add_lane,item.desc.add_lane,item_add_lane,500
+1,item.name.add_lane,item.desc.add_lane,item_add_lane,1000
 2,item.name.shuffle,item.desc.shuffle,item_shuffle,300
-3,item.name.hint,item.desc.hint,item_hint,200
-4,item.name.undo,item.desc.undo,item_undo,100
+4,item.name.undo,item.desc.undo,item_undo,0

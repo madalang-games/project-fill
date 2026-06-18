@@ -24,7 +24,7 @@
 ```
 
 - 활성 탭: `UI_CTA` 강조 컬러 적용
-- 하단 탭: `🏠 홈`, `🛒 상점`(MVP에서는 비활성화/플레이스홀더), `🏆 랭킹`(활성화!)
+- 하단 탭: `🏠 홈`, `🛒 상점`(서브탭 Product/Skin/Avatar — `ShopSubTab`, `cosmetic-system-design.md` §4.1 참조), `🏆 랭킹`(활성화!)
 
 ---
 

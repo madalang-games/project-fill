@@ -16,7 +16,7 @@
 │                                          │
 │  [🎪 이벤트 배지]        [🚫 광고 제거 배지] │  ← HUD 아래 좌/우 배치 영역
 │  [📅 출석부 배지]                            │
-│  [📡 데일리 챌린지 배지]                     │
+│  [📋 주간 미션 배지]                         │
 │                                          │
 │                  (맵 스크롤 영역)           │
 │                         ●                │
@@ -29,7 +29,7 @@
 - **역할**: 게임 내 플레이어의 참여를 유도하는 순수 이벤트 및 콘텐츠 바로가기 배지.
 - **적용 콘텐츠**:
   - **출석부(Attendance/Daily Login)**: 매일 로그인 보상 팝업 링크. 미수령 시 레드 도트 표시. `daily-login-design.md` 참조.
-  - **데일리 챌린지(Daily Challenge)**: 당일 챌린지 미완료 시 Pulse 애니메이션 배지. 탭 시 챌린지 정보 팝업 진입. `daily-challenge-design.md` 참조.
+  - **주간 미션 이벤트(Weekly Mission Event)**: 미완료 미션 또는 미수령 마일스톤 존재 시 레드 도트 배지. 탭 시 주간 미션 팝업 진입. `weekly-mission-event-design.md` 참조.
   - **인게임 이벤트(Event Milestone)**: 기간 한정 챕터 클리어 이벤트 등.
 - **레이아웃**: 좌측 정렬(UpperLeft), 아래로 쌓이는 `VerticalLayoutGroup`.
 
@@ -52,8 +52,10 @@
 | Product ID | 상품명 (Localization Key) | 구성 요소 및 혜택 | 가격 (USD) | 유형 |
 | :--- | :--- | :--- | :--- | :--- |
 | **no_ads** | 광고 제거 (`shop.iap.no_ads.title`) | 전면 광고 영구 제거 (보상형 광고 제외) | $1.99 | 비소모성 (Non-Consumable) |
-| **starter_pack** | 스타터 팩 (`shop.iap.starter.title`) | 1,000 골드 + 부스터 아이템 3종 각 1개 (Shuffle ×1, Add Lane ×1) + 광고 제거 혜택 | $4.99 | 소모성 + 비소모성 복합 |
-| **master_bundle** | 마스터 번들 (`shop.iap.master.title`) | 5,000 골드 + 부스터 아이템 3종 각 5개 (Shuffle ×5, Add Lane ×5) | $9.99 | 소모성 (Consumable) |
+| **starter_pack** | 스타터 팩 (`shop.iap.starter.title`) | 6,000 골드 (1회 한정 로스리더, 최고 골드/$ 가치) | $4.99 | 소모성 (Consumable) |
+| **master_bundle** | 마스터 번들 (`shop.iap.master.title`) | 골드만 지급 (번들 규모별) | $9.99 | 소모성 (Consumable) |
+
+<!-- NOTE: synced to impl 2026-06-18 — IAP 보상은 **골드만** 정책으로 전환(no_ads는 전용 상품 1001로만 판매; starter에서 제거). IAP가 부스터를 직접 지급하면 골드→아이템 싱크 루프를 우회하므로 골드만 주입. 골드 라더(골드/$): small $2.99→3,000 · normal $5.99→6,500 · large $11.99→14,000 · starter $4.99→6,000(1회 한정, 최고 가치). 실 카탈로그 SoT = `shared/datas/shop/iap_product.csv` + `shared/datas/reward/reward_item.csv` (현재 구현: bundle_small/normal/large; 위 master_bundle 명칭은 미반영 drift). -->
 
 ### 3.2. 영수증 검증 및 결제 로그 구조화
 다른 기기 로그인 시의 데이터 동기화와 환불/CS 문의 대응을 위해 서버 측에 구조화된 이력 테이블(`iap_purchases`)을 추가합니다.
