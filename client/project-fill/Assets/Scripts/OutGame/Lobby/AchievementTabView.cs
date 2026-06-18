@@ -123,6 +123,7 @@ namespace Game.OutGame.Lobby
             {
                 UIManager.Instance?.HideLoading();
                 var rewards = RewardDisplay.Build(resp.GrantedRewards);
+                rewards.AddRange(RewardDisplay.BuildCosmeticUnlocks(a.AchievementId));
                 if (rewards.Count > 0)
                     UIManager.Instance?.ShowPopup<RewardPopupView>(v => v.Init(rewards));
                 Fetch();

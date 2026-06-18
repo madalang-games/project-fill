@@ -63,7 +63,7 @@ Namespace: `Game.Core.UI`
 | `RewardPopupView.Init(IReadOnlyList<RewardItem>)` | method | Required before showing; calls RewardItemCellView.Init() per cell |
 | `NetworkErrorView.Show(Action)` | method | onRetry callback; increments failure counter |
 | `ChapterUnlockOverlayView.Play(int,Action)` | method | chapterNumber + onComplete callback |
-| `RewardItem` | struct | `Sprite Icon`, `int Quantity`, `string Label`, `string NameKey`, `string DescKey` |
+| `RewardItem` | struct | `Sprite Icon`, `int Quantity`, `string Label`, `string NameKey`, `string DescKey`, `Action<Image> CustomRender` (optional; when set, renders the row Icon via this delegate instead of a flat sprite — keeps Core.UI free of OutGame deps; cosmetics inject `CosmeticPreview.Build`) |
 | `RewardItemCellView.Init(Sprite,string,string)` | method | Sets icon + nameKey + descKey; required for tooltip to show |
 | `ItemTooltipView.Init(Sprite,string,string,Vector3)` | method | icon, nameKey, descKey, cellScreenPos; positions panel clamped to screen |
 | `LongPressTooltipTrigger.SetTooltip(nameKey,descKey)` | method | Sets the localization keys shown after 0.4s hold; no-op press if both empty |

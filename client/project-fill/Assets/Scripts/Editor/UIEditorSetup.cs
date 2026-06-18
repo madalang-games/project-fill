@@ -1559,6 +1559,12 @@ namespace Game.Editor
                 var slot = Child(card, "RewardSlot");
                 Fixed(slot, new Vector2(0, -28), new Vector2(108, 150));
 
+                // "+N" badge (top-left) — set active + filled by the View when the day's group
+                // has more than one reward kind. Font-only (dynamic text), hidden by default.
+                var badge = TMP(card, "CountBadge", Center(-32, 58, 60, 38), 18, UI_CTA, "+1", null, TextCategory.Normal);
+                badge.alignment = TextAlignmentOptions.Center;
+                badge.gameObject.SetActive(false);
+
                 var pulse = Child(card, "PulseRing"); Stretch(pulse);
                 var pulseImg = Img(pulse, UI_PRIMARY); pulseImg.raycastTarget = false;
                 Comp<UIScalePulse>(pulse);

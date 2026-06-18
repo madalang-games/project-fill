@@ -24,9 +24,7 @@ namespace Game.OutGame.Lobby
         [SerializeField] private TMP_Text _claimLabel;
         [SerializeField] private Button _closeButton;
 
-        private const float DayCellFootprint = 100f;   // base cell size; scaled down to stack multiple per card
-        private const float DayCellMaxSize = 104f;      // single-item cap (no upscaling past this)
-        private const float DayCellGap = 6f;
+        private const float DayCellSize = 104f;         // fixed day-card icon size (no per-count scaling)
         private const float TodayCellFootprint = 110f;  // today row has horizontal room; no scaling
 
         private void Awake()
@@ -68,29 +66,37 @@ namespace Game.OutGame.Lobby
             if (_claimLabel != null && loc != null) _claimLabel.text = loc.Get("popup.attendance.btn_claim");
         }
 
-        // All items of the day's group stacked vertically inside the narrow card; cells scaled to fit.
+        // Narrow card shows ONLY the primary reward at a fixed size; a "+N" badge denotes extra
+        // reward kinds. Full group lives in TodayRewardRow + the cell's long-press tooltip — so
+        // every day-card is the same size regardless of group count (no per-count scaling).
         private void BuildDayReward(Transform card, int rewardGroupId)
         {
             var slot = card.Find("RewardSlot") as RectTransform;
             if (slot == null) return;
             ClearChildren(slot);
 
+            var badge = card.Find("CountBadge");
             var rewards = RewardDisplay.BuildFromGroup(rewardGroupId);
             int n = rewards.Count;
-            if (n == 0) return;
-
-            float slotH = slot.sizeDelta.y;
-            float foot = Mathf.Min(DayCellMaxSize, (slotH - (n - 1) * DayCellGap) / n);
-            float scale = foot / DayCellFootprint;
-            float top = slotH * 0.5f;
-
-            for (int i = 0; i < n; i++)
+            if (n == 0)
             {
-                var cell = SpawnCell(slot, rewards[i], DayCellFootprint);
-                if (cell == null) continue;
-                cell.transform.localScale = Vector3.one * scale;
-                float y = top - foot * 0.5f - i * (foot + DayCellGap);
-                cell.GetComponent<RectTransform>().anchoredPosition = new Vector2(0, y);
+                if (badge != null) badge.gameObject.SetActive(false);
+                return;
+            }
+
+            var cell = SpawnCell(slot, rewards[n - 1], DayCellSize);
+            if (cell != null)
+                cell.GetComponent<RectTransform>().anchoredPosition = Vector2.zero;
+
+            if (badge != null)
+            {
+                bool hasExtra = n > 1;
+                badge.gameObject.SetActive(hasExtra);
+                if (hasExtra)
+                {
+                    var t = badge.GetComponent<TMP_Text>();
+                    if (t != null) t.text = $"+{n - 1}";
+                }
             }
         }
 

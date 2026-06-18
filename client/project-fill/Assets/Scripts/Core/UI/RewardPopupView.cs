@@ -14,6 +14,10 @@ namespace Game.Core.UI
         public string Label;
         public string NameKey;
         public string DescKey;
+        // Optional: when set, the row's Icon Image is rendered by this delegate instead of a flat
+        // sprite (e.g. cosmetics have no sprite — RewardDisplay injects CosmeticPreview.Build here).
+        // Keeps Core.UI free of any OutGame dependency.
+        public Action<Image> CustomRender;
     }
 
     public class RewardPopupView : MonoBehaviour
@@ -48,7 +52,11 @@ namespace Game.Core.UI
 
                 var icon = row.transform.Find("Icon")?.GetComponent<Image>();
                 var qty  = row.transform.Find("Quantity")?.GetComponent<TMP_Text>();
-                if (icon != null) icon.sprite = rewards[i].Icon;
+                if (icon != null)
+                {
+                    if (rewards[i].CustomRender != null) rewards[i].CustomRender(icon);
+                    else icon.sprite = rewards[i].Icon;
+                }
                 if (qty  != null) qty.text    = $"× {rewards[i].Quantity}";
 
                 var cellView = row.GetComponent<RewardItemCellView>();

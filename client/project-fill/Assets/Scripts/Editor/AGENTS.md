@@ -41,7 +41,7 @@
 | `PlayerPrefsResetMenu.ResetPrefs()` | method | [MenuItem "Tools/Reset PlayerPrefs"] deletes all PlayerPrefs |
 | `IconAutomator.ShowWindow()` | method | [MenuItem "Tools/Icon Automator"] opens icon automation window |
 | `UIEditorSetup.CreateAllPrefabs()` | method | [MenuItem "Tools/UI Setup/1"] creates all popup/overlay prefabs (incl. OutGame: cosmetic/avatar/attendance/achievement/weekly-mission) |
-| `UIEditorSetup.CreateAttendancePopup()` | method | [MenuItem ".../AttendancePopup"] 7 day-card attendance popup; each card has a `RewardSlot` (108×150, NO LayoutGroup — View vertical-stacks all group items scaled via localScale) before its Dim overlay; `TodayRewardRow` HLG + `_rewardCellPrefab`=RewardItemCell.prefab wired for runtime reward previews |
+| `UIEditorSetup.CreateAttendancePopup()` | method | [MenuItem ".../AttendancePopup"] 7 day-card attendance popup; each card has a `RewardSlot` (108×150, NO LayoutGroup — View mounts the primary reward cell at fixed size, centered) + a hidden top-left `CountBadge` TMP ("+N" extra-kinds badge, toggled by the View) before its Dim overlay; `TodayRewardRow` HLG + `_rewardCellPrefab`=RewardItemCell.prefab wired for runtime reward previews |
 | `UIEditorSetup.CreateCosmeticPreviewPopup()` | method | [MenuItem ".../CosmeticPreviewPopup"] cosmetic preview/buy popup |
 | `UIEditorSetup.CreateAvatarPreviewPopup()` | method | [MenuItem ".../AvatarPreviewPopup"] avatar preview + equip/buy popup |
 | `UIEditorSetup.BuildCosmeticCell()` | method | [MenuItem ".../CosmeticItemCell"] cosmetic grid cell prefab 300×360 (Preview + Preview/SelectedHighlight + Preview/LockOverlay + NameText/StateText); referenced by CosmeticSectionView, built in SetupLobby; SetupLobby grid is 3-col, cellSize 300×360, section height 1340 |

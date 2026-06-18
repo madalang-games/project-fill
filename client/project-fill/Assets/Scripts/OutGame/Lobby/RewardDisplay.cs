@@ -3,8 +3,11 @@ using System.Linq;
 using Game.Core.UI;
 using Game.Services;
 using Game.Utils;
+using ProjectFill.Contracts.Cosmetic;
+using ProjectFill.Contracts.GameTypes;
 using ProjectFill.Contracts.Rewards;
 using GeneratedRewardItem = ProjectFill.Data.Generated.RewardItem;
+using GeneratedCosmeticItem = ProjectFill.Data.Generated.CosmeticItem;
 
 namespace Game.OutGame.Lobby
 {
@@ -17,6 +20,7 @@ namespace Game.OutGame.Lobby
     public static class RewardDisplay
     {
         private static List<GeneratedRewardItem> _rewardItems;
+        private static List<GeneratedCosmeticItem> _cosmeticItems;
 
         public static List<RewardItem> Build(IReadOnlyList<GrantedRewardDto> rewards)
         {
@@ -41,6 +45,41 @@ namespace Game.OutGame.Lobby
             foreach (var row in _rewardItems.Where(r => r.reward_group_id == rewardGroupId).OrderBy(r => r.sort_order))
                 list.Add(MapReward(row.reward_type, row.target_id, row.amount));
 
+            return list;
+        }
+
+        /// <summary>
+        /// Cosmetics are not reward_group items — a cosmetic reverse-references the achievement that
+        /// gates it (cosmetic_item.unlock_condition_id == achievementId, unlock_type == Achievement).
+        /// Returns the cosmetic rows unlocked by a given achievement, rendered procedurally via
+        /// <see cref="CosmeticPreview.Build"/> (no flat sprite) — the same look the Shop cosmetic grid uses.
+        /// </summary>
+        public static List<RewardItem> BuildCosmeticUnlocks(string achievementId)
+        {
+            var list = new List<RewardItem>();
+            if (string.IsNullOrEmpty(achievementId)) return list;
+            EnsureCosmeticItems();
+
+            foreach (var row in _cosmeticItems
+                         .Where(c => c.unlock_type == CosmeticUnlockType.Achievement &&
+                                     c.unlock_condition_id == achievementId)
+                         .OrderBy(c => c.sort_order))
+            {
+                var dto = new CosmeticItemDto
+                {
+                    CosmeticId = row.cosmetic_id,
+                    Category   = (int)row.category,
+                    NameKey    = row.name_key,
+                    DescKey    = row.desc_key,
+                };
+                list.Add(new RewardItem
+                {
+                    Quantity     = 1,
+                    NameKey      = row.name_key,
+                    DescKey      = row.desc_key,
+                    CustomRender = img => CosmeticPreview.Build(img, dto),
+                });
+            }
             return list;
         }
 
@@ -90,6 +129,17 @@ namespace Game.OutGame.Lobby
                 _rewardItems = loaded != null ? new List<GeneratedRewardItem>(loaded) : new List<GeneratedRewardItem>();
             }
             catch { _rewardItems = new List<GeneratedRewardItem>(); }
+        }
+
+        private static void EnsureCosmeticItems()
+        {
+            if (_cosmeticItems != null) return;
+            try
+            {
+                var loaded = CsvLoader.Load<GeneratedCosmeticItem>(GeneratedCosmeticItem.ResourcePath);
+                _cosmeticItems = loaded != null ? new List<GeneratedCosmeticItem>(loaded) : new List<GeneratedCosmeticItem>();
+            }
+            catch { _cosmeticItems = new List<GeneratedCosmeticItem>(); }
         }
 
         private static UnityEngine.Sprite GetSprite(string key)
