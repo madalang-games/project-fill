@@ -432,6 +432,10 @@ PrefabInstance:
       propertyPath: m_fontSize
       value: 47
       objectReference: {fileID: 0}
+    - target: {fileID: 978118107111476466, guid: 5755d70de05ec024d976577cf0431d67, type: 3}
+      propertyPath: _badgePrefab
+      value: 
+      objectReference: {fileID: 4524302788568871424, guid: 9e8a2cbda8411b54f89823716c10bcc0, type: 3}
     - target: {fileID: 995361745874173230, guid: 5755d70de05ec024d976577cf0431d67, type: 3}
       propertyPath: m_fontSize
       value: 47
@@ -476,6 +480,10 @@ PrefabInstance:
       propertyPath: m_fontSize
       value: 32
       objectReference: {fileID: 0}
+    - target: {fileID: 1839812626461678120, guid: 5755d70de05ec024d976577cf0431d67, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: -40
+      objectReference: {fileID: 0}
     - target: {fileID: 2122594115299043313, guid: 5755d70de05ec024d976577cf0431d67, type: 3}
       propertyPath: m_AnchorMax.x
       value: 0
@@ -507,6 +515,14 @@ PrefabInstance:
     - target: {fileID: 2122594115299043313, guid: 5755d70de05ec024d976577cf0431d67, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2225142230373347651, guid: 5755d70de05ec024d976577cf0431d67, type: 3}
+      propertyPath: _stageSprite
+      value: 
+      objectReference: {fileID: 21300000, guid: 7057de3dfec358a409bcde8cb9190506, type: 3}
+    - target: {fileID: 2225142230373347651, guid: 5755d70de05ec024d976577cf0431d67, type: 3}
+      propertyPath: _stageResourceKey
+      value: ui_flag_icon
       objectReference: {fileID: 0}
     - target: {fileID: 2231874692583031709, guid: 5755d70de05ec024d976577cf0431d67, type: 3}
       propertyPath: m_fontSize
@@ -580,6 +596,10 @@ PrefabInstance:
       propertyPath: m_fontSize
       value: 47
       objectReference: {fileID: 0}
+    - target: {fileID: 4041309130703689224, guid: 5755d70de05ec024d976577cf0431d67, type: 3}
+      propertyPath: _itemPrefab
+      value: 
+      objectReference: {fileID: 4298312565922505745, guid: 0d74e3218f123934cbc2886fb93e0b19, type: 3}
     - target: {fileID: 4192047359794786537, guid: 5755d70de05ec024d976577cf0431d67, type: 3}
       propertyPath: m_fontSize
       value: 32
@@ -640,6 +660,10 @@ PrefabInstance:
       propertyPath: _sceneBackground
       value: 
       objectReference: {fileID: 62924526}
+    - target: {fileID: 5678594434091012048, guid: 5755d70de05ec024d976577cf0431d67, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: -40
+      objectReference: {fileID: 0}
     - target: {fileID: 5709976584103488546, guid: 5755d70de05ec024d976577cf0431d67, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0

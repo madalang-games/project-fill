@@ -450,9 +450,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.OutGame.Lobby.ChapterChestView
   _chestImage: {fileID: 1673146717352365444}
   _button: {fileID: 636850352463511269}
-  _inactiveSprite: {fileID: 0}
-  _activeSprite: {fileID: 0}
-  _claimedSprite: {fileID: 0}
+  _inactiveSprite: {fileID: 21300000, guid: 7233708759d883549a8c60ffcd071aca, type: 3}
+  _activeSprite: {fileID: 21300000, guid: 0c04245b22f824245a5b7b52306ad244, type: 3}
+  _claimedSprite: {fileID: 21300000, guid: 1d777caa759bcc346aa0f00631d10003, type: 3}
   _glowEffect: {fileID: 209066040076458313}
   _sparkleParticles: {fileID: 2335359362036030672}
   _canvasGroup: {fileID: 1387188924035908347}

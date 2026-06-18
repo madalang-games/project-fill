@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Game.Core.UI;
 using UnityEngine;
 
 namespace Game.InGame.View
@@ -41,6 +42,11 @@ namespace Game.InGame.View
                 node.transform.localPosition = localPos;
                 node.Initialize(sprites, type, showConnector: i != 0, nodeSize);
                 _nodes.Add(node);
+
+                // Tag node by order (signal_node_1 = first in the relay order) so the Relay tutorial can
+                // highlight individual nodes and run the drag pointer between them.
+                var tt = node.gameObject.GetComponent<TutorialTarget>() ?? node.gameObject.AddComponent<TutorialTarget>();
+                tt.SetIds($"signal_node_{i + 1}");
             }
         }
 

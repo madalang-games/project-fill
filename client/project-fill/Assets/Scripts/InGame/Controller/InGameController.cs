@@ -5,6 +5,8 @@ using Game.Core.UI;
 using Game.InGame.View;
 using Game.OutGame.Settings;
 using Game.Services;
+using Game.Services.Tutorial;
+using ProjectFill.Contracts.GameTypes;
 using ProjectFill.Contracts.Rewards;
 using UnityEngine;
 
@@ -22,19 +24,27 @@ namespace Game.InGame.Controller
         [SerializeField] private BoardView _boardView;
         [SerializeField] private bool      _isDevMode; // kept for scene compatibility
 
+        // Pre-buffer up to one lookahead move (2 taps: select + commit) while a move animation plays,
+        // then replay in order on completion. Only move-animation blocks enqueue (see _animating);
+        // modal blocks (ad / network spend) still drop taps.
+        private const int TapQueueCap = 2;
+
         private Board _board;
         private StageDefinition _def;
         private int  _stageIndex;
         private int  _selectedLane = -1;
+        private bool _animating;           // true only while a move animation is playing → taps queue
+        private readonly Queue<int> _tapQueue = new();
         private bool _subscribed;
         private bool _adRewardedThisStage; // §5.4: set on rewarded-ad watch; suppresses this stage's interstitial; reset on stage enter
-        private bool _challenge;           // daily-challenge mode (board from ChallengeContext seed, separate clear submit)
-        private float _challengeStart;     // realtime seconds at challenge board load → clear time
+        private bool _boostersUsed;        // any booster (Undo/Shuffle/AddLane) used this stage → reported on clear (boosterless seams); reset on stage enter
+        private string _sessionId;         // start-issued attempt token for the current stage; echoed on clear
+        private int  _failCount;           // consecutive hard-stuck fails on the current stage (FailRepeat tutorial)
+        private int  _failTrackedStage = -1; // stage id the fail counter belongs to; resets _failCount on stage change
 
-        public void Begin(int startIndex)
+        public void Begin(int startIndex, string sessionId = null)
         {
-            _challenge  = ChallengeContext.Active; // consume-once: clear the flag so a later campaign entry isn't hijacked
-            ChallengeContext.Clear();
+            _sessionId  = sessionId;
             _stageIndex = startIndex;
             if (_boardView == null)
             {
@@ -48,10 +58,24 @@ namespace Game.InGame.Controller
                 _subscribed = true;
             }
             LoadCurrent();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            DevSkinSwitcher.Ensure(this, _boardView); // dev-only in-game skin/stage switcher overlay
+#endif
         }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        // DEV-ONLY: jump to a campaign stage index live (skin switcher). Bypasses the server unlock
+        // gate and daily-challenge mode. Compiled out of release builds.
+        public void DevLoadStage(int index)
+        {
+            _stageIndex = Mathf.Max(0, index);
+            LoadCurrent();
+        }
+#endif
 
         private void HandlePause()
         {
+            if (TutorialManager.ActiveBlocking) return; // overlay owns input during a tutorial step
             if (_boardView.IsInputBlocked) return;
             if (UIManager.Instance != null)
             {
@@ -60,7 +84,8 @@ namespace Game.InGame.Controller
                     p.Configure(
                         onResume: () => {},
                         onRestart: LoadCurrent,
-                        onStageSelect: () => BoardView.GoToScene("Lobby")
+                        onStageSelect: () => BoardView.GoToScene("Lobby"),
+                        onHowToPlay: TutorialManager.Recap
                     );
                 });
             }
@@ -68,7 +93,6 @@ namespace Game.InGame.Controller
 
         private void LoadCurrent()
         {
-            if (_challenge) { LoadChallenge(); return; }
             var row = ResolveRow(_stageIndex);
             _def = row != null ? BuildDefinition(row) : StageLibrary.Get(_stageIndex);
             // Saved stages carry an explicit board layout (board column) — decode it directly.
@@ -82,25 +106,36 @@ namespace Game.InGame.Controller
                 _board = BoardFactory.Generate(_def);
             }
             _selectedLane = -1;
+            ResetTapQueue();
             _adRewardedThisStage = false; // new stage → clear the rewarded-ad / interstitial-suppression flag
+            _boostersUsed = false;        // new stage → reset booster-use tracking (boosterless clear seam)
             _boardView.Init(_board, _def);
             var progress = Game.Services.PlayerProgressService.Instance;
             _boardView.SetBestMoves(progress != null ? progress.GetBestMoves(_stageIndex + 1) : 0);
             UpdateSoftStuck();
+
+            // Onboarding triggers: FirstLaunch (by stage id) + GimmickAppear (by present board gimmick).
+            int stageId = _stageIndex + 1;
+            if (stageId != _failTrackedStage) { _failTrackedStage = stageId; _failCount = 0; }
+            TutorialManager.NotifyBoardReady(stageId, DetectGimmicks(_def));
         }
 
-        // Daily challenge: board comes from the server-provided seed/params (identical worldwide).
-        private void LoadChallenge()
+        // Board gimmicks present in this stage, for GimmickAppear tutorial evaluation.
+        private static HashSet<TutorialGimmick> DetectGimmicks(StageDefinition def)
         {
-            _def   = ChallengeContext.BuildDefinition();
-            _board = BoardFactory.Generate(_def);
-            if (_board == null) { _def = StageLibrary.Get(0); _board = BoardFactory.Generate(_def); }
-            _selectedLane = -1;
-            _adRewardedThisStage = false;
-            _challengeStart = Time.realtimeSinceStartup;
-            _boardView.Init(_board, _def);
-            _boardView.SetBestMoves(0); // challenge has no per-stage personal best surface
-            UpdateSoftStuck();
+            var set = new HashSet<TutorialGimmick>();
+            if (def == null) return set;
+            if (def.LaneKinds != null)
+            {
+                foreach (var k in def.LaneKinds)
+                {
+                    if (k == LaneKind.Locked)     set.Add(TutorialGimmick.Locked);
+                    else if (k == LaneKind.Blind) set.Add(TutorialGimmick.Blind);
+                }
+            }
+            if (def.OverloadType != null)                       set.Add(TutorialGimmick.Overload);
+            if (def.RelayOrder != null && def.RelayOrder.Length > 0) set.Add(TutorialGimmick.Relay);
+            return set;
         }
 
         // Stage source of truth is shared/datas/stage/stage.csv (via StageDataService). The hardcoded
@@ -163,7 +198,15 @@ namespace Game.InGame.Controller
 
         private void HandleLaneTapped(int lane)
         {
-            if (_boardView.IsInputBlocked) return;
+            // Tutorial: Tap (info) steps block the board; Select/Move (action) steps let the real tap
+            // through so the player plays for real and the step advances on the action.
+            if (TutorialManager.BoardInputBlocked) return;
+            if (_boardView.IsInputBlocked)
+            {
+                // Buffer taps only while a move animation plays; replayed in order on completion.
+                if (_animating && _tapQueue.Count < TapQueueCap) _tapQueue.Enqueue(lane);
+                return;
+            }
 
             if (_selectedLane == -1)
             {
@@ -171,6 +214,7 @@ namespace Game.InGame.Controller
                 if (src.IsEmpty || src.Pending || src.Locked) return; // nothing selectable
                 _selectedLane = lane;
                 _boardView.SetSelection(lane);
+                TutorialManager.NotifyAction(TutorialAdvanceMode.Select); // advance a "select" tutorial step
             }
             else if (_selectedLane == lane)
             {
@@ -190,10 +234,14 @@ namespace Game.InGame.Controller
                     var absorbed = _board.Move(from, lane);
 
                     _boardView.BlockInput(true);
+                    _animating = true;
                     _boardView.AnimateMove(from, lane, chip, count, destBase, absorbed, () =>
                     {
                         _boardView.BlockInput(false);
+                        _animating = false;
+                        TutorialManager.NotifyAction(TutorialAdvanceMode.Move); // advance a "move" tutorial step
                         PostMoveCheck();
+                        DrainTapQueue();
                     });
                 }
                 else
@@ -204,60 +252,61 @@ namespace Game.InGame.Controller
             }
         }
 
+        // Replay buffered taps in order once a move animation settles. Stops as soon as a tap starts a
+        // new move (re-blocks input) — its own completion drains the rest. Cleared on stage (re)load.
+        private void DrainTapQueue()
+        {
+            while (_tapQueue.Count > 0 && !_boardView.IsInputBlocked)
+                HandleLaneTapped(_tapQueue.Dequeue());
+        }
+
+        private void ResetTapQueue() { _tapQueue.Clear(); _animating = false; }
+
         private void HandleBooster(BoosterType type)
         {
+            if (TutorialManager.ActiveBlocking) return; // overlay owns input during a tutorial step
             if (_boardView.IsInputBlocked) return;
             _selectedLane = -1;
             _boardView.ClearHighlights();
 
             switch (type)
             {
-                case BoosterType.Undo: // free + unlimited (spec §4)
-                    if (_board.Undo()) { _boardView.RefreshAll(); UpdateSoftStuck(); }
+                case BoosterType.Undo: // free, single-step — no inventory, no count; only the last move is reversible (Board.CanUndo)
+                    if (_board.Undo()) { _boostersUsed = true; _boardView.RefreshAll(); UpdateSoftStuck(); }
                     break;
                 case BoosterType.Shuffle:
-                    SpendThen(type, () => { _board.Shuffle(); _boardView.RefreshAll(); UpdateSoftStuck(); });
+                    ConsumeThen(type, () => { _boostersUsed = true; _board.Shuffle(); _boardView.RefreshAll(); UpdateSoftStuck(); });
                     break;
                 case BoosterType.AddLane:
-                    if (_board.AddLaneUsed) break; // max 1/stage (spec §4) — don't charge for a no-op
-                    SpendThen(type, () => { if (_board.TryAddLane()) { _boardView.RefreshAll(); UpdateSoftStuck(); } });
+                    if (_board.AddLaneUsed) break; // max 1/stage (spec §4) — don't consume for a no-op
+                    ConsumeThen(type, () => { if (_board.TryAddLane()) { _boostersUsed = true; _boardView.RefreshAll(); UpdateSoftStuck(); } });
                     break;
             }
         }
 
-        // Server-authoritative gold spend (spec §4 prices live in item.csv). Pre-checks the local
-        // balance for instant feedback, then POSTs /api/currency/spend; the booster applies only on
-        // server confirmation. Falls back to a local deduction when the currency service is absent
-        // (e.g. InGame scene entered directly without Boot) so dev play still works.
-        private void SpendThen(BoosterType type, Action onPaid)
+        // Inventory-backed booster use: spend one OWNED item (item.csv id), not gold. When the player
+        // owns none, surface the IAP purchase flow instead (mock for now). Spends via the server
+        // (/api/inventory/spend); the booster applies only on confirmation. Falls back to a local count
+        // decrement when the inventory service is absent (e.g. InGame entered directly without Boot).
+        private void ConsumeThen(BoosterType type, Action onUsed)
         {
-            int cost = BoosterCost(type);
+            int itemId   = type.ItemId();
             var progress = PlayerProgressService.Instance;
-            if (progress != null && !progress.CanAfford(cost)) { ShowInsufficientGold(); return; }
+            int owned    = progress != null ? progress.GetItemCount(itemId) : 0;
+            if (owned <= 0) { BuyBoosterThenUse(type, onUsed); return; } // 0 owned → instant gold purchase, then use
 
-            var currency = CurrencyApiService.Instance;
-            if (currency == null)
+            var inventory = InventoryApiService.Instance;
+            if (inventory == null)
             {
-                if (progress != null && !progress.SpendGold(cost)) { ShowInsufficientGold(); return; }
-                onPaid();
+                progress?.SetItemCount(itemId, owned - 1);
+                onUsed();
                 return;
             }
 
             _boardView.BlockInput(true);
-            currency.SpendGold(cost, BoosterReason(type),
-                onSuccess: _   => { _boardView.BlockInput(false); onPaid(); },
+            inventory.SpendItem(itemId, 1, BoosterReason(type),
+                onSuccess: _   => { _boardView.BlockInput(false); onUsed(); },
                 onError:   err => { _boardView.BlockInput(false); ShowSpendError(err); });
-        }
-
-        private static int BoosterCost(BoosterType type)
-        {
-            var items = Game.Utils.CsvLoader.Load<ProjectFill.Data.Generated.Item>(
-                ProjectFill.Data.Generated.Item.ResourcePath);
-            int id = type.ItemId();
-            if (items != null)
-                foreach (var it in items)
-                    if (it.id == id) return it.price;
-            return 0;
         }
 
         private static string BoosterReason(BoosterType type) => type switch
@@ -267,10 +316,56 @@ namespace Game.InGame.Controller
             _                   => "booster",
         };
 
-        private static void ShowInsufficientGold()
+        // Count-0 booster tap → gold purchase via a confirm popup. Shows a ConfirmDialog with the item name +
+        // gold price; on confirm, requests the server (/api/inventory/buy charges item.csv price + syncs gold),
+        // and only on success grants the item then spends it so the booster applies (buy→spend, no recursion →
+        // no re-buy loop). Insufficient gold → toast, no popup. Undo never reaches here (free, bypasses
+        // ConsumeThen). Price/affordability are data-driven (item.csv via ItemDataService) — no magic numbers.
+        private void BuyBoosterThenUse(BoosterType type, Action onUsed)
         {
-            var loc = LocalizationService.Instance;
-            UIManager.Instance?.ShowToast(loc != null ? loc.Get("toast.insufficient_gold") : "Insufficient Gold!", ToastType.Warning);
+            int itemId   = type.ItemId();
+            var progress = PlayerProgressService.Instance;
+            var item     = ItemDataService.Instance != null ? ItemDataService.Instance.GetItem(itemId) : null;
+            int price    = item?.price ?? 0;
+            var loc      = LocalizationService.Instance;
+
+            if (progress == null || price <= 0) return; // misconfigured / no progress service
+            if (!progress.CanAfford(price))
+            {
+                UIManager.Instance?.ShowToast(loc != null ? loc.Get("toast.insufficient_gold") : "Insufficient Gold!", ToastType.Warning);
+                return;
+            }
+
+            // Buy one (server charges gold) then spend it to apply — two explicit calls, no recursion.
+            void DoPurchase()
+            {
+                var inventory = InventoryApiService.Instance;
+                if (inventory == null) // offline/dev: local gold spend, then use (bought 1 + used 1 = net 0)
+                {
+                    if (progress.SpendGold(price)) onUsed();
+                    return;
+                }
+                _boardView.BlockInput(true);
+                inventory.BuyItem(itemId,
+                    onSuccess: _ => inventory.SpendItem(itemId, 1, BoosterReason(type),
+                        onSuccess: __  => { _boardView.BlockInput(false); onUsed(); },
+                        onError:   err => { _boardView.BlockInput(false); ShowSpendError(err); }),
+                    onError: err => { _boardView.BlockInput(false); ShowSpendError(err); });
+            }
+
+            var ui = UIManager.Instance;
+            if (ui == null) { DoPurchase(); return; } // no UI (dev/no-Boot) → skip confirm
+
+            string name = loc != null ? loc.Get(item.name_key) : type.ToString();
+            string body = loc != null ? string.Format(loc.Get("popup.booster_buy.body_fmt"), name, price)
+                                      : $"Buy {name} for {price} gold?";
+            ui.ShowPopup<ConfirmDialogView>(p => p.Init(
+                title:        loc != null ? loc.Get("popup.booster_buy.title") : "Buy Booster",
+                body:         body,
+                confirmLabel: loc != null ? loc.Get("common.btn_confirm")      : "Confirm",
+                onConfirm:    DoPurchase,
+                onCancel:     null,
+                cancelLabel:  loc != null ? loc.Get("common.btn_cancel")       : "Cancel"));
         }
 
         private static void ShowSpendError(string err)
@@ -288,19 +383,24 @@ namespace Game.InGame.Controller
             if (_board.IsCleared)
             {
                 _boardView.BlockInput(true);
-                if (_challenge) SubmitChallengeClear();
-                else            SubmitClear(_stageIndex + 1);
+                _tapQueue.Clear(); // drop buffered taps — board is done, no phantom move after clear
+                SubmitClear(_stageIndex + 1);
                 return;
             }
 
             if (_board.IsHardStuck())
             {
                 _boardView.BlockInput(true);
+                _tapQueue.Clear(); // drop buffered taps — stuck panel owns input now
                 _boardView.ShowStuckPanel(
                     addLaneAvailable: !_board.AddLaneUsed,
                     onAddLane: WatchAdForAddLane, // ad reward → free 1/stage (spec §5.1/§5.4)
-                    onShuffle: () => SpendThen(BoosterType.Shuffle, () => { _board.Shuffle(); _boardView.RefreshAll(); PostMoveCheck(); }),
+                    onRetry:   LoadCurrent,       // restart the same stage from the top (no lobby round-trip)
                     onGiveUp:  () => BoardView.GoToScene("Lobby"));
+
+                // Repeated-failure onboarding hint (FailRepeat). Counter resets on stage change (LoadCurrent).
+                _failCount++;
+                TutorialManager.NotifyFailRepeat(_failCount);
                 return;
             }
 
@@ -311,6 +411,16 @@ namespace Game.InGame.Controller
         {
             bool solvable = BoardSolver.IsSolvable(_board, SoftStuckNodeCap, resultOnCapExceeded: true);
             _boardView.SetSoftStuck(!solvable);
+
+            // Soft stuck: legal moves remain but every path only revisits prior states (never clears).
+            // Pulse alone is easy to miss, so nag on each move with the concrete recovery actions.
+            if (!solvable)
+            {
+                var loc = LocalizationService.Instance;
+                UIManager.Instance?.ShowToast(
+                    loc != null ? loc.Get("toast.no_solution") : "No solution left — try Undo Shuffle or Restart.",
+                    ToastType.Warning);
+            }
         }
 
         // ── Stage clear (server-authoritative) ────────────────────────────────
@@ -337,7 +447,7 @@ namespace Game.InGame.Controller
                 return;
             }
 
-            api.ClearStage(stageId, moves, completedTypes,
+            api.ClearStage(stageId, moves, completedTypes, _sessionId, _boostersUsed,
                 onSuccess: res =>
                 {
                     var progress = PlayerProgressService.Instance;
@@ -351,11 +461,17 @@ namespace Game.InGame.Controller
                 },
                 onError: err =>
                 {
-                    PlayerProgressService.Instance?.RecordBestMoves(stageId, moves);
-                    PlayerProgressService.Instance?.UnlockStage(stageId + 1);
+                    // Attempt-token rejected (missing/mismatched/expired start session): the clear can't
+                    // be trusted and there is no valid in-progress stage. Force the player back to the
+                    // lobby via a blocking popup rather than silently retrying.
+                    if (ServerErrorCodes.IsStageSessionError(err)) { ShowSessionEndedAndExit(); return; }
+
+                    // Other rejections (e.g. INVALID_STAGE_CLEAR): the clear is not valid, so cache
+                    // NOTHING — no best-moves, no unlock. The board is already cleared locally, so
+                    // reload the same stage to offer a fresh retry instead of a bogus clear screen.
                     ShowSpendError(err); // reuse server-error toast
-                    ShowClear(stageId, attemptId, Array.Empty<GrantedRewardDto>(), canDouble: false,
-                        new ClearSummary(moves, moves, false));
+                    _boardView.BlockInput(false);
+                    LoadCurrent();
                 });
         }
 
@@ -363,26 +479,60 @@ namespace Game.InGame.Controller
             bool canDouble, ClearSummary summary)
         {
             _boardView.ShowClearPanel(stageId, attemptId, rewards, canDouble, summary,
-                onNext:  () => ShowInterstitialThen(() => { _stageIndex++; LoadCurrent(); }),
+                onNext:  () => ShowInterstitialThen(AdvanceToNextStage),
                 onLobby: () => ShowInterstitialThen(() => BoardView.GoToScene("Lobby")));
         }
 
-        // Daily-challenge clear: server records moves + clear time for the global ranking (one attempt/day).
-        // No "next stage" — both popup actions return to the lobby.
-        private void SubmitChallengeClear()
+        // Result-screen "Next": the next stage is a NEW attempt, so it must go through the same
+        // server start gate that scene entry uses (unlock check + fresh attempt token). Only build the
+        // next board once the server issues a session; otherwise its clear would be rejected.
+        private void AdvanceToNextStage()
         {
-            int moves   = _board.MoveCount;
-            int seconds = System.Math.Max(0, Mathf.RoundToInt(Time.realtimeSinceStartup - _challengeStart));
-            DailyChallengeApiService.Instance?.SubmitClear(moves, seconds, _ => { }, _ => { });
-            // Daily challenge has no per-stage clear reward group → no reward list, no double-reward.
-            _boardView.ShowClearPanel(0, string.Empty, Array.Empty<GrantedRewardDto>(), canDouble: false,
-                summary: null, onNext: ReturnFromChallenge, onLobby: ReturnFromChallenge);
+            int nextIndex   = _stageIndex + 1;
+            int nextStageId = nextIndex + 1; // stage_id is 1-based
+
+            var api = StageApiService.Instance;
+            if (api == null) // offline/dev (no Boot → no StageApiService): advance locally, no session
+            {
+                _sessionId  = null;
+                _stageIndex = nextIndex;
+                LoadCurrent();
+                return;
+            }
+
+            _boardView.BlockInput(true);
+            api.StartStage(nextStageId,
+                onSuccess: res =>
+                {
+                    PlayerProgressService.Instance?.ApplyMaxClearedStage(res.MaxClearedStageId);
+                    _sessionId  = res.SessionId;
+                    _stageIndex = nextIndex;
+                    _boardView.BlockInput(false);
+                    LoadCurrent();
+                },
+                onError: err =>
+                {
+                    _boardView.BlockInput(false);
+                    ShowSessionEndedAndExit();
+                });
         }
 
-        private void ReturnFromChallenge()
+        // Blocking popup → forced lobby return when the server has no valid stage session (clear
+        // rejected, or next-stage start failed). A toast is too easy to miss for a flow-ending error.
+        private void ShowSessionEndedAndExit()
         {
-            ChallengeContext.Clear();
-            BoardView.GoToScene("Lobby");
+            void GoLobby() => BoardView.GoToScene("Lobby");
+            var ui = UIManager.Instance;
+            if (ui == null) { GoLobby(); return; }
+
+            var loc = LocalizationService.Instance;
+            ui.ShowPopup<ConfirmDialogView>(p => p.Init(
+                title:        loc != null ? loc.Get("popup.session_invalid.title") : "Session Ended",
+                body:         loc != null ? loc.Get("popup.session_invalid.body")  : "Your stage session has ended. Returning to the lobby.",
+                confirmLabel: loc != null ? loc.Get("common.btn_ok")              : "OK",
+                onConfirm:    GoLobby,
+                onCancel:     GoLobby,
+                cancelLabel:  loc != null ? loc.Get("common.btn_close")           : "Close"));
         }
 
         // ── Ads ──────────────────────────────────────────────────────────────
@@ -395,7 +545,7 @@ namespace Game.InGame.Controller
             var ads = AdMobService.Instance;
             if (ads == null) // no ad service (e.g. InGame entered without Boot) → grant free so the loop isn't soft-locked
             {
-                if (_board.TryAddLane()) _boardView.RefreshAll();
+                if (_board.TryAddLane()) { _boostersUsed = true; _boardView.RefreshAll(); }
                 PostMoveCheck();
                 return;
             }
@@ -404,7 +554,7 @@ namespace Game.InGame.Controller
                 if (result.HasValue && result.Value.Earned)
                 {
                     _adRewardedThisStage = true;
-                    if (_board.TryAddLane()) _boardView.RefreshAll();
+                    if (_board.TryAddLane()) { _boostersUsed = true; _boardView.RefreshAll(); }
                 }
                 PostMoveCheck();
             });

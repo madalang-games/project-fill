@@ -31,6 +31,7 @@ namespace Game.OutGame.Lobby
 
         private int    _stageId;
         private Action _onPlay;
+        private bool   _isLocked;
         private Color  _defaultRibbonColor;
 
         private void Awake()
@@ -44,7 +45,10 @@ namespace Game.OutGame.Lobby
         {
             _stageId   = stageId;
             _onPlay    = onPlay;
-            _playButton.interactable = !isLocked;
+            _isLocked  = isLocked;
+            // Keep PLAY interactable even when locked so the tap surfaces a "locked" toast
+            // instead of a dead, unexplained button (OnPlay gates on _isLocked).
+            _playButton.interactable = true;
 
             if (_ribbonImage != null)
                 _ribbonImage.color = DifficultyStyle.Get(difficulty, _defaultRibbonColor);
@@ -98,6 +102,14 @@ namespace Game.OutGame.Lobby
 
         private void OnPlay()
         {
+            if (_isLocked)
+            {
+                var loc = LocalizationService.Instance;
+                UIManager.Instance?.ShowToast(
+                    loc != null ? loc.Get("toast.stage_locked") : "Stage is locked!",
+                    ToastType.Warning);
+                return;
+            }
             ScrollStateCache.LastPlayedStageId = _stageId;
             _onPlay?.Invoke();
             Close();

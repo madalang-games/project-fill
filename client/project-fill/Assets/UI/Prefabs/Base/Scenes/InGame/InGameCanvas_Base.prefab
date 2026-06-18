@@ -117,7 +117,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 4668565884025387155, guid: f174f6675a5fc254dbc52d53b177d85b, type: 3}
   m_Type: 0
   m_PreserveAspect: 1
   m_FillCenter: 1
@@ -574,6 +574,7 @@ GameObject:
   - component: {fileID: 6228170699440135141}
   - component: {fileID: 5614907491734981635}
   - component: {fileID: 8792930664745111628}
+  - component: {fileID: 4362281451490594278}
   m_Layer: 0
   m_Name: MovesText
   m_TagString: Untagged
@@ -731,6 +732,20 @@ MonoBehaviour:
   _shadowDilate: 0.4
   _shadowSoftness: 0.05
   _faceDilate: 0.15
+--- !u!114 &4362281451490594278
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2831874452268419638}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: acccf40f9cf11da42be0623e0aecd0fe, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Core.UI.TutorialTarget
+  _targetIds:
+  - hud_moves_count
 --- !u!1 &3106660410108830459
 GameObject:
   m_ObjectHideFlags: 0
@@ -797,7 +812,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: -3916822223674342743, guid: 1905a1ce6b1aac2419ee29a47793904a, type: 3}
   m_Type: 0
   m_PreserveAspect: 1
   m_FillCenter: 1
@@ -1299,7 +1314,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.023529412, g: 0.8392157, b: 0.627451, a: 1}
+  m_Color: {r: 0.29803923, g: 0.7882353, b: 0.9411765, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -1797,7 +1812,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 7028781480910526861, guid: ddc9d31802037354d8f2429c717027e9, type: 3}
   m_Type: 0
   m_PreserveAspect: 1
   m_FillCenter: 1
@@ -2224,7 +2239,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.043137256, g: 0.043137256, b: 0.11764706, a: 1}
+  m_Color: {r: 0.29803923, g: 0.7882353, b: 0.9411765, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -2477,7 +2492,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 21300000, guid: a72f70eefb2c75f43aace2e4093d9322, type: 3}
   m_Type: 0
   m_PreserveAspect: 1
   m_FillCenter: 1
@@ -2684,6 +2699,12 @@ MonoBehaviour:
   _lanesContainer: {fileID: 0}
   _panelContainer: {fileID: 0}
   _flightLayer: {fileID: 0}
+  _topBar: {fileID: 7032929867320238827}
+  _bottomBar: {fileID: 7483907819031778454}
+  _marginX: 0.04
+  _barGap: 0.02
+  _innerPad: 0.015
+  _panelHeightFrac: 0.16
 --- !u!1 &8451184972387650341
 GameObject:
   m_ObjectHideFlags: 0
@@ -3194,6 +3215,7 @@ GameObject:
   - component: {fileID: 7483907819031778454}
   - component: {fileID: 2971053618878560682}
   - component: {fileID: 8019681865420556209}
+  - component: {fileID: 1361974521317404219}
   m_Layer: 0
   m_Name: BoosterBar
   m_TagString: Untagged
@@ -3261,3 +3283,17 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &1361974521317404219
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9172547708574359412}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: acccf40f9cf11da42be0623e0aecd0fe, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Core.UI.TutorialTarget
+  _targetIds:
+  - booster_bar

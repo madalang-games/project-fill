@@ -38,12 +38,15 @@ namespace Game.Services
         }
 
         // completedSignalTypes must equal the stage's {0..types-1} set (server-validated).
+        // sessionId is the token issued by the matching StartStage; the server validates+consumes it.
         public void ClearStage(int stageId, int movesUsed, IReadOnlyList<int> completedSignalTypes,
-            Action<StageClearResponse> onSuccess = null, Action<string> onError = null)
+            string sessionId, bool boostersUsed, Action<StageClearResponse> onSuccess = null, Action<string> onError = null)
         {
             var sb = new StringBuilder();
             sb.Append("{\"rulesetVersion\":").Append(CurrentRulesetVersion)
               .Append(",\"movesUsed\":").Append(movesUsed)
+              .Append(",\"sessionId\":\"").Append(sessionId).Append('"')
+              .Append(",\"boostersUsed\":").Append(boostersUsed ? "true" : "false")
               .Append(",\"completedSignalTypes\":[");
             for (int i = 0; i < completedSignalTypes.Count; i++)
             {
@@ -68,12 +71,14 @@ namespace Game.Services
             public int stageId;
             public int maxClearedStageId;
             public int rulesetVersion;
+            public string sessionId;
 
             public StageStartResponse ToContract() => new StageStartResponse
             {
                 StageId = stageId,
                 MaxClearedStageId = maxClearedStageId,
                 RulesetVersion = rulesetVersion,
+                SessionId = sessionId,
             };
         }
 

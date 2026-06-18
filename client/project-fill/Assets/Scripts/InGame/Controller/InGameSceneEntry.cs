@@ -32,12 +32,10 @@ namespace Game.InGame.Controller
             int stageId = ScrollStateCache.LastPlayedStageId;
             int index   = stageId > 0 ? stageId - 1 : _startStageIndex;
 
-            // Daily challenge is not a campaign stage — it has no unlock gating and Begin consumes
-            // ChallengeContext directly. Skip the campaign stage-start validation.
             var api = StageApiService.Instance;
-            if (ChallengeContext.Active || api == null)
+            if (api == null)
             {
-                // ChallengeContext path, or offline/dev play (no Boot scene → no StageApiService) → start locally.
+                // Offline/dev play (no Boot scene → no StageApiService) → start locally.
                 _controller.Begin(index);
                 return;
             }
@@ -47,7 +45,7 @@ namespace Game.InGame.Controller
                 onSuccess: res =>
                 {
                     PlayerProgressService.Instance?.ApplyMaxClearedStage(res.MaxClearedStageId);
-                    _controller.Begin(index);
+                    _controller.Begin(index, res.SessionId);
                 },
                 onError: OnStartFailed);
         }

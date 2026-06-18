@@ -2714,7 +2714,82 @@ MonoBehaviour:
   _displayNameInput: {fileID: 1072979448461027890}
   _saveNicknameButton: {fileID: 7413590454170609582}
   _nicknameArea: {fileID: 8836036718250395626}
-  _avatarSprites: []
+  _avatarSprites:
+  - avatarId: 1
+    resourceName: avatar_1
+    sprite: {fileID: 21300000, guid: 1e9ede19ddb7f6f4eb385ce4e5e5b1bb, type: 3}
+  - avatarId: 2
+    resourceName: avatar_2
+    sprite: {fileID: 21300000, guid: cb4f460425fc9434193e4ef67da9b21c, type: 3}
+  - avatarId: 3
+    resourceName: avatar_3
+    sprite: {fileID: 21300000, guid: 54817b6bc00dd3847a02f764dde3d4b6, type: 3}
+  - avatarId: 4
+    resourceName: avatar_4
+    sprite: {fileID: 21300000, guid: e607cdc418ac3844fa1121dbcdb46357, type: 3}
+  - avatarId: 5
+    resourceName: avatar_5
+    sprite: {fileID: 21300000, guid: e25fc6ce5c5acef42961863e49480e27, type: 3}
+  - avatarId: 6
+    resourceName: avatar_6
+    sprite: {fileID: 21300000, guid: 3f680bb1b36c8f4448353ffa2df30ee9, type: 3}
+  - avatarId: 7
+    resourceName: avatar_7
+    sprite: {fileID: 21300000, guid: 645237ed2697bc7418acf58c14b83462, type: 3}
+  - avatarId: 8
+    resourceName: avatar_8
+    sprite: {fileID: 21300000, guid: 15beb118983070542966678e879a13bb, type: 3}
+  - avatarId: 9
+    resourceName: avatar_9
+    sprite: {fileID: 21300000, guid: bd0c3186229abf641b8f89b5c626c42c, type: 3}
+  - avatarId: 10
+    resourceName: avatar_10
+    sprite: {fileID: 21300000, guid: 83b82544c5f6c3940818d75406b5e3ef, type: 3}
+  - avatarId: 11
+    resourceName: avatar_11
+    sprite: {fileID: 21300000, guid: 31c0c27f77fca334cbf9f691da00819c, type: 3}
+  - avatarId: 12
+    resourceName: avatar_12
+    sprite: {fileID: 21300000, guid: 14275f88afa363e4f9e8cab7796f616d, type: 3}
+  - avatarId: 13
+    resourceName: avatar_13
+    sprite: {fileID: 21300000, guid: 473eb15a48506dd41a961414d3607545, type: 3}
+  - avatarId: 14
+    resourceName: avatar_14
+    sprite: {fileID: 21300000, guid: 6b1b14052b1b21248bc3f3a9afb1fce4, type: 3}
+  - avatarId: 15
+    resourceName: avatar_15
+    sprite: {fileID: 21300000, guid: c82c6495c63991d45b5c11f3d2f99c4e, type: 3}
+  - avatarId: 16
+    resourceName: avatar_16
+    sprite: {fileID: 21300000, guid: 01f4a464aabf0d74eb0d62a00bc0b269, type: 3}
+  - avatarId: 17
+    resourceName: avatar_17
+    sprite: {fileID: 21300000, guid: 99081fea57e8dbc46a9ec2555f370692, type: 3}
+  - avatarId: 18
+    resourceName: avatar_18
+    sprite: {fileID: 21300000, guid: 77e1144c860e3fc4ea57625beca3ab00, type: 3}
+  - avatarId: 19
+    resourceName: avatar_19
+    sprite: {fileID: 21300000, guid: 145d3d01ea831f649b2e5440b79ff968, type: 3}
+  - avatarId: 20
+    resourceName: avatar_20
+    sprite: {fileID: 21300000, guid: caefba813edf03843b2677cc9971e25f, type: 3}
+  - avatarId: 21
+    resourceName: avatar_21
+    sprite: {fileID: 21300000, guid: 2bb679da152e80e4a9d7180af6eb893c, type: 3}
+  - avatarId: 22
+    resourceName: avatar_22
+    sprite: {fileID: 21300000, guid: 48b376028d299564997300aa39f1ca10, type: 3}
+  - avatarId: 23
+    resourceName: avatar_23
+    sprite: {fileID: 21300000, guid: 95ceac1846b5c194b9ee16fa53b54aea, type: 3}
+  - avatarId: 24
+    resourceName: avatar_24
+    sprite: {fileID: 21300000, guid: 15f9f4d2cacc5e1468da822dc9b52348, type: 3}
+  - avatarId: 25
+    resourceName: avatar_25
+    sprite: {fileID: 21300000, guid: 1d3564deedf5be64496dc954c090af01, type: 3}
 --- !u!225 &8319531011893948718
 CanvasGroup:
   m_ObjectHideFlags: 0

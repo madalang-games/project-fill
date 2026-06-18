@@ -49,6 +49,9 @@ namespace Game.OutGame.Lobby
             if (_contentRoot == null && _scrollRect != null)
                 _contentRoot = _scrollRect.content;
 
+            if (_stageNodePrefab == null)
+                _stageNodePrefab = Resources.Load<GameObject>("Prefabs/UI/StageNodeView");
+
             if (_chestPrefab == null)
                 _chestPrefab = Resources.Load<GameObject>("Prefabs/UI/ChapterChest");
 
@@ -66,12 +69,7 @@ namespace Game.OutGame.Lobby
             _stages         = StageDataService.Instance?.GetAll();
             _currentStageId = FindCurrentStage();
 
-            if (!_layoutBuilt)
-            {
-                BuildPool();
-                _layoutBuilt = true;
-            }
-            else if (_builtPositions != null && _stages != null)
+            if (_layoutBuilt && _builtPositions != null && _stages != null)
             {
                 StartGuideOrb(_builtPositions, _stages.Length);
                 StartSignalPulses(_builtPositions, _stages.Length);
@@ -79,8 +77,12 @@ namespace Game.OutGame.Lobby
 
             _scrollRect.onValueChanged.AddListener(OnScrolled);
 
-            // Immediate render if layout already built (tab re-enter); otherwise ApplyScrollNextFrame handles it
-            if (_scrollRect.viewport.rect.height > 0f)
+            // Immediate render only on tab re-enter (layout already built).
+            // First build is deferred to ApplyScrollNextFrame so the viewport is
+            // measured AFTER its first layout pass — gives the real device width,
+            // letting the serpentine X-spacing scale responsively instead of
+            // baking a fallback width while the canvas is still unsized.
+            if (_layoutBuilt && _scrollRect.viewport.rect.height > 0f)
                 OnScrolled(new Vector2(0f, _scrollRect.verticalNormalizedPosition));
 
             RestoreScrollPosition();
@@ -108,6 +110,17 @@ namespace Game.OutGame.Lobby
             {
                 _badgeContainer.Refresh(GetComponentInParent<LobbyView>());
             }
+        }
+
+        // Re-pull current stage + re-bind visible nodes so a server-side progress change (e.g. the dev
+        // /stage cheat) reflects live without leaving the lobby. Mirrors the OnEnable render path.
+        public void Refresh()
+        {
+            _stages = StageDataService.Instance?.GetAll();
+            _currentStageId = FindCurrentStage();
+            if (_layoutBuilt && _scrollRect != null && _scrollRect.viewport != null
+                && _scrollRect.viewport.rect.height > 0f)
+                OnScrolled(new Vector2(0f, _scrollRect.verticalNormalizedPosition));
         }
 
         private void OnDisable()
@@ -505,37 +518,12 @@ namespace Game.OutGame.Lobby
                     _chestClaimed[sourceId] = true;
                     RefreshChestNodes();
 
-                    var loc = LocalizationService.Instance;
-                    var dynRes = DynamicResourceService.Instance;
-                    var rewardItems = new List<Game.Core.UI.RewardItem>();
                     foreach (var r in response.GrantedRewards)
                     {
                         if (r.RewardType == "SOFT_CURRENCY")
-                        {
                             PlayerProgressService.Instance?.AddGold(r.Amount);
-                            var currency = CurrencyDataService.Instance?.GetByRewardType("SOFT_CURRENCY");
-                            rewardItems.Add(new Game.Core.UI.RewardItem
-                            {
-                                Icon     = currency != null ? dynRes?.GetSprite(currency.icon_name) : null,
-                                Quantity = r.Amount,
-                                Label    = loc.Get("common.gold"),
-                                NameKey  = currency?.name_key ?? string.Empty,
-                                DescKey  = currency?.desc_key ?? string.Empty,
-                            });
-                        }
-                        else if (r.RewardType == "ITEM")
-                        {
-                            var item = ItemDataService.Instance?.GetItem(r.TargetId);
-                            rewardItems.Add(new Game.Core.UI.RewardItem
-                            {
-                                Icon     = item != null ? dynRes?.GetSprite(item.icon_name) : null,
-                                Quantity = r.Amount,
-                                Label    = item != null ? loc.Get(item.name_key) : $"Item {r.TargetId}",
-                                NameKey  = item?.name_key ?? string.Empty,
-                                DescKey  = item?.desc_key ?? string.Empty,
-                            });
-                        }
                     }
+                    var rewardItems = RewardDisplay.Build(response.GrantedRewards);
                     Game.Core.UIManager.Instance?.ShowPopup<RewardPopupView>(popup => popup.Init(rewardItems));
                 },
                 onError: error =>
@@ -653,21 +641,20 @@ namespace Game.OutGame.Lobby
             {
                 var range = chapters[cid];
                 int startIdx = range.first;
-                
-                // Connect to next chapter's first node for continuous lines
-                int endIdx = range.last;
-                if (endIdx < count - 1)
-                {
-                    endIdx++;
-                }
+                int endIdx   = range.last;
 
-                int segCount = endIdx - startIdx + 1;
+                // Draw the incoming bridge (prev chapter's last node → this chapter's first node)
+                // as part of THIS chapter, so the boundary segment takes the new chapter's color
+                // instead of the previous chapter's.
+                int drawStart = startIdx > 0 ? startIdx - 1 : startIdx;
+
+                int segCount = endIdx - drawStart + 1;
                 if (segCount < 2) continue;
 
                 var chapterPts = new Vector2[segCount];
                 for (int s = 0; s < segCount; s++)
                 {
-                    chapterPts[s] = nodePositions[startIdx + s];
+                    chapterPts[s] = nodePositions[drawStart + s];
                 }
 
                 // Straight polyline through the nodes — no curve smoothing.
@@ -729,49 +716,20 @@ namespace Game.OutGame.Lobby
                 pathStrip.SetPoints(curve);
                 _pathStrips.Add(pathStrip);
 
-                ApplyChapterPathStyle(pathStrip, cid, startIdx, endIdx, progress);
-            }
-        }
-
-        private void ApplyChapterPathStyle(UILineStrip pathStrip, int chapterId, int startIdx, int endIdx, PlayerProgressService progress)
-        {
-            if (progress == null) return;
-
-            bool isChapterLocked = true;
-            bool isChapterFullyCleared = true;
-
-            for (int idx = startIdx; idx <= endIdx; idx++)
-            {
-                if (idx >= _stages.Length) break;
-                var stageId = _stages[idx].stage_id;
-                
-                if (progress.IsStageUnlocked(stageId))
+                // Light the trace only up to the furthest reachable (unlocked) node; the locked
+                // tail beyond the current challenge stage stays unlit.
+                float activeLen = 0f, cum = 0f;
+                for (int s = 0; s < curve.Count; s++)
                 {
-                    isChapterLocked = false;
+                    if (s > 0) cum += Vector2.Distance(curve[s - 1], curve[s]);
+                    int gi  = drawStart + s;
+                    int sid = gi < _stages.Length ? _stages[gi].stage_id : -1;
+                    if (sid > 0 && (progress?.IsStageUnlocked(sid) ?? false)) activeLen = cum;
                 }
-                
-                if (progress.GetBestMoves(stageId) == 0)
-                {
-                    isChapterFullyCleared = false;
-                }
-            }
-
-            if (isChapterLocked)
-            {
-                pathStrip.color = new Color(0.4f, 0.4f, 0.4f, 0.15f);
-                pathStrip.scrollSpeed = 0f;
-            }
-            else if (isChapterFullyCleared)
-            {
-                var theme = ChapterBgTheme.Get(chapterId);
-                pathStrip.color = new Color(theme.PathColor.r, theme.PathColor.g, theme.PathColor.b, 0.55f);
-                pathStrip.scrollSpeed = theme.PathScrollSpeed * 0.5f;
-            }
-            else
-            {
-                var theme = ChapterBgTheme.Get(chapterId);
-                pathStrip.color = theme.PathColor;
-                pathStrip.scrollSpeed = theme.PathScrollSpeed;
+                pathStrip.inactiveColor = new Color(theme.PathColor.r, theme.PathColor.g, theme.PathColor.b, 0.10f);
+                pathStrip.activeLength  = activeLen;
+                pathStrip.color         = activeLen > 0f ? theme.PathColor : pathStrip.inactiveColor;
+                pathStrip.scrollSpeed   = activeLen > 0f ? theme.PathScrollSpeed : 0f;
             }
         }
 
@@ -938,10 +896,8 @@ namespace Game.OutGame.Lobby
 
                 var node = _pool[poolIdx++];
                 var s    = _stages[i];
-                bool cleared = (progress?.GetBestMoves(s.stage_id) ?? 0) > 0;
                 bool unlock  = progress?.IsStageUnlocked(s.stage_id) ?? (s.stage_id == 1);
-                bool cur     = s.stage_id == _currentStageId;
-                node.Bind(s.stage_id, cleared, unlock, cur, s.chapter_id, (int)s.difficulty);
+                node.Bind(s.stage_id, unlock, s.chapter_id, (int)s.difficulty);
                 var rt      = node.GetComponent<RectTransform>();
                 rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 1f);
                 rt.pivot     = new Vector2(0.5f, 0.5f);
@@ -972,6 +928,15 @@ namespace Game.OutGame.Lobby
         {
             yield return null;
             LayoutRebuilder.ForceRebuildLayoutImmediate(_scrollRect.viewport);
+
+            // First build happens here: the viewport now carries its real,
+            // device-correct width from the first layout pass, so BuildPool's
+            // X-spacing math scales to the actual screen instead of a fallback.
+            if (!_layoutBuilt)
+            {
+                BuildPool();
+                _layoutBuilt = true;
+            }
 
             int targetId = ScrollStateCache.LastPlayedStageId;
             if (targetId > 0)

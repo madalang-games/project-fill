@@ -19,6 +19,7 @@ namespace Game.InGame.View
         private static readonly Color SocketColor   = new(0.06f, 0.07f, 0.10f, 0.60f);
 
         private SpriteRenderer _border;
+        private SpriteRenderer _backlight;    // inner ambient glow (skin accent channel)
         private ChipView[] _chips;
         private Transform[] _slots;
 
@@ -28,10 +29,19 @@ namespace Game.InGame.View
         private GameObject _blindMarker;
         private GameObject _pendingBadge;
         private SpriteRenderer _scanLine;     // blind-lane scanning sweep
+        private SpriteRenderer _edgeFrame;    // premium lane skin: tight inner accent frame (breathes, in-bounds)
         private SpriteRenderer[] _pips;        // relay queue-position dots
 
         private SlotLane _lane;
         private bool _selected, _validTarget, _flashing;
+
+        // Skin tokens (from SpriteSet/BoardTheme); defaults reproduce the original look.
+        private Color       _borderNormal   = BorderNormal;
+        private Color       _accent         = new(0.21f, 0.84f, 0.95f);
+        private Color       _railColor      = new(0.22f, 0.25f, 0.34f, 1f);
+        private Color       _backlightColor = new(0.21f, 0.84f, 0.95f, 0.18f);
+        private float       _edgePulse      = 0f; // premium lane skin breathe amplitude (0 = static)
+        private BoardFxTier _fx             = BoardFxTier.Static;
 
         private bool _built;
         private Vector2 _chipSize;
@@ -59,6 +69,13 @@ namespace Game.InGame.View
             _built = true;
             _lane = lane;
 
+            _borderNormal   = s.LaneBorder;
+            _accent         = s.Accent;
+            _railColor      = s.LaneRail;
+            _backlightColor = s.LaneBacklight;
+            _edgePulse      = s.LaneEdgePulse;
+            _fx             = s.Fx;
+
             // BoxCollider2D on the whole lane for raycasting
             var col = gameObject.GetComponent<BoxCollider2D>();
             if (col == null)
@@ -68,29 +85,18 @@ namespace Game.InGame.View
             col.size = size;
             col.offset = Vector2.zero;
 
-            // Lane frame body - sortingOrder: 3
-            var body = WorldUtil.CreateSprite(transform, "Body", s.LaneSlot, BodyColor, size, sortingOrder: 3);
+            // Inner backlight: soft ambient behind the column, tinted to the skin accent. Always-visible
+            // skin-identity channel — stays lit while the state-driven border changes color, so the lane
+            // never loses its look during selection. - sortingOrder: 2
+            _backlight = WorldUtil.CreateSprite(transform, "Backlight", s.Glow, _backlightColor, new Vector2(size.x * 0.82f, size.y * 0.92f), sliced: false, sortingOrder: 2);
 
-            // Motherboard PCIe/RAM slot contact pins at the bottom - proportional to width size.x
-            float contactW = size.x * 0.75f;
-            float contactH = size.x * 0.10f; // Scale contact height with width to prevent vertical stretching
-            var contacts = WorldUtil.CreateSprite(transform, "Contacts", s.Chip, new Color(0.92f, 0.69f, 0.20f, 1f), new Vector2(contactW, contactH), sortingOrder: 2);
-            contacts.transform.localPosition = new Vector3(0f, -size.y * 0.5f - contactH * 0.4f, 0f);
-            
-            // Adding a small socket block that "inserts" the contacts - sortingOrder: 1
-            var insertSocket = WorldUtil.CreateSprite(transform, "InsertSocket", s.LaneOutline, new Color(0.08f, 0.09f, 0.13f, 1f), new Vector2(size.x * 0.9f, contactH * 1.5f), sortingOrder: 1);
-            insertSocket.transform.localPosition = new Vector3(0f, -size.y * 0.5f - contactH * 0.8f, 0f);
+            // Register-column body: the lane is a single vertical register, not a box of parts. - sortingOrder: 3
+            var body = WorldUtil.CreateSprite(transform, "Body", s.LaneSlot, s.LaneBody, size, sortingOrder: 3);
 
-            // Mechanical ejector latches at the top - proportional to width size.x
-            float ejectW = size.x * 0.15f;
-            float ejectH = size.x * 0.22f; // Scale ejector height with width to prevent stretching
-            var ejectL = WorldUtil.CreateSprite(transform, "Ejector_L", s.Chip, new Color(0.25f, 0.28f, 0.35f, 1f), new Vector2(ejectW, ejectH), sortingOrder: 6);
-            ejectL.transform.localPosition = new Vector3(-size.x * 0.5f - ejectW * 0.2f, size.y * 0.5f, 0f);
-            ejectL.transform.localRotation = Quaternion.Euler(0, 0, 15f);
-            
-            var ejectR = WorldUtil.CreateSprite(transform, "Ejector_R", s.Chip, new Color(0.25f, 0.28f, 0.35f, 1f), new Vector2(ejectW, ejectH), sortingOrder: 6);
-            ejectR.transform.localPosition = new Vector3(size.x * 0.5f + ejectW * 0.2f, size.y * 0.5f, 0f);
-            ejectR.transform.localRotation = Quaternion.Euler(0, 0, -15f);
+            // Recessed track spanning all cells: one continuous channel so the lane reads as ONE column
+            // of stacked data cells rather than four separate sockets. - sortingOrder: 3
+            var channelCol = Color.Lerp(s.LaneBody, Color.black, 0.45f); channelCol.a = 0.6f;
+            WorldUtil.CreateSprite(transform, "Channel", s.LaneSlot, channelCol, new Vector2(size.x * 0.80f, size.y * 0.94f), sortingOrder: 3);
 
             const float vpad = 0.035f, gap = 0.014f;
             float usable = 1f - 2f * vpad;
@@ -103,7 +109,8 @@ namespace Game.InGame.View
             float sh = (slotH - gap) * size.y;
             _chipSize = new Vector2(sw, sh);
 
-            // Sockets and slots behind chips - sortingOrder: 4
+            // Cell guides inside the column (faint — the continuous channel already carries the column
+            // read; these only hint where each cell seats). - sortingOrder: 4
             for (int sIdx = 0; sIdx < SlotLane.Capacity; sIdx++)
             {
                 float yMin = vpad + sIdx * slotH + gap * 0.5f;
@@ -111,8 +118,19 @@ namespace Game.InGame.View
                 float yCenter_norm = (yMin + yMax) * 0.5f;
                 float yCenter_local = -size.y * 0.5f + yCenter_norm * size.y;
 
-                var sock = WorldUtil.CreateSprite(transform, $"Socket_{sIdx}", s.LaneOutline, SocketColor, _chipSize, sortingOrder: 4);
+                var sockCol = s.LaneSocket; sockCol.a *= 0.5f;
+                var sock = WorldUtil.CreateSprite(transform, $"Socket_{sIdx}", s.LaneOutline, sockCol, _chipSize, sortingOrder: 4);
                 sock.transform.localPosition = new Vector3(0f, yCenter_local, 0f);
+
+                // Cell separator between stacked cells — a thin divider so the stack reads as discrete
+                // registers, not one fused bar. - sortingOrder: 5
+                if (sIdx > 0)
+                {
+                    float bNorm  = vpad + sIdx * slotH;
+                    float bLocal = -size.y * 0.5f + bNorm * size.y;
+                    var div = WorldUtil.CreateSprite(transform, $"Divider_{sIdx}", s.LaneSlot, _railColor, new Vector2(_chipSize.x * 0.92f, size.y * 0.012f), sortingOrder: 5);
+                    div.transform.localPosition = new Vector3(0f, bLocal, 0f);
+                }
 
                 var slot = WorldUtil.CreateGameObject(transform, $"Slot_{sIdx}");
                 slot.localPosition = new Vector3(0f, yCenter_local, 0f);
@@ -121,8 +139,17 @@ namespace Game.InGame.View
                 _chips[sIdx].Hide();
             }
 
+            // Premium lane skin frame: a tight accent outline INSET inside the lane (x*0.94/y*0.97) so a
+            // breathing premium lane never bleeds onto its neighbours. Separate from `_border` (the
+            // interaction-state channel, overwritten every frame) — this carries skin identity only.
+            // Sits below the chips (≥7); alpha breathes in Update. - sortingOrder: 5
+            if (_edgePulse > 0f)
+            {
+                _edgeFrame = WorldUtil.CreateSprite(transform, "EdgeFrame", s.LaneOutline, new Color(_accent.r, _accent.g, _accent.b, 0f), new Vector2(size.x * 0.94f, size.y * 0.97f), sortingOrder: 5);
+            }
+
             // Outer border - sortingOrder: 5
-            _border = WorldUtil.CreateSprite(transform, "Border", s.LaneOutline, BorderNormal, size, sortingOrder: 5);
+            _border = WorldUtil.CreateSprite(transform, "Border", s.LaneOutline, _borderNormal, size, sortingOrder: 5);
 
             BuildLockOverlay(s, lane, size);
             BuildBlindMarker(s, size);
@@ -303,9 +330,36 @@ namespace Game.InGame.View
             else if (_validTarget)      target = new Color(BorderValid.r, BorderValid.g, BorderValid.b, Mathf.Lerp(0.5f, 1f, pulse));
             else if (_lane.Pending)     target = new Color(BorderPending.r, BorderPending.g, BorderPending.b, Mathf.Lerp(0.45f, 0.95f, pulse));
             else if (_lane.Kind == LaneKind.Blind) target = BorderBlind;
-            else                        target = BorderNormal;
+            else if (_fx == BoardFxTier.Dynamic)
+                // Premium boards: idle border breathes toward the neon accent.
+                target = Color.Lerp(_borderNormal, _accent, Mathf.Lerp(0.15f, 0.55f, pulse));
+            else                        target = _borderNormal;
             // Smooth neon color transition between states (no hard snap).
             _border.color = Color.Lerp(_border.color, target, 1f - Mathf.Exp(-Time.deltaTime * 12f));
+
+            // Lane skin identity breathe. Premium lane skins (LaneEdgePulse>0) pulse the inner backlight
+            // AND a tight inner accent frame — BOTH inside the lane bounds, so a breathing premium lane
+            // never bleeds onto its neighbours (replaces the old vertical LaneFlow sweep that collided
+            // with the blind scan). Otherwise Dynamic boards give a gentle backlight breathe; static
+            // lanes hold the resting skin colour.
+            if (_edgePulse > 0f)
+            {
+                if (_backlight != null)
+                {
+                    var c = _backlightColor; c.a = _backlightColor.a * Mathf.Lerp(0.7f, 1f + 0.7f * _edgePulse, pulse);
+                    _backlight.color = c;
+                }
+                if (_edgeFrame != null)
+                {
+                    var c = _accent; c.a = Mathf.Lerp(0.06f, 0.12f + 0.30f * _edgePulse, pulse);
+                    _edgeFrame.color = c;
+                }
+            }
+            else if (_fx == BoardFxTier.Dynamic && _backlight != null)
+            {
+                var c = _backlightColor; c.a = _backlightColor.a * Mathf.Lerp(0.6f, 1.25f, pulse);
+                _backlight.color = c;
+            }
 
             // Blind scanning sweep: a bright bar travels up the masked stack, fading at the ends.
             if (_scanLine != null)

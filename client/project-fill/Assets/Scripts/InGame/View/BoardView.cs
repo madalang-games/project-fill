@@ -2,6 +2,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Game.Core;
+using Game.Core.UI;
+using Game.Services;
 using ProjectFill.Contracts.Rewards;
 using TMPro;
 using UnityEngine;
@@ -69,10 +71,25 @@ namespace Game.InGame.View
         private RectTransform   _shuffleBtnRt;
         private readonly List<LaneView> _laneViews = new();
 
+        // Visible board surface (themed inset panel the lanes/panel sit inside); sized by the resizer.
+        private SpriteRenderer _surfaceFill;
+        private SpriteRenderer _surfaceEdge;
+
+        // Premium board ambient FX (drifting glow motes on the surface, behind the pieces). Fixed pool
+        // animated in Update — no per-frame spawn churn. Live position tracks the resizer-driven surface.
+        private Vector3 _surfaceCenter;
+        private Vector2 _surfaceSize;
+        private SpriteRenderer[] _motes;
+        private float[] _moteOffX, _moteOffY, _motePhase, _moteSpeed;
+        // Top-tier edge sparks: glow points orbiting the surface PERIMETER (distinct from internal motes).
+        private SpriteRenderer[] _sparks;
+        private float[] _sparkU, _sparkSpeed;
+
         private float _worldWidth;
         private float _panelWorldHeight;
         private float _lanesWorldHeight;
         private float _lanesScale = 1f;   // uniform fit-shrink applied to _lanesContainer (flight FX must match)
+        private float _gridW, _gridH;     // unscaled lane-grid size (cached by BuildLanes for live re-fit)
 
         public bool IsInputBlocked => _inputBlocked;
 
@@ -82,8 +99,44 @@ namespace Game.InGame.View
 
         private void Awake()
         {
-            _sprites = SpriteSet.Resolve(_skin);
+            // Skin the board pieces from the player's active cosmetics (board master + chip/lane
+            // overrides). Falls back to the default theme if cosmetics weren't fetched this session.
+            var theme = BoardTheme.Resolve(
+                CosmeticState.ResolveBoardSkin(),
+                CosmeticState.ActiveChipSkin,
+                CosmeticState.ActiveLaneSkin);
+            _sprites = SpriteSet.Resolve(_skin, theme);
             if (_worldCamera == null) _worldCamera = Camera.main;
+        }
+
+        // Re-skins the board live: re-resolves the theme from CosmeticState and rebuilds the pieces
+        // with the new SpriteSet. Normal flow skins once in Awake; this is the runtime re-skin path
+        // (used by the dev skin switcher). Safe to call anytime after Init.
+        public void RebuildSkins()
+        {
+            var theme = BoardTheme.Resolve(
+                CosmeticState.ResolveBoardSkin(),
+                CosmeticState.ActiveChipSkin,
+                CosmeticState.ActiveLaneSkin);
+            _sprites = SpriteSet.Resolve(_skin, theme);
+            if (_surfaceFill != null)
+            {
+                _surfaceFill.sprite = _sprites.LaneSlot;    _surfaceFill.color = _sprites.Surface;
+                _surfaceEdge.sprite = _sprites.LaneOutline; _surfaceEdge.color = _sprites.SurfaceBorder;
+            }
+            // Mote pool was built for the OLD skin's count — drop it so the next SetBoardSurface rebuilds
+            // it for the new skin (dev skin switcher may change BoardMoteCount).
+            if (_motes != null)
+            {
+                foreach (var m in _motes) if (m != null) Destroy(m.gameObject);
+                _motes = null;
+            }
+            if (_sparks != null)
+            {
+                foreach (var s in _sparks) if (s != null) Destroy(s.gameObject);
+                _sparks = null;
+            }
+            if (_board != null && _def != null) Init(_board, _def); // rebuilds panel + lanes with _sprites
         }
 
         public void SetWorldDimensions(float width, float panelHeight, float lanesHeight)
@@ -91,6 +144,171 @@ namespace Game.InGame.View
             _worldWidth = width;
             _panelWorldHeight = panelHeight;
             _lanesWorldHeight = lanesHeight;
+            ApplyLanesFit(); // re-fit live so margin/padding changes resize the lanes (not only at build)
+        }
+
+        // Recomputes the uniform lane-grid shrink for the current pieces area and applies it to the
+        // container. Cheap (no rebuild) — the grid is authored in local space, so scaling the container
+        // resizes every lane + chip + tap collider together.
+        private void ApplyLanesFit()
+        {
+            if (_lanesContainer == null || _gridW <= 0f || _gridH <= 0f) return;
+            // Clamp to a positive scale — a negative fit (from a bad/oversized margin) would mirror the
+            // container (the "180° flip" artifact). Never enlarge past 1.
+            _lanesScale = Mathf.Clamp(Mathf.Min(1f, _worldWidth / _gridW, _lanesWorldHeight / _gridH), 0.05f, 1f);
+            _lanesContainer.localScale = Vector3.one * _lanesScale;
+        }
+
+        // Positions/sizes the visible themed board surface (called by BoardWorldResizer each frame).
+        // The surface sits behind the lanes/nodes (negative sortingOrder); pieces lay out inside it.
+        // worldRoot = BoardWorldRoot (the SAME world-space parent as LanesContainer/SignalPanel). The
+        // resizer passes it so the surface lives in world space with the pieces — NEVER under the
+        // screen-space canvas (which would mangle the world position and float it off on its own).
+        public void SetBoardSurface(Transform worldRoot, Vector3 worldCenter, Vector2 worldSize)
+        {
+            if (_sprites == null) return; // edit-mode / pre-Awake guard
+            EnsureBoardSurface(worldRoot);
+            if (_surfaceFill == null) return;
+            // Slight +z keeps the surface BEHIND the pieces (z=0); sortingOrder 0 (pieces ≥1) also does.
+            _surfaceFill.transform.position = new Vector3(worldCenter.x, worldCenter.y, 0.05f);
+            _surfaceFill.size               = worldSize;
+            _surfaceEdge.transform.position = new Vector3(worldCenter.x, worldCenter.y, 0.04f);
+            _surfaceEdge.size               = worldSize;
+
+            _surfaceCenter = worldCenter;
+            _surfaceSize   = worldSize;
+            EnsureBoardMotes(worldRoot, worldSize);
+            EnsureBoardSparks(worldRoot, worldSize);
+        }
+
+        // Builds the premium board mote pool once (sized to the surface). Behind the pieces, scattered
+        // at random rest offsets; Update drifts + twinkles them. No-op when the skin has no motes.
+        private void EnsureBoardMotes(Transform root, Vector2 worldSize)
+        {
+            if (_motes != null || _sprites == null || _sprites.BoardMoteCount <= 0) return;
+            int n = _sprites.BoardMoteCount;
+            _motes     = new SpriteRenderer[n];
+            _moteOffX  = new float[n]; _moteOffY = new float[n];
+            _motePhase = new float[n]; _moteSpeed = new float[n];
+            var rng  = new System.Random(20260618);
+            float md = worldSize.x * 0.09f; // mote diameter relative to board width
+            var ac   = _sprites.Accent;
+            for (int i = 0; i < n; i++)
+            {
+                var m = WorldUtil.CreateSprite(root, $"BoardMote_{i}", _sprites.Glow, new Color(ac.r, ac.g, ac.b, 0f), Vector2.one * md, sliced: false, sortingOrder: 0);
+                _motes[i]     = m;
+                _moteOffX[i]  = (float)(rng.NextDouble() - 0.5) * 0.78f; // rest offset within ±0.39 of size
+                _moteOffY[i]  = (float)(rng.NextDouble() - 0.5) * 0.78f;
+                _motePhase[i] = (float)rng.NextDouble() * 6.283f;
+                _moteSpeed[i] = 0.25f + (float)rng.NextDouble() * 0.5f;
+            }
+        }
+
+        // Builds the top-tier edge-spark pool once: glow points that orbit the surface PERIMETER (an edge
+        // effect distinct from the internal motes). No-op when the skin has no edge sparks.
+        private void EnsureBoardSparks(Transform root, Vector2 worldSize)
+        {
+            if (_sparks != null || _sprites == null || _sprites.SurfaceEdgeSparkCount <= 0) return;
+            int n = _sprites.SurfaceEdgeSparkCount;
+            _sparks     = new SpriteRenderer[n];
+            _sparkU     = new float[n];
+            _sparkSpeed = new float[n];
+            var rng = new System.Random(31415926);
+            float sd = worldSize.x * 0.06f;
+            var ac  = _sprites.Accent;
+            for (int i = 0; i < n; i++)
+            {
+                _sparks[i]     = WorldUtil.CreateSprite(root, $"BoardEdgeSpark_{i}", _sprites.Glow, new Color(ac.r, ac.g, ac.b, 0f), Vector2.one * sd, sliced: false, sortingOrder: 0);
+                _sparkU[i]     = (float)rng.NextDouble();
+                _sparkSpeed[i] = (0.05f + (float)rng.NextDouble() * 0.05f) * (rng.Next(2) == 0 ? 1f : -1f);
+            }
+        }
+
+        // A point on the perimeter of a centred rectangle, parameterised by u∈[0,1) clockwise from the
+        // bottom-left corner. Used to drive edge sparks around the surface frame.
+        private static Vector3 EdgePoint(Vector3 c, Vector2 s, float u)
+        {
+            float w = s.x, h = s.y, per = 2f * (w + h), d = ((u % 1f) + 1f) % 1f * per;
+            float x, y;
+            if (d < w)              { x = -w * 0.5f + d;             y = -h * 0.5f; }
+            else if (d < w + h)     { x =  w * 0.5f;                 y = -h * 0.5f + (d - w); }
+            else if (d < 2f * w + h){ x =  w * 0.5f - (d - w - h);   y =  h * 0.5f; }
+            else                    { x = -w * 0.5f;                 y =  h * 0.5f - (d - 2f * w - h); }
+            return new Vector3(c.x + x, c.y + y, 0.02f);
+        }
+
+        // The accent colour driving premium FX — cycles through the spectrum on SpectrumCycle skins,
+        // otherwise the skin's fixed accent.
+        private Color FxAccent()
+            => _sprites.SpectrumCycle
+                ? Color.HSVToRGB((Time.unscaledTime * 0.08f) % 1f, 0.75f, 1f)
+                : _sprites.Accent;
+
+        // Per-frame premium board FX: surface-frame colour-shift breathe + drifting motes + orbiting edge
+        // sparks. All gated by the skin tokens (cheap boards = 0 = nothing runs).
+        private void BoardSurfaceFx()
+        {
+            if (_sprites == null) return;
+            float pulse = Mathf.Sin(Time.unscaledTime * 2.2f) * 0.5f + 0.5f;
+            Color acc   = FxAccent();
+
+            if (_surfaceEdge != null && _sprites.SurfaceEdgePulse > 0f)
+            {
+                float amp     = _sprites.SurfaceEdgePulse;
+                var   b       = _sprites.SurfaceBorder;
+                Color baseCol = _sprites.SpectrumCycle ? acc : b;                  // spectrum overrides hue
+                Color shifted = Color.Lerp(baseCol, Color.white, 0.35f * amp * pulse); // colour shift, not just alpha
+                float a       = Mathf.Clamp01((_sprites.SpectrumCycle ? 0.9f : b.a) * Mathf.Lerp(1f - 0.4f * amp, 1f + 0.3f * amp, pulse));
+                _surfaceEdge.color = new Color(shifted.r, shifted.g, shifted.b, a);
+            }
+
+            if (_motes != null)
+            {
+                for (int i = 0; i < _motes.Length; i++)
+                {
+                    float t  = Time.unscaledTime * _moteSpeed[i] + _motePhase[i];
+                    float dx = Mathf.Sin(t) * 0.06f;
+                    float dy = Mathf.Cos(t * 0.8f) * 0.06f;
+                    _motes[i].transform.position = new Vector3(
+                        _surfaceCenter.x + (_moteOffX[i] + dx) * _surfaceSize.x,
+                        _surfaceCenter.y + (_moteOffY[i] + dy) * _surfaceSize.y,
+                        0.03f); // in front of the surface (z 0.05), behind the pieces (sortingOrder ≥1)
+                    float tw = Mathf.Sin(t * 1.7f) * 0.5f + 0.5f;
+                    _motes[i].color = new Color(acc.r, acc.g, acc.b, Mathf.Lerp(0.05f, 0.22f, tw));
+                }
+            }
+
+            if (_sparks != null)
+            {
+                for (int i = 0; i < _sparks.Length; i++)
+                {
+                    float u = _sparkU[i] + Time.unscaledTime * _sparkSpeed[i];
+                    _sparks[i].transform.position = EdgePoint(_surfaceCenter, _surfaceSize, u);
+                    float tw = Mathf.Sin(u * Mathf.PI * 4f + Time.unscaledTime * 3f) * 0.5f + 0.5f;
+                    _sparks[i].color = new Color(acc.r, acc.g, acc.b, Mathf.Lerp(0.12f, 0.55f, tw));
+                }
+            }
+        }
+
+        private void EnsureBoardSurface(Transform worldRoot)
+        {
+            // Resolve the world root robustly: explicit arg → lanes' parent → scene lookup → self.
+            Transform root = worldRoot != null ? worldRoot
+                : (_lanesContainer != null && _lanesContainer.parent != null) ? _lanesContainer.parent
+                : (GameObject.Find("BoardWorldRoot")?.transform ?? transform);
+
+            if (_surfaceFill == null)
+            {
+                // sortingOrder 0: above the camera clear / background, below every lane piece (lowest = 1).
+                _surfaceFill = WorldUtil.CreateSprite(root, "BoardSurface",     _sprites.LaneSlot,    _sprites.Surface,       Vector2.one, sortingOrder: 0);
+                _surfaceEdge = WorldUtil.CreateSprite(root, "BoardSurfaceEdge", _sprites.LaneOutline, _sprites.SurfaceBorder, Vector2.one, sortingOrder: 0);
+            }
+            else if (root != null && _surfaceFill.transform.parent != root)
+            {
+                // Was created before the world root resolved (parented under the canvas) — relocate it.
+                _surfaceFill.transform.SetParent(root, worldPositionStays: false);
+                _surfaceEdge.transform.SetParent(root, worldPositionStays: false);
+            }
         }
 
         private void WireButtons()
@@ -282,6 +500,8 @@ namespace Game.InGame.View
             // container. Chips + tap colliders are children, so they scale with the container.
             float gridW = laneW * cols + gap * (cols - 1);
             float gridH = laneH * rows + gap * (rows - 1);
+            _gridW = gridW;
+            _gridH = gridH;
             _lanesScale = Mathf.Min(1f, containerWidth / gridW, containerHeight / gridH);
             _lanesContainer.localScale = Vector3.one * _lanesScale;
 
@@ -301,8 +521,32 @@ namespace Game.InGame.View
 
                 var lv = SpawnLane(i, _board.Lanes[i], laneSize);
                 lv.transform.localPosition = new Vector3(x, y, 0f);
-                lv.OnTapped += tapped => { if (!_inputBlocked) OnLaneTapped?.Invoke(tapped); };
+                lv.OnTapped += tapped => OnLaneTapped?.Invoke(tapped); // controller queues taps during move anim
                 _laneViews.Add(lv);
+
+                // Tag the lane by id (slot_lane_1…) and, if it carries a gimmick, by gimmick id
+                // (gimmick_locked/blind/overload) so GimmickAppear tutorials can highlight the real lane.
+                var laneIds = new List<string> { $"slot_lane_{i + 1}" };
+                var laneModel = _board.Lanes[i];
+                if (laneModel.Kind == LaneKind.Locked)     laneIds.Add("gimmick_locked");
+                else if (laneModel.Kind == LaneKind.Blind) laneIds.Add("gimmick_blind");
+                foreach (var c in laneModel.Chips) if (c.Overload) { laneIds.Add("gimmick_overload"); break; }
+                var laneTt = lv.gameObject.GetComponent<TutorialTarget>() ?? lv.gameObject.AddComponent<TutorialTarget>();
+                laneTt.SetIds(laneIds.ToArray());
+            }
+
+            // Whole-lane-area target (tut.free_sort step).
+            if (_lanesContainer != null)
+            {
+                var areaTt = _lanesContainer.GetComponent<TutorialTarget>() ?? _lanesContainer.gameObject.AddComponent<TutorialTarget>();
+                areaTt.SetIds("slot_lane_area");
+            }
+
+            // Signal Panel target (relay/panel explanation steps).
+            if (_panelContainer != null)
+            {
+                var panelTt = _panelContainer.GetComponent<TutorialTarget>() ?? _panelContainer.gameObject.AddComponent<TutorialTarget>();
+                panelTt.SetIds("signal_panel");
             }
         }
 
@@ -371,27 +615,26 @@ namespace Game.InGame.View
             if (_undoBtn)    _undoBtn.interactable    = _board.CanUndo;
             if (_addLaneBtn) _addLaneBtn.interactable = !_board.AddLaneUsed;
 
-            // Boosters are gold-priced (spec §4): show the cost from item.csv. Undo is free/unlimited.
+            // Shuffle / AddLane are OWNED items: show the held quantity (× N), not a gold price.
+            // Undo is free, single-step — icon alone conveys it (no count, no locale text); button greys out via CanUndo.
             var undoTxt = FindDeep(_undoBtn.transform, "Label")?.GetComponent<TMP_Text>()
                        ?? FindDeep(_undoBtn.transform, "Text")?.GetComponent<TMP_Text>();
-            if (undoTxt) undoTxt.text = ""; // free/unlimited — icon alone conveys it (no locale text)
+            if (undoTxt) undoTxt.text = "";
 
             var shuffleTxt = FindDeep(_shuffleBtn.transform, "Label")?.GetComponent<TMP_Text>()
                           ?? FindDeep(_shuffleBtn.transform, "Text")?.GetComponent<TMP_Text>();
-            if (shuffleTxt) shuffleTxt.text = BoosterPrice(BoosterType.Shuffle).ToString();
+            if (shuffleTxt) shuffleTxt.text = OwnedLabel(BoosterType.Shuffle);
 
-            if (_addLaneLabel) _addLaneLabel.text = BoosterPrice(BoosterType.AddLane).ToString();
+            if (_addLaneLabel) _addLaneLabel.text = OwnedLabel(BoosterType.AddLane);
         }
 
-        private static int BoosterPrice(BoosterType type)
+        // Booster-bar label: held quantity (× N). Out of stock shows × 0 (tapping still instant-buys one
+        // with gold via InGameController.BuyBoosterThenUse — the price is not surfaced on the bar).
+        private static string OwnedLabel(BoosterType type)
         {
-            var items = Game.Utils.CsvLoader.Load<ProjectFill.Data.Generated.Item>(
-                ProjectFill.Data.Generated.Item.ResourcePath);
-            int id = type.ItemId();
-            if (items != null)
-                foreach (var it in items)
-                    if (it.id == id) return it.price;
-            return 0;
+            var progress = Game.Services.PlayerProgressService.Instance;
+            int owned = progress != null ? progress.GetItemCount(type.ItemId()) : 0;
+            return $"× {owned}";
         }
 
         // ── Selection / highlight ────────────────────────────────────────────
@@ -474,6 +717,8 @@ namespace Game.InGame.View
             {
                 for (int j = 0; j < count; j++) Destroy(flyers[j].gameObject);
                 RefreshLane(to);
+                UpdateHud();        // move count
+                UpdateBoosters();   // re-enable Undo (CanUndo) after a plain move
             }
             else
             {
@@ -812,19 +1057,21 @@ namespace Game.InGame.View
                 float s = _softStuck ? 1f + Mathf.Sin(Time.unscaledTime * 6f) * 0.06f : 1f;
                 _shuffleBtnRt.localScale = Vector3.one * s;
             }
+
+            BoardSurfaceFx();
         }
 
         public void BlockInput(bool block) => _inputBlocked = block;
 
         // ── Overlays (route through UIManager — scrim = popup backdrop convention) ────
 
-        public void ShowStuckPanel(bool addLaneAvailable, Action onAddLane, Action onShuffle, Action onGiveUp)
+        public void ShowStuckPanel(bool addLaneAvailable, Action onAddLane, Action onRetry, Action onGiveUp)
         {
-            Action add  = () => { BlockInput(false); onAddLane?.Invoke(); };
-            Action shuf = () => { BlockInput(false); onShuffle?.Invoke(); };
+            Action add   = () => { BlockInput(false); onAddLane?.Invoke(); };
+            Action retry = () => { BlockInput(false); onRetry?.Invoke(); };
 
             var v = UIManager.Instance != null
-                ? UIManager.Instance.ShowPopup<FailOverlayView>(p => p.Configure(addLaneAvailable, add, shuf, onGiveUp))
+                ? UIManager.Instance.ShowPopup<FailOverlayView>(p => p.Configure(addLaneAvailable, add, retry, onGiveUp))
                 : null;
             if (v != null) return;
 
@@ -836,7 +1083,7 @@ namespace Game.InGame.View
                 AddOverlayButton(card, "＋  ADD LANE  (Ad)", new Color(0.12f, 0.42f, 0.40f), y, () => { Destroy(scrim); add(); });
                 y -= 0.18f;
             }
-            AddOverlayButton(card, "⟳  SHUFFLE  100", new Color(0.18f, 0.20f, 0.38f), y, () => { Destroy(scrim); shuf(); });
+            AddOverlayButton(card, "Retry Stage", new Color(0.12f, 0.30f, 0.34f), y, () => { Destroy(scrim); retry(); });
             AddOverlayButton(card, "Forfeit Stage", new Color(0.28f, 0.12f, 0.12f), y - 0.18f, () => { Destroy(scrim); onGiveUp?.Invoke(); });
         }
 

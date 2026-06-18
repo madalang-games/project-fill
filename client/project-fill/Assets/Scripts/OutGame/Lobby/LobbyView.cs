@@ -14,7 +14,6 @@ namespace Game.OutGame.Lobby
         [SerializeField] private GameObject           _shopTabRoot;
         [SerializeField] private GameObject           _rankingTabRoot;
         [SerializeField] private GameObject           _achievementTabRoot;
-        [SerializeField] private RankingTabView       _rankingTabView;
         [SerializeField] private SceneBackgroundView  _sceneBackground;
 
         private void Awake()
@@ -89,13 +88,6 @@ namespace Game.OutGame.Lobby
         {
             _navBar?.SelectTab(LobbyTab.Shop);
             ShowTab(LobbyTab.Shop);
-        }
-
-        public void GoToRankingChallenge()
-        {
-            _navBar?.SelectTab(LobbyTab.Ranking);
-            ShowTab(LobbyTab.Ranking);
-            _rankingTabView?.SelectChallenge();
         }
     }
 }

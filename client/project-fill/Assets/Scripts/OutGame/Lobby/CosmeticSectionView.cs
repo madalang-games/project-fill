@@ -68,7 +68,8 @@ namespace Game.OutGame.Lobby
             var loc = LocalizationService.Instance;
             var cells = _items
                 .Where(i => (CosmeticCategory)i.Category == _currentCategory)
-                .OrderBy(i => i.SortOrder);
+                .OrderBy(i => i.SortOrder)
+                .ToList();
 
             foreach (var item in cells)
             {
@@ -79,11 +80,17 @@ namespace Game.OutGame.Lobby
                 var preview = go.transform.Find("Preview")?.GetComponent<Image>();
                 if (preview != null)
                 {
-                    var spr = DynamicResourceService.Instance?.GetSprite(item.PreviewRes);
-                    preview.sprite = spr;
-                    preview.preserveAspect = true;
-                    preview.color = spr != null ? UnityEngine.Color.white : _inactiveTabColor;
+                    // Render the actual skin (board surface+chips / lane column / scaled chip) as layered UI,
+                    // not a flat preview_res sprite — the cell shows what the player is buying.
+                    preview.preserveAspect = false;
+                    CosmeticPreview.Build(preview, item);
                 }
+
+                var highlight = go.transform.Find("Preview/SelectedHighlight")?.gameObject;
+                if (highlight != null) highlight.SetActive(IsActive(item));
+
+                var lockOverlay = go.transform.Find("Preview/LockOverlay")?.gameObject;
+                if (lockOverlay != null) lockOverlay.SetActive(!item.Unlocked);
 
                 var nameText = go.transform.Find("NameText")?.GetComponent<TMP_Text>();
                 if (nameText != null) nameText.text = loc != null ? loc.Get(item.NameKey) : item.NameKey;
@@ -99,6 +106,33 @@ namespace Game.OutGame.Lobby
                     btn.onClick.AddListener(() => OpenPreview(captured));
                 }
             }
+
+            ResizeSectionToFit(cells.Count);
+        }
+
+        // Section lives inside the Shop's vertical ScrollRect — adding a second vertical scroll here would
+        // conflict. Instead size the section to the grid's row count so the outer Shop scroll absorbs overflow.
+        private void ResizeSectionToFit(int count)
+        {
+            var glg = _gridContainer != null ? _gridContainer.GetComponent<GridLayoutGroup>() : null;
+            if (glg == null) return;
+
+            int cols = Mathf.Max(1, glg.constraintCount);
+            int rows = Mathf.CeilToInt(count / (float)cols);
+            float gridH = rows * glg.cellSize.y + Mathf.Max(0, rows - 1) * glg.spacing.y;
+
+            // Grid is anchor-stretched inside the section; its insets reserve the title/tab header band.
+            float topInset = -_gridContainer.offsetMax.y;
+            float bottomInset = _gridContainer.offsetMin.y;
+            float sectionH = gridH + topInset + bottomInset;
+
+            var le = GetComponent<LayoutElement>();
+            if (le != null) le.preferredHeight = sectionH;
+            var rt = (RectTransform)transform;
+            rt.sizeDelta = new Vector2(rt.sizeDelta.x, sectionH);
+
+            if (transform.parent is RectTransform parentRt)
+                LayoutRebuilder.ForceRebuildLayoutImmediate(parentRt);
         }
 
         private string StateLabel(CosmeticItemDto item, LocalizationService loc)

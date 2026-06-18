@@ -536,7 +536,7 @@ Transform:
   m_GameObject: {fileID: 1019528925}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: -0.120251894, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -567,7 +567,7 @@ Transform:
   m_GameObject: {fileID: 1188956502}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -0.37878776, z: 0}
+  m_LocalPosition: {x: 0, y: -0.6398885, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -616,7 +616,7 @@ PrefabInstance:
     - target: {fileID: 1902601276092142199, guid: 3f0fb8863d66d6f41b141934026cdcea, type: 3}
       propertyPath: _skin.chip
       value: 
-      objectReference: {fileID: 21300000, guid: db1b9f7f598fdf94ea5c75b04f31554f, type: 3}
+      objectReference: {fileID: 0}
     - target: {fileID: 1902601276092142199, guid: 3f0fb8863d66d6f41b141934026cdcea, type: 3}
       propertyPath: _skin.disc
       value: 
@@ -640,7 +640,7 @@ PrefabInstance:
     - target: {fileID: 1902601276092142199, guid: 3f0fb8863d66d6f41b141934026cdcea, type: 3}
       propertyPath: _skin.lockSeal
       value: 
-      objectReference: {fileID: 21300000, guid: 6fef9353eb9e2ea459eae622eaa53852, type: 3}
+      objectReference: {fileID: 21300000, guid: 869fd279fb7c33a40a34ddabeac2739c, type: 3}
     - target: {fileID: 1902601276092142199, guid: 3f0fb8863d66d6f41b141934026cdcea, type: 3}
       propertyPath: _skin.panelNode
       value: 
@@ -648,7 +648,7 @@ PrefabInstance:
     - target: {fileID: 1902601276092142199, guid: 3f0fb8863d66d6f41b141934026cdcea, type: 3}
       propertyPath: _skin.chipOutline
       value: 
-      objectReference: {fileID: 21300000, guid: 3e45e97a8efaeb948a01e13e23556f7c, type: 3}
+      objectReference: {fileID: 0}
     - target: {fileID: 1915032740836409137, guid: 3f0fb8863d66d6f41b141934026cdcea, type: 3}
       propertyPath: m_SizeDelta.x
       value: -8
@@ -857,6 +857,30 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 8189640851268163189, guid: 3f0fb8863d66d6f41b141934026cdcea, type: 3}
+      propertyPath: _innerPad
+      value: 0.04
+      objectReference: {fileID: 0}
+    - target: {fileID: 8189640851268163189, guid: 3f0fb8863d66d6f41b141934026cdcea, type: 3}
+      propertyPath: _flightLayer
+      value: 
+      objectReference: {fileID: 1019528926}
+    - target: {fileID: 8189640851268163189, guid: 3f0fb8863d66d6f41b141934026cdcea, type: 3}
+      propertyPath: _worldCamera
+      value: 
+      objectReference: {fileID: 519420031}
+    - target: {fileID: 8189640851268163189, guid: 3f0fb8863d66d6f41b141934026cdcea, type: 3}
+      propertyPath: _boardWorldRoot
+      value: 
+      objectReference: {fileID: 474139536}
+    - target: {fileID: 8189640851268163189, guid: 3f0fb8863d66d6f41b141934026cdcea, type: 3}
+      propertyPath: _lanesContainer
+      value: 
+      objectReference: {fileID: 1188956503}
+    - target: {fileID: 8189640851268163189, guid: 3f0fb8863d66d6f41b141934026cdcea, type: 3}
+      propertyPath: _panelContainer
+      value: 
+      objectReference: {fileID: 1750720020}
     - target: {fileID: 8578732736713015685, guid: 3f0fb8863d66d6f41b141934026cdcea, type: 3}
       propertyPath: m_IsActive
       value: 0
@@ -926,7 +950,7 @@ Transform:
   m_GameObject: {fileID: 1750720019}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 3.5911846, z: 0}
+  m_LocalPosition: {x: 0, y: 2.60784, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

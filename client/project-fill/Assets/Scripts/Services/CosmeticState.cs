@@ -23,6 +23,19 @@ namespace Game.Services
             HasData            = true;
         }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        // DEV-ONLY: force the active cosmetics for the in-game skin switcher (no server round-trip).
+        // Compiled out of release builds. See InGame.Controller.DevSkinSwitcher.
+        public static void DevOverride(string board, string chip, string lane)
+        {
+            ActiveBoardSkin    = board ?? string.Empty;
+            ActiveChipSkin     = chip  ?? string.Empty;
+            ActiveLaneSkin     = lane  ?? string.Empty;
+            UseCustomBoardSkin = true;
+            HasData            = true;
+        }
+#endif
+
         // Board skin to render in-game: the custom override if enabled, else the default.
         public static string ResolveBoardSkin()
             => UseCustomBoardSkin && !string.IsNullOrEmpty(ActiveBoardSkin)

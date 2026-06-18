@@ -8,7 +8,7 @@ namespace Game.InGame
         private readonly List<SlotLane>     _lanes;
         private readonly List<SignalType>   _relayOrder;       // empty = no Relay constraint
         private readonly List<SignalType>   _registered = new(); // types absorbed into the Signal Panel
-        private readonly Stack<BoardSnapshot> _undoStack = new();
+        private BoardSnapshot _lastSnapshot;   // single-step undo: only the most recent move is reversible
         private bool _addLaneUsed;
         private int  _relayProgress;
 
@@ -22,7 +22,7 @@ namespace Game.InGame
         public int  TotalSets     { get; }
         public bool IsCleared     => CompletedSets >= TotalSets;
         public bool AddLaneUsed   => _addLaneUsed;
-        public bool CanUndo       => _undoStack.Count > 0;
+        public bool CanUndo       => _lastSnapshot != null;
 
         public Board(List<SlotLane> lanes, int totalSets, List<SignalType> relayOrder = null)
         {
@@ -37,7 +37,7 @@ namespace Game.InGame
         {
             if (from == to || (uint)from >= _lanes.Count || (uint)to >= _lanes.Count) return false;
             var src = _lanes[from];
-            if (src.IsEmpty || src.Pending) return false; // A-R01 / pending lanes are sealed
+            if (src.IsEmpty || src.Pending || src.Locked) return false; // A-R01 / pending + locked lanes are sealed (no take-from)
             return _lanes[to].CanAccept(src.TopChip!.Value);
         }
 
@@ -130,7 +130,7 @@ namespace Game.InGame
         {
             for (int i = 0; i < _lanes.Count; i++)
             {
-                if (_lanes[i].IsEmpty || _lanes[i].Pending) continue;
+                if (_lanes[i].IsEmpty || _lanes[i].Pending || _lanes[i].Locked) continue; // locked = sealed source (matches player)
                 var top = _lanes[i].TopChip!.Value;
                 for (int j = 0; j < _lanes.Count; j++)
                 {
@@ -145,8 +145,9 @@ namespace Game.InGame
 
         public bool Undo()
         {
-            if (_undoStack.Count == 0) return false;
-            _undoStack.Pop().Restore(this);
+            if (_lastSnapshot == null) return false;
+            _lastSnapshot.Restore(this);
+            _lastSnapshot = null; // consumed → no chained undo (single-step, spec: 1 move only)
             return true;
         }
 
@@ -186,7 +187,7 @@ namespace Game.InGame
         {
             for (int i = 0; i < _lanes.Count; i++)
             {
-                if (_lanes[i].IsEmpty || _lanes[i].Pending) continue;
+                if (_lanes[i].IsEmpty || _lanes[i].Pending || _lanes[i].Locked) continue; // locked = sealed source (matches player)
                 var top = _lanes[i].TopChip!.Value;
                 for (int j = 0; j < _lanes.Count; j++)
                 {
@@ -237,7 +238,7 @@ namespace Game.InGame
             return sb.ToString();
         }
 
-        private void SaveSnapshot() => _undoStack.Push(new BoardSnapshot(this));
+        private void SaveSnapshot() => _lastSnapshot = new BoardSnapshot(this); // keep only the latest → single-step undo
     }
 
     // Full-state snapshot for Undo (lanes + gimmick flags + counters).

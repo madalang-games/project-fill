@@ -12,6 +12,7 @@ Namespace: `Game.Services`
 |------|-------|------|
 | `StageDataService.cs` | `StageDataService` | DDOL singleton (lazy-instantiated if not in scene, e.g. InGame entered without Boot); loads Stage CSV via CsvLoader; GetStage(id), GetAll(), MaxStageId() |
 | `DynamicResourceService.cs` | `DynamicResourceService` | DDOL singleton; loads dynamic_resource CSV; GetSprite(resourceKey) via Resources.Load (Resources-path entries only) |
+| `ResourceKeys.cs` | `ResourceKeys` | `public static` const `dynamic_resource.csv` keys referenced by fixed key in code (IAP icons, lobby event badges); avoids magic-string typos. Data-driven keys (item/currency/iap icon columns) stay in CSV |
 | `CurrencyDataService.cs` | `CurrencyDataService` | DDOL singleton; loads currency CSV; GetByRewardType(string) |
 | `PlayerProgressService.cs` | `PlayerProgressService` | DDOL singleton; gold balance, per-stage best-moves/unlock (server-authoritative, cached), booster inventories |
 | `AuthService.cs` | `AuthService` | DDOL singleton; auth result enum; Initialize(callback); stub until real HTTP auth wiring |
@@ -22,19 +23,20 @@ Namespace: `Game.Services`
 | `AdApiService.cs` | `AdApiService` | API client for ad operations: interstitial shown recording; result-screen double-reward claim |
 | `NetworkService.cs` | `NetworkService` | DDOL singleton; centralised HTTP client; Get/Post; injects Application.version + authToken headers; configurable log level |
 | `BootstrapService.cs` | `BootstrapService` | DDOL singleton; pre-auth boot gate: GET `/api/bootstrap/config` → force-update / schema-mismatch / OTA meta-hash patch via `/api/data/bundle` + `CsvLoader.ApplyPatchAtomic`; uses raw `UnityWebRequest` (pre-auth, custom headers/timeout) |
-| `StageApiService.cs` | `StageApiService` | `POST /api/stages/{id}/start` — stage-entry unlock gate (STAGE_LOCKED on locked); `POST /api/stages/{id}/clear` — server-authoritative stage-clear submit; syncs gold + returns best/rank/first-clear/chapter-chest/rewards |
+| `StageApiService.cs` | `StageApiService` | `POST /api/stages/{id}/start` — stage-entry unlock gate (STAGE_LOCKED on locked) + returns `SessionId` attempt token; `POST /api/stages/{id}/clear` — server-authoritative stage-clear submit (echoes `SessionId`); syncs gold + returns best/rank/first-clear/chapter-chest/rewards |
 | `RankingApiService.cs` | `RankingApiService` | Optional server ranking page/my-rank fetcher |
 | `CurrencyApiService.cs` | `CurrencyApiService` | Server soft currency fetch + spend; syncs `PlayerProgressService.Gold` on response |
 | `InventoryApiService.cs` | `InventoryApiService` | Server-backed items fetch + spend API client |
 | `RewardsApiService.cs` | `RewardsApiService` | Server rewards list fetch + claim API client |
 | `TutorialApiService.cs` | `TutorialApiService` | Server-backed tutorial progress fetch + complete API client |
 | `ErrorResponseJson.cs` | `ErrorResponseJson` | Serializable helper for server error code extraction |
+| `ServerErrorCodes.cs` | `ServerErrorCodes` | Client-side mirror of server error codes the client must BRANCH on (not display): stage attempt-token failures; `Parse`/`IsStageSessionError` helpers |
 | `PlayerApiService.cs` | `PlayerApiService` | DDOL singleton; `GET /api/player/progress` fetch; deserializes to `PlayerProgressResponse` |
 | `CosmeticApiService.cs` | `CosmeticApiService` | DDOL singleton; `/api/cosmetics` list/unlock/active client; syncs gold on unlock; caches active cosmetics into `CosmeticState` on Fetch/SetActive |
-| `CosmeticState.cs` | `CosmeticState` | Static session cache of active cosmetics (chip/lane/board skin + useCustomBoardSkin); `ResolveBoardSkin()` → active board skin or `board_default`; read by `InGameSceneBackgroundView` without re-fetch |
+| `CosmeticState.cs` | `CosmeticState` | Static session cache of active cosmetics (chip/lane/board skin + useCustomBoardSkin); `ResolveBoardSkin()` → active board skin or `board_default`; read by `InGameSceneBackgroundView` without re-fetch; `DevOverride(board,chip,lane)` (`#if UNITY_EDITOR \|\| DEVELOPMENT_BUILD`) forces active cosmetics for the dev skin switcher |
 | `AttendanceApiService.cs` | `AttendanceApiService` | DDOL singleton; `/api/attendance` status + claim client; syncs gold on claim |
 | `AchievementApiService.cs` | `AchievementApiService` | DDOL singleton; `/api/achievements` list + claim client; syncs gold on claim |
-| `DailyChallengeApiService.cs` | `DailyChallengeApiService` | DDOL singleton; `/api/daily-challenge` today/clear/ranking/streak client; syncs gold on clear |
+| `WeeklyMissionApiService.cs` | `WeeklyMissionApiService` | DDOL singleton; `/api/events/weekly-mission` status fetch + `claim/{threshold}`; syncs gold on claim |
 | `NetworkRetryOptions.cs` | `NetworkRetryOptions` | Options class for HTTP retries with exponential backoff, jitter, loading overlay, and toast messages |
 | `SoundManager.cs` | `SoundManager` | DDOL singleton; BGM + SFX playback; SfxCatalog-based PlaySfx(SfxId) with pitch/cooldown; volume + mute in PlayerPrefs |
 
@@ -68,7 +70,9 @@ Namespace: `Game.Services`
 | `LocalizationService.GetFont(Language)` | method | Returns TMP_FontAsset from FontLocalizationConfig; null if config missing |
 | `StageDataService.GetStage(int)` | method | Returns Stage or null |
 | `StageDataService.GetAll()` | method | Returns Stage[] |
-| `StageApiService.StartStage(int,onSuccess,onError)` | method | `POST /api/stages/{id}/start`; onError carries STAGE_LOCKED when unreachable; onSuccess carries server `MaxClearedStageId` |
+| `StageApiService.StartStage(int,onSuccess,onError)` | method | `POST /api/stages/{id}/start`; onError carries STAGE_LOCKED when unreachable; onSuccess carries server `MaxClearedStageId` + `SessionId` attempt token |
+| `StageApiService.ClearStage(stageId,moves,types,sessionId,boostersUsed,onSuccess,onError)` | method | `POST /api/stages/{id}/clear`; `sessionId` = the matching StartStage token (server rejects missing/mismatch/expired with `INVALID_STAGE_ATTEMPT`); `boostersUsed` drives the boosterless achievement + weekly-mission seams |
+| `ServerErrorCodes.IsStageSessionError(err)` | method | True when a clear failure body is `INVALID_STAGE_ATTEMPT`/`STAGE_ATTEMPT_EXPIRED` (→ force-exit to lobby) |
 | `DynamicResourceService.Instance` | prop | DDOL singleton |
 | `DynamicResourceService.GetSprite(string)` | method | Loads Sprite via Resources.Load; caches result; returns null for non-Resources paths |
 | `CurrencyDataService.Instance` | prop | DDOL singleton |

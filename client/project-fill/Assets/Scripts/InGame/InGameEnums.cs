@@ -10,6 +10,20 @@ namespace Game.InGame
         Blind  = 2, // Ch3: only the Top Chip's type is revealed
     }
 
+    // Chip cosmetic "material" axis — a surface finish composited OVER the signal-colour body.
+    // The body hue ALWAYS stays the signal colour (gameplay identity); the finish only modulates
+    // the surface (stipple / scanline / emboss / gloss), never the colour. Flat = original look.
+    // Carried by a chip skin (see BoardTheme.ApplyChip); rendered by ChipView via a procedural
+    // overlay (TextureFactory.ChipFinishOverlay).
+    public enum ChipFinish
+    {
+        Flat     = 0, // no surface pattern (default — no regression)
+        Dither   = 1, // ordered-dither stipple (retro pixel shading)
+        Scanline = 2, // horizontal CRT scanlines
+        Bevel    = 3, // top highlight + bottom shadow (embossed cell)
+        Gloss    = 4, // glossy sheen fading down from the top (glassy)
+    }
+
     // Maps each booster to its item.csv id — the single source of truth for price (item.price)
     // and inventory counts (PlayerProgressService.GetItemCount). Keeps booster spending off magic numbers.
     public static class BoosterItem

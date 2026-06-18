@@ -17,7 +17,7 @@ slot-in via `BoardSkin`.
 | file | class | role |
 |------|-------|------|
 | `SignalType.cs` | `SignalType`, `BoosterType`, `SignalTypeExtensions` | 10 signal colors + glyphs; 3 boosters (Undo/Shuffle/AddLane) |
-| `InGameEnums.cs` | `LaneKind`, `BoosterItem` | Normal / Locked / Blind lane kind; `BoosterItem.ItemId(BoosterType)` maps a booster to its `item.csv` id (price + inventory source) |
+| `InGameEnums.cs` | `LaneKind`, `ChipFinish`, `BoosterItem` | Normal / Locked / Blind lane kind; `ChipFinish` (Flat/Dither/Scanline/Bevel/Gloss) cosmetic chip surface-material axis; `BoosterItem.ItemId(BoosterType)` maps a booster to its `item.csv` id (price + inventory source) |
 | `Chip.cs` | `Chip` | Readonly struct: SignalType + Overload flag |
 | `SlotLane.cs` | `SlotLane` | Lane model: chip stack, capacity, Locked/Pending/Blind state, CanAccept rules |
 | `Board.cs` | `Board`, `BoardSnapshot` | Board model: move rules, relay-order cascade absorb, locked unlock, undo, solver hooks (Clone/EnumerateMoves/ApplyMoveRaw/StateKey) |
@@ -25,7 +25,6 @@ slot-in via `BoardSkin`.
 | `BoardFactory.cs` | `BoardFactory` | Seeded random-fill + solvability verify; **fallback** generator when a stage row has no `board`; in-place Reshuffle for Shuffle booster |
 | `BoardCodec.cs` | `BoardCodec` | Encode/decode the `board` column layout (4 chars/lane; lower=overload; `-`=empty); mirror of editor `board-codec.ts` |
 | `StageDefinition.cs` | `StageDefinition`, `StageLibrary` | Declarative stage layout; one sample stage per chapter (gimmick verification) |
-| `ChallengeContext.cs` | `ChallengeContext` | Daily-challenge hand-off (popup→InGame): server stageSeed/params → `BuildDefinition`; stable seed hash → identical board worldwide; consume-once `Active` flag |
 
 ## Symbols
 | symbol | kind | note |
@@ -48,3 +47,4 @@ slot-in via `BoardSkin`.
 - Sample stages deviate slightly from the content-design difficulty table (fewer types / extra empties)
   to keep the runtime solver light and relay/overload demos reliable — they are a dev verification harness.
 - `BoardFactory.Generate` rejects boards that start with any Complete Set (A-R09 no-freebie); solver path stays single-chip (batch is a player convenience, not a new reachable state).
+- **Solver/player move parity**: a lane that is Empty, **Pending** (relay hold), or **Locked** is NOT a valid move SOURCE — you can't take chips off it. `CanMoveTo`, `IsHardStuck`, and `EnumerateMoves` all skip these as sources so the Soft/Hard Stuck solver matches what the player can actually do (controller blocks selecting Pending/Locked lanes). Omitting Locked here makes the solver see phantom moves and under-detect stuck on Locked-lane stages.

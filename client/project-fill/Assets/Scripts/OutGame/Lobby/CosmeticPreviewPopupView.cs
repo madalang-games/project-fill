@@ -42,10 +42,9 @@ namespace Game.OutGame.Lobby
             var loc = LocalizationService.Instance;
             if (_previewImage != null)
             {
-                var spr = DynamicResourceService.Instance?.GetSprite(item.PreviewRes);
-                _previewImage.sprite = spr;
-                _previewImage.preserveAspect = true;
-                _previewImage.enabled = spr != null;
+                // Layered procedural skin preview (same as the grid cell) — shows the real in-game look.
+                _previewImage.preserveAspect = false;
+                CosmeticPreview.Build(_previewImage, item);
             }
             if (_nameText != null) _nameText.text = loc != null ? loc.Get(item.NameKey) : item.NameKey;
             if (_descText != null) _descText.text = loc != null ? loc.Get(item.DescKey) : item.DescKey;

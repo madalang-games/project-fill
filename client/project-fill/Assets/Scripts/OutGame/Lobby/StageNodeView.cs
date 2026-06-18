@@ -1,6 +1,5 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using Game.Core;
 using TMPro;
 using UnityEngine;
@@ -10,86 +9,96 @@ namespace Game.OutGame.Lobby
 {
     public class StageNodeView : MonoBehaviour
     {
-        [SerializeField] private TMP_Text       _stageLabel;
-        [SerializeField] private GameObject     _clearedBadge; // shown when the stage has been cleared
-        [SerializeField] private Button         _button;
-        [SerializeField] private Image          _border;
-        [SerializeField] private Image          _difficultyOutline; // neon border (Normal=blue, Hard=red)
-        [SerializeField] private GameObject     _skullIcon;         // Hard only badge
-        [SerializeField] private GameObject     _lockOverlay;
+        [SerializeField] private TMP_Text _stageLabel;
+        [SerializeField] private Button   _button;
+        [SerializeField] private Image    _node; // ui_stage_node sprite; chapter-tinted, or static power-off when locked
+        [SerializeField] private Image    _glow; // difficulty aura behind node (Normal/Hard only); gently color-pulsed
 
-        private static readonly Dictionary<int, Sprite> _chapterSpriteCache = new();
-        private static readonly Color _lockedTint = new Color(0.75f, 0.75f, 0.75f, 1f);
+        // Circuit "power cut" look for locked stages: desaturated cold slate.
+        private static readonly Color _lockedColor = new Color(0.20f, 0.23f, 0.30f, 1f);
+
+        private const float GlowPulseAlpha  = 0.60f; // unlocked: steady alpha, color shifts
+        private const float GlowStaticAlpha = 0.30f; // locked: steady, no animation
+        private const float PulseBrighten   = 0.55f; // base → white blend at pulse peak
+        private const float PulseSpeed      = 2.0f;
+        private const float NodeTintWeight  = 0.55f; // white → chapter PathColor
 
         public event Action<int> OnTapped;
 
         private int       _stageId;
-        private int       _difficulty;
-        private Color     _baseColor;
-        private Coroutine _outlinePulse;
+        private bool      _unlocked;
+        private Color     _glowColor;
+        private Coroutine _glowPulse;
 
         private void Awake()
         {
             _button.onClick.AddListener(() => OnTapped?.Invoke(_stageId));
         }
 
-        public void Bind(int stageId, bool cleared, bool unlocked, bool isCurrent, int chapterId = 0, int difficulty = 0)
+        public void Bind(int stageId, bool unlocked, int chapterId, int difficulty)
         {
-            _stageId    = stageId;
-            _difficulty = difficulty;
-
+            _stageId  = stageId;
+            _unlocked = unlocked;
             if (_stageLabel != null) _stageLabel.text = stageId.ToString();
-            if (_lockOverlay != null) _lockOverlay.SetActive(!unlocked);
 
-            if (_clearedBadge != null) _clearedBadge.SetActive(cleared && unlocked);
+            StopPulse();
 
-            if (_border != null && chapterId > 0)
+            // Node tint: unlocked → chapter-themed (bright, pops on the dark gradient); locked → power-off slate.
+            if (_node != null)
+                _node.color = unlocked
+                    ? Color.Lerp(Color.white, ChapterBgTheme.Get(chapterId).PathColor, NodeTintWeight)
+                    : _lockedColor;
+
+            // Difficulty glow (Easy=0 → none) shown in BOTH states; unlocked breathes (dynamic),
+            // locked is steady (static).
+            bool hasGlow = difficulty > 0;
+            if (_glow != null)
             {
-                if (!_chapterSpriteCache.TryGetValue(chapterId, out var spr))
+                _glow.gameObject.SetActive(hasGlow);
+                if (hasGlow)
                 {
-                    spr = Resources.Load<Sprite>($"Sprites/StageNodes/stage_node_ch_{chapterId}");
-                    _chapterSpriteCache[chapterId] = spr;
-                }
-                if (spr != null) _border.sprite = spr;
-                _border.color = unlocked ? Color.white : _lockedTint;
-            }
-
-            if (_outlinePulse != null) { StopCoroutine(_outlinePulse); _outlinePulse = null; }
-            if (_difficultyOutline != null)
-            {
-                bool show = difficulty > 0;
-                _difficultyOutline.gameObject.SetActive(show);
-                if (show)
-                {
-                    _baseColor = DifficultyStyle.Get(difficulty);
-                    _difficultyOutline.color = _baseColor;
-                    if (gameObject.activeInHierarchy)
-                        _outlinePulse = StartCoroutine(PulseOutline(_baseColor));
+                    _glowColor = DifficultyStyle.Get(difficulty); // 1=teal, 2=crimson
+                    if (unlocked)
+                    {
+                        _glow.color = WithAlpha(_glowColor, GlowPulseAlpha);
+                        if (gameObject.activeInHierarchy)
+                            _glowPulse = StartCoroutine(PulseGlow());
+                    }
+                    else
+                    {
+                        _glow.color = WithAlpha(_glowColor, GlowStaticAlpha);
+                    }
                 }
             }
-            if (_skullIcon != null) _skullIcon.SetActive(difficulty == 2);
         }
 
         private void OnEnable()
         {
-            if (_difficulty > 0 && _outlinePulse == null)
-                _outlinePulse = StartCoroutine(PulseOutline(_baseColor));
+            if (_unlocked && _glow != null && _glow.gameObject.activeSelf && _glowPulse == null)
+                _glowPulse = StartCoroutine(PulseGlow());
         }
 
-        private void OnDisable()
+        private void OnDisable() => StopPulse();
+
+        private void StopPulse()
         {
-            if (_outlinePulse != null) { StopCoroutine(_outlinePulse); _outlinePulse = null; }
+            if (_glowPulse != null) { StopCoroutine(_glowPulse); _glowPulse = null; }
         }
 
-        private IEnumerator PulseOutline(Color baseColor)
+        // Color pulse — alpha stays fixed; the hue shifts base → brightened and back for a clearly
+        // dynamic feel (alpha breathing alone read as static).
+        private IEnumerator PulseGlow()
         {
-            var brightColor = Color.Lerp(baseColor, Color.white, 0.4f);
+            var bright = Color.Lerp(_glowColor, Color.white, PulseBrighten);
             while (true)
             {
-                float t = (Mathf.Sin(Time.time * 1.8f) + 1f) * 0.5f;
-                _difficultyOutline.color = Color.Lerp(baseColor, brightColor, t);
+                float t = (Mathf.Sin(Time.time * PulseSpeed) + 1f) * 0.5f;
+                var c = Color.Lerp(_glowColor, bright, t);
+                _glow.color = WithAlpha(c, GlowPulseAlpha);
                 yield return null;
             }
         }
+
+        private static Color WithAlpha(Color c, float a) => new Color(c.r, c.g, c.b, a);
     }
 }

@@ -6,18 +6,43 @@ namespace Game.Services
 {
     public class ItemDataService : MonoBehaviour
     {
-        public static ItemDataService Instance { get; private set; }
+        private static ItemDataService _instance;
 
-        private Item[] _items = System.Array.Empty<Item>();
+        // Lazy-instantiated if not placed in scene, so item data (reward icons) is always available
+        // rather than silently resolving to empty sprites.
+        public static ItemDataService Instance
+        {
+            get
+            {
+                if (_instance == null)
+                {
+                    _instance = FindObjectOfType<ItemDataService>();
+                    if (_instance == null)
+                        _instance = new GameObject(nameof(ItemDataService)).AddComponent<ItemDataService>();
+                }
+                return _instance;
+            }
+        }
+
+        private Item[] _items;
 
         private void Awake()
         {
-            if (Instance != null) { Destroy(gameObject); return; }
-            Instance = this;
+            if (_instance != null && _instance != this) { Destroy(gameObject); return; }
+            _instance = this;
             DontDestroyOnLoad(gameObject);
-            _items = CsvLoader.Load<Item>(Item.ResourcePath) ?? System.Array.Empty<Item>();
+            EnsureLoaded();
         }
 
-        public Item GetItem(int itemId) => System.Array.Find(_items, i => i.id == itemId);
+        private void EnsureLoaded()
+        {
+            if (_items == null) _items = CsvLoader.Load<Item>(Item.ResourcePath) ?? System.Array.Empty<Item>();
+        }
+
+        public Item GetItem(int itemId)
+        {
+            EnsureLoaded();
+            return System.Array.Find(_items, i => i.id == itemId);
+        }
     }
 }

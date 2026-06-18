@@ -16,7 +16,7 @@
 | `Language.cs` | `Language` | Shared enum for all 15 supported locales (EN KO ZH_CN ZH_TW JA RU ES PT FR DE TH AR IT TR ID) |
 | `GoogleSignInBridge.cs` | `GoogleSignInBridge` | DDOL singleton; Android JNI bridge to `GoogleSignInPlugin.java`; SignIn/SignOut; UnitySendMessage callbacks |
 | `SfxCatalog.cs` | `SfxId`, `SfxEntry`, `SfxCatalog`, `SfxEventBus` | SFX enum (10 ids), ScriptableObject catalog, static event bus |
-| `DifficultyStyle.cs` | `DifficultyStyle` | Static color helper: Normal=#4488FF neon blue, Hard=#FF4757 coral red; Get(difficulty, fallback) |
+| `DifficultyStyle.cs` | `DifficultyStyle` | Static color helper: Normal=#1EDAC4 neon teal, Hard=#DC143C crimson; Get(difficulty, fallback) |
 | `FileLogger.cs` | `FileLogger` | Static; hooks `Application.logMessageReceived` via `[RuntimeInitializeOnLoadMethod(BeforeSceneLoad)]`; writes to `persistentDataPath/logs/game_YYYYMMDD_HHmmss.log`; no-op in Editor |
 
 ## Symbols
@@ -54,7 +54,7 @@
 | `SfxEntry` | class | id + clip + volume + pitchRange + cooldownSeconds |
 | `SfxCatalog.TryGet(id, out entry)` | method | ScriptableObject; linear search; loaded from Resources/SfxCatalog |
 | `SfxEventBus.Play(id)` | static method | Fire-and-forget; SoundManager subscribes |
-| `DifficultyStyle.Get(difficulty, easyFallback)` | static method | 0→easyFallback, 1→Normal(#4488FF), 2→Hard(#FF4757) |
+| `DifficultyStyle.Get(difficulty, easyFallback)` | static method | 0→easyFallback, 1→Normal(#1EDAC4 teal), 2→Hard(#DC143C crimson) |
 | `FileLogger.Init()` | static method | `[RuntimeInitializeOnLoadMethod(BeforeSceneLoad)]`; no-op in Editor; opens log file and subscribes to log events |
 
 ## Rules

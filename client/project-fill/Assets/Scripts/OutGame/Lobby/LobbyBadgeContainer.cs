@@ -8,7 +8,9 @@ namespace Game.OutGame.Lobby
     {
         [SerializeField] private RectTransform _eventLayoutGroup; // Left layout (Events)
         [SerializeField] private RectTransform _buyLayoutGroup;   // Right layout (BM / Buy)
-        [SerializeField] private GameObject _badgePrefab;         // Template Badge Item
+        [SerializeField] private GameObject _badgePrefab;         // Template Badge Item (lazy-loaded if unassigned)
+
+        private const string BadgePrefabPath = "Prefabs/UI/LobbyBadgeItem";
 
         private readonly List<GameObject> _spawnedBadges = new List<GameObject>();
         private LobbyView _cachedLobbyView;
@@ -45,6 +47,9 @@ namespace Game.OutGame.Lobby
             _spawnedBadges.Clear();
 
             if (_badgePrefab == null)
+                _badgePrefab = Resources.Load<GameObject>(BadgePrefabPath);
+
+            if (_badgePrefab == null)
             {
                 Debug.LogWarning("[LobbyBadgeContainer] Badge Prefab template is missing.");
                 return;
@@ -56,7 +61,7 @@ namespace Game.OutGame.Lobby
             {
                 SpawnBadge(
                     parent: _buyLayoutGroup,
-                    iconKey: "ui_iap_no_ads",
+                    iconKey: ResourceKeys.IapNoAds,
                     labelKey: "shop.iap.no_ads.title",
                     onClick: () =>
                     {
@@ -72,17 +77,17 @@ namespace Game.OutGame.Lobby
             // Daily Attendance badge → opens attendance popup
             SpawnBadge(
                 parent: _eventLayoutGroup,
-                iconKey: "ui_flag_icon",
+                iconKey: ResourceKeys.BadgeDailyLogin,
                 labelKey: "home.badge.attendance",
                 onClick: () => Game.Core.UIManager.Instance?.ShowPopup<AttendancePopupView>()
             );
 
-            // Daily Challenge badge → opens challenge info popup
+            // Weekly Mission Event badge → opens the weekly mission popup
             SpawnBadge(
                 parent: _eventLayoutGroup,
-                iconKey: "nav_ranking",
-                labelKey: "home.badge.challenge",
-                onClick: () => Game.Core.UIManager.Instance?.ShowPopup<DailyChallengePopupView>()
+                iconKey: ResourceKeys.BadgeWeeklyMission,
+                labelKey: "home.badge.weekly_mission",
+                onClick: () => Game.Core.UIManager.Instance?.ShowPopup<WeeklyMissionPopupView>()
             );
         }
 

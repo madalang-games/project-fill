@@ -95,7 +95,7 @@ namespace Game.Editor
             CreateAvatarPreviewPopup();
             CreateAttendancePopup();
             CreateAchievementToast();
-            CreateDailyChallengePopup();
+            CreateWeeklyMissionPopup();
 
             // Signal Sort gameplay prefabs — must exist before SetupInGame wires them
             CreateInGameChip();
@@ -219,8 +219,8 @@ namespace Game.Editor
         [MenuItem("Tools/UI Setup/Prefabs/CosmeticPreviewPopup", false, 144)]
         static void CreateCosmeticPreviewPopupSingle() { EnsureDirs(); CreateCosmeticPreviewPopup(); AssetDatabase.Refresh(); }
 
-        [MenuItem("Tools/UI Setup/Prefabs/DailyChallengePopup", false, 145)]
-        static void CreateDailyChallengePopupSingle() { EnsureDirs(); CreateDailyChallengePopup(); AssetDatabase.Refresh(); }
+        [MenuItem("Tools/UI Setup/Prefabs/WeeklyMissionPopup", false, 145)]
+        static void CreateWeeklyMissionPopupSingle() { EnsureDirs(); CreateWeeklyMissionPopup(); AssetDatabase.Refresh(); }
 
         static void SetupBoot()
         {
@@ -436,62 +436,60 @@ namespace Game.Editor
             var shopTab = Child(tabContent, "ShopTab");  Stretch(shopTab); shopTab.SetActive(false);
             var shopView = Comp<ShopTabView>(shopTab);
 
-            // Redesigned: Shop Title Ribbon with 3D shadow (Top-Center Anchored to Y=0 exactly below HUD)
-            var shopTitleShadow = shopTab.transform.Find("ShopTitleRibbonShadow")?.gameObject;
-            if (shopTitleShadow == null)
-            {
-                shopTitleShadow = Child(shopTab, "ShopTitleRibbonShadow");
-                var rtShadow = RT(shopTitleShadow);
-                rtShadow.anchorMin = new Vector2(0.5f, 1f);
-                rtShadow.anchorMax = new Vector2(0.5f, 1f);
-                rtShadow.pivot = new Vector2(0.5f, 1f);
-                rtShadow.anchoredPosition = new Vector2(0, -8); // Shadow Y=-8 offset relative to ribbon Y=0
-                rtShadow.sizeDelta = new Vector2(640, 88);
-                Img(shopTitleShadow, Hex("1A0B22"));
-            }
+            // Shop Title Ribbon (Top-Center, Y=0 below HUD). Paint order inside ribbon:
+            // Shadow (first, offset bottom-right, behind) → Border → white Text (last). Legacy bug: the
+            // shadow used to be a top-level sibling rendered ABOVE the ribbon (SetAsFirstSibling on the
+            // ribbon), hiding the same-colored text — now the shadow lives inside the ribbon behind the text.
+            var legacyShadow = shopTab.transform.Find("ShopTitleRibbonShadow");
+            if (legacyShadow != null && legacyShadow.parent == shopTab.transform)
+                Object.DestroyImmediate(legacyShadow.gameObject);
 
-            var shopTitleRibbon = shopTab.transform.Find("ShopTitleRibbon")?.gameObject;
-            if (shopTitleRibbon == null)
-            {
-                shopTitleRibbon = Child(shopTab, "ShopTitleRibbon");
-                var rtTitle = RT(shopTitleRibbon);
-                rtTitle.anchorMin = new Vector2(0.5f, 1f);
-                rtTitle.anchorMax = new Vector2(0.5f, 1f);
-                rtTitle.pivot = new Vector2(0.5f, 1f);
-                rtTitle.anchoredPosition = new Vector2(0, 0); // Placed exactly below HUD (starts at top of tabContent)
-                rtTitle.sizeDelta = new Vector2(640, 88);
-                Img(shopTitleRibbon, UI_CTA); // Amber yellow background
+            var shopTitleRibbon = Child(shopTab, "ShopTitleRibbon");
+            var rtTitle = RT(shopTitleRibbon);
+            rtTitle.anchorMin = new Vector2(0.5f, 1f);
+            rtTitle.anchorMax = new Vector2(0.5f, 1f);
+            rtTitle.pivot = new Vector2(0.5f, 1f);
+            rtTitle.anchoredPosition = new Vector2(0, 0); // Placed exactly below HUD (starts at top of tabContent)
+            rtTitle.sizeDelta = new Vector2(640, 88);
+            Img(shopTitleRibbon, UI_CTA);
 
-                var strBorder = Child(shopTitleRibbon, "Border");
-                Stretch(strBorder);
-                var strBImg = Img(strBorder, UI_BORDER);
-                shopTitleRibbon.transform.SetAsFirstSibling();
-                strBImg.rectTransform.offsetMin = new Vector2(-2, -2);
-                strBImg.rectTransform.offsetMax = new Vector2(2, 2);
+            var shopTitleShadow = Child(shopTitleRibbon, "ShopTitleRibbonShadow");
+            Stretch(shopTitleShadow);
+            var shopShadowImg = Img(shopTitleShadow, Hex("1A0B22"));
+            shopShadowImg.rectTransform.offsetMin = new Vector2(8, -8); // peeks out bottom-right behind ribbon
+            shopShadowImg.rectTransform.offsetMax = new Vector2(8, -8);
+            shopShadowImg.raycastTarget = false;
+            shopTitleShadow.transform.SetAsFirstSibling();
 
-                var shopTitleText = TMP(shopTitleRibbon, "Text", Center(0, 0, 600, 80), 36, Hex("1A0B22"), "SHOP", "shop.iap.title", TextCategory.Header);
-                shopTitleText.alignment = TextAlignmentOptions.Center;
-            }
-            else
-            {
-                var txtTrans = shopTitleRibbon.transform.Find("Text");
-                if (txtTrans != null && txtTrans.TryGetComponent<LocalizedText>(out var lt))
-                {
-                    var soLt = new SerializedObject(lt);
-                    var stringIdProp = soLt.FindProperty("_stringId");
-                    if (stringIdProp != null && string.IsNullOrEmpty(stringIdProp.stringValue))
-                    {
-                        stringIdProp.stringValue = "shop.iap.title";
-                        soLt.ApplyModifiedProperties();
-                    }
-                }
-            }
+            var strBorder = Child(shopTitleRibbon, "Border");
+            Stretch(strBorder);
+            var strBImg = Img(strBorder, UI_BORDER);
+            strBImg.rectTransform.offsetMin = new Vector2(-2, -2);
+            strBImg.rectTransform.offsetMax = new Vector2(2, 2);
+            strBImg.raycastTarget = false;
 
-            // Scroll View for Shop Content (shifted down for Ribbon space)
+            var shopTitleText = TMP(shopTitleRibbon, "Text", Center(0, 0, 600, 80), 36, UI_TEXT, "SHOP", "shop.iap.title", TextCategory.Header);
+            shopTitleText.alignment = TextAlignmentOptions.Center;
+            shopTitleText.transform.SetAsLastSibling();
+
+            // ── Shop sub-tab row (Products / Skins / Avatars) below the title ribbon ──
+            var shopSubTabs = Child(shopTab, "ShopSubTabs");
+            var sstRt = RT(shopSubTabs);
+            sstRt.anchorMin = new Vector2(0.5f, 1f); sstRt.anchorMax = new Vector2(0.5f, 1f); sstRt.pivot = new Vector2(0.5f, 1f);
+            sstRt.anchoredPosition = new Vector2(0, -100); sstRt.sizeDelta = new Vector2(960, 80);
+            var sstHlg = Comp<HorizontalLayoutGroup>(shopSubTabs);
+            sstHlg.spacing = 10; sstHlg.childAlignment = TextAnchor.MiddleCenter;
+            sstHlg.childControlWidth = true; sstHlg.childControlHeight = true;
+            sstHlg.childForceExpandWidth = true; sstHlg.childForceExpandHeight = true;
+            var productTab = BtnHlg(shopSubTabs, "ProductTab", UI_CTA, "Products", ShopTabProduct);
+            var skinTab = BtnHlg(shopSubTabs, "SkinTab", UI_BG_MID, "Skins", ShopTabSkin);
+            var avatarTabBtn = BtnHlg(shopSubTabs, "AvatarTab", UI_BG_MID, "Avatars", ShopTabAvatar);
+
+            // Scroll View for Shop Content (shifted down for Ribbon + sub-tab row)
             var shopScrollGo = Child(shopTab, "ShopScrollView");
             var ssRt = RT(shopScrollGo);
             ssRt.anchorMin = Vector2.zero; ssRt.anchorMax = Vector2.one;
-            ssRt.offsetMin = new Vector2(0, 0); ssRt.offsetMax = new Vector2(0, -100); // top title margin (ribbon height 88 + shadow offset 8 = 96)
+            ssRt.offsetMin = new Vector2(0, 0); ssRt.offsetMax = new Vector2(0, -184); // ribbon 96 + sub-tab row 80 (+8 gap)
 
             var shopScroll = Comp<ScrollRect>(shopScrollGo);
             shopScroll.horizontal = false; shopScroll.vertical = true;
@@ -516,7 +514,7 @@ namespace Game.Editor
             shopContentVlg.childControlWidth   = true;
             shopContentVlg.childControlHeight  = true;  // uses LayoutElement.preferredHeight per child
             shopContentVlg.childForceExpandHeight = false; // spacers define section gaps; don't force-fill
-            // Content height must track actual child sum (IAP cards + cosmetic 780 + avatar 380) — fixed height clipped the bottom.
+            // Content height must track actual child sum (IAP cards + cosmetic 1340 + avatar 380) — fixed height clipped the bottom.
             var shopContentCsf = Comp<ContentSizeFitter>(shopContentGo);
             shopContentCsf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
@@ -539,11 +537,16 @@ namespace Game.Editor
             // ── Cosmetic section (appended below IAP; ShopTabView keeps it last sibling) ──
             var cosmeticCell = BuildCosmeticCell();
             var cosmeticSection = Child(shopContentGo, "CosmeticSection");
-            var csRt = RT(cosmeticSection); csRt.sizeDelta = new Vector2(0, 780);
-            var csLe = Comp<LayoutElement>(cosmeticSection); csLe.preferredHeight = 780; csLe.flexibleWidth = 1;
+            var csRt = RT(cosmeticSection); csRt.sizeDelta = new Vector2(0, 1340);
+            var csLe = Comp<LayoutElement>(cosmeticSection); csLe.preferredHeight = 1340; csLe.flexibleWidth = 1;
             var csView = Comp<CosmeticSectionView>(cosmeticSection);
 
-            TMP(cosmeticSection, "SectionTitle", Center(0, 350, 600, 60), 26, UI_CTA, "Cosmetics", "shop.cosmetic.section_title", TextCategory.Header);
+            // Top-anchored so the title stays pinned above CategoryTabs regardless of grid resize
+            // (ResizeSectionToFit changes the section height; a center-anchored title would drift).
+            var csTitle = TMP(cosmeticSection, "SectionTitle", Center(0, 0, 600, 60), 26, UI_CTA, "Cosmetics", "shop.cosmetic.section_title", TextCategory.Header);
+            var csTitleRt = csTitle.rectTransform;
+            csTitleRt.anchorMin = new Vector2(0.5f, 1f); csTitleRt.anchorMax = new Vector2(0.5f, 1f); csTitleRt.pivot = new Vector2(0.5f, 1f);
+            csTitleRt.anchoredPosition = new Vector2(0, -15); csTitleRt.sizeDelta = new Vector2(600, 60);
 
             var catTabs = Child(cosmeticSection, "CategoryTabs");
             var ctRt = RT(catTabs);
@@ -562,8 +565,8 @@ namespace Game.Editor
             gRt.anchorMin = new Vector2(0, 0); gRt.anchorMax = new Vector2(1, 1);
             gRt.offsetMin = new Vector2(20, 20); gRt.offsetMax = new Vector2(-20, -190);
             var glg = Comp<GridLayoutGroup>(grid);
-            glg.cellSize = new Vector2(210, 240); glg.spacing = new Vector2(14, 14);
-            glg.constraint = GridLayoutGroup.Constraint.FixedColumnCount; glg.constraintCount = 4;
+            glg.cellSize = new Vector2(300, 360); glg.spacing = new Vector2(14, 14);
+            glg.constraint = GridLayoutGroup.Constraint.FixedColumnCount; glg.constraintCount = 3;
             glg.childAlignment = TextAnchor.UpperCenter;
 
             var soCs = new SerializedObject(csView);
@@ -581,32 +584,29 @@ namespace Game.Editor
             var asLe = Comp<LayoutElement>(avatarSection); asLe.preferredHeight = 380; asLe.flexibleWidth = 1;
             var avView = Comp<AvatarSectionView>(avatarSection);
 
-            TMP(avatarSection, "SectionTitle", Center(0, 150, 600, 60), 26, UI_CTA, "Avatars", PopupAccountLabelSelectAvatar, TextCategory.Header);
+            // Top-anchored title pinned above the grid (section height changes as the grid resizes).
+            var avTitle = TMP(avatarSection, "SectionTitle", Center(0, 0, 600, 60), 26, UI_CTA, "Avatars", PopupAccountLabelSelectAvatar, TextCategory.Header);
+            var avTitleRt = avTitle.rectTransform;
+            avTitleRt.anchorMin = new Vector2(0.5f, 1f); avTitleRt.anchorMax = new Vector2(0.5f, 1f); avTitleRt.pivot = new Vector2(0.5f, 1f);
+            avTitleRt.anchoredPosition = new Vector2(0, -15); avTitleRt.sizeDelta = new Vector2(600, 60);
 
-            // Horizontal scroll carousel of avatar cards
-            var avScrollGo = Child(avatarSection, "AvatarScroll");
-            var avScrollRt = RT(avScrollGo);
-            avScrollRt.anchorMin = new Vector2(0, 0); avScrollRt.anchorMax = new Vector2(1, 1);
-            avScrollRt.offsetMin = new Vector2(20, 20); avScrollRt.offsetMax = new Vector2(-20, -110);
-            var avScroll = Comp<ScrollRect>(avScrollGo);
-            avScroll.horizontal = true; avScroll.vertical = false;
-            var avVp = Child(avScrollGo, "Viewport"); Stretch(avVp); Comp<RectMask2D>(avVp);
-            var avVpImg = Img(avVp, new Color(0, 0, 0, 0)); avVpImg.raycastTarget = true;
-            avScroll.viewport = RT(avVp);
-            var avContent = Child(avVp, "Content");
-            var avContentRt = RT(avContent);
-            avContentRt.anchorMin = new Vector2(0, 0); avContentRt.anchorMax = new Vector2(0, 1); avContentRt.pivot = new Vector2(0, 0.5f);
-            avContentRt.sizeDelta = new Vector2(0, 0);
-            avScroll.content = avContentRt;
-            var avHlg = Comp<HorizontalLayoutGroup>(avContent);
-            avHlg.spacing = 14; avHlg.childAlignment = TextAnchor.MiddleLeft;
-            avHlg.childControlWidth = false; avHlg.childControlHeight = false;
-            avHlg.childForceExpandWidth = false; avHlg.childForceExpandHeight = false;
-            avHlg.padding = new RectOffset(10, 10, 10, 10);
-            var avCsf = Comp<ContentSizeFitter>(avContent); avCsf.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+            // Legacy cleanup: replaced the horizontal scroll carousel with a responsive vertical grid.
+            var legacyAvScroll = avatarSection.transform.Find("AvatarScroll");
+            if (legacyAvScroll != null) Object.DestroyImmediate(legacyAvScroll.gameObject);
+
+            // Responsive grid: Flexible constraint auto-fits column count to width; cells 180×210.
+            // AvatarSectionView.ResizeSectionToFit sizes the section so the outer Shop scroll absorbs overflow.
+            var avGrid = Child(avatarSection, "Grid");
+            var avGridRt = RT(avGrid);
+            avGridRt.anchorMin = new Vector2(0, 0); avGridRt.anchorMax = new Vector2(1, 1);
+            avGridRt.offsetMin = new Vector2(20, 20); avGridRt.offsetMax = new Vector2(-20, -90);
+            var avGlg = Comp<GridLayoutGroup>(avGrid);
+            avGlg.cellSize = new Vector2(180, 210); avGlg.spacing = new Vector2(14, 14);
+            avGlg.constraint = GridLayoutGroup.Constraint.Flexible;
+            avGlg.childAlignment = TextAnchor.UpperCenter;
 
             var soAv = new SerializedObject(avView);
-            soAv.FindProperty("_gridContainer").objectReferenceValue = avContentRt;
+            soAv.FindProperty("_gridContainer").objectReferenceValue = avGridRt;
             soAv.FindProperty("_cardPrefab").objectReferenceValue = avatarCard;
             PopulateAvatarSprites(soAv.FindProperty("_avatarSprites"), resMap);
             soAv.ApplyModifiedProperties();
@@ -616,6 +616,9 @@ namespace Game.Editor
             soShop.FindProperty("_contentContainer").objectReferenceValue = shopContentRt;
             soShop.FindProperty("_cosmeticSection").objectReferenceValue = csRt;
             soShop.FindProperty("_avatarSection").objectReferenceValue = asRt;
+            soShop.FindProperty("_productTabButton").objectReferenceValue = productTab.GetComponent<Button>();
+            soShop.FindProperty("_skinTabButton").objectReferenceValue = skinTab.GetComponent<Button>();
+            soShop.FindProperty("_avatarTabButton").objectReferenceValue = avatarTabBtn.GetComponent<Button>();
             soShop.ApplyModifiedProperties();
 
             var rankingTab = Child(tabContent, "RankingTab"); Stretch(rankingTab); rankingTab.SetActive(false);
@@ -626,25 +629,47 @@ namespace Game.Editor
                 var oldTab = rankingTab.transform.Find(legacy);
                 if (oldTab != null) Object.DestroyImmediate(oldTab.gameObject);
             }
-            var stageTab = Btn(rankingTab, "StageTabButton", new Vector2(-280, 700), new Vector2(260, 80), UI_PRIMARY, "Stage", LobbyRankingTabStages);
-            var perfectTab = Btn(rankingTab, "PerfectTabButton", new Vector2(0, 700), new Vector2(260, 80), UI_BG_MID, "Perfect", LobbyRankingTabPerfect);
-            var weeklyTab = Btn(rankingTab, "WeeklyTabButton", new Vector2(280, 700), new Vector2(260, 80), UI_BG_MID, "Weekly", LobbyRankingTabWeekly);
+            // ── Responsive top-down stack inside the header/nav-bar safe band:
+            //    title → tab row → desc → my-rank, scroll fills the middle,
+            //    my-rank pin hugs the bottom. Top items anchor to the top edge
+            //    (never hidden by the HUD), pin anchors to the bottom edge
+            //    (never overlaps BottomNavBar) on every device aspect ratio. ──
+            var rankTitle = TMP(rankingTab, "TitleText", Center(0, 0, 820, 70), 30, UI_CTA, "Stage Ranking", LobbyRankingStagesTitle, TextCategory.Header);
+            TopAnchor(rankTitle.rectTransform, new Vector2(820, 70), -10);
 
-            var rankTitle = TMP(rankingTab, "TitleText", Center(0, 625, 760, 70), 30, UI_CTA, "Stage Ranking", LobbyRankingStagesTitle, TextCategory.Header);
+            var stageTab   = Btn(rankingTab, "StageTabButton",   Vector2.zero, new Vector2(260, 96), UI_PRIMARY, "Stage",   LobbyRankingTabStages);
+            var perfectTab = Btn(rankingTab, "PerfectTabButton", Vector2.zero, new Vector2(260, 96), UI_BG_MID,  "Perfect", LobbyRankingTabPerfect);
+            var weeklyTab  = Btn(rankingTab, "WeeklyTabButton",  Vector2.zero, new Vector2(260, 96), UI_BG_MID,  "Weekly",  LobbyRankingTabWeekly);
+            TopAnchor(RT(stageTab),   new Vector2(260, 96), -95, -280);
+            TopAnchor(RT(perfectTab), new Vector2(260, 96), -95, 0);
+            TopAnchor(RT(weeklyTab),  new Vector2(260, 96), -95, 280);
+
             // Per-tab description, placed directly below the tab row (above the my-rank line)
-            var rankDesc = TMP(rankingTab, "DescText", Center(0, 558, 820, 56), 22, UI_TEXT, "Pioneers who reached the farthest stage", LobbyRankingDescStage, TextCategory.Normal);
-            var myRank = TMP(rankingTab, "MyRankText", Center(0, 478, 760, 80), 24, UI_TEXT, "My Rank: -", LobbyRankingMyRankEmpty, TextCategory.Normal);
-            var entries = TMP(rankingTab, "EntriesText", Center(0, -190, 820, 1220), 20, UI_TEXT, "Ranking unavailable", LobbyRankingUnavailable, TextCategory.Normal);
-            entries.alignment = TextAlignmentOptions.TopLeft;
+            var rankDesc = TMP(rankingTab, "DescText", Center(0, 0, 820, 56), 22, UI_TEXT, "Pioneers who reached the farthest stage", LobbyRankingDescStage, TextCategory.Normal);
+            TopAnchor(rankDesc.rectTransform, new Vector2(820, 56), -200);
 
-            // Generate VirtualizedScrollRect hierarchy
+            var myRank = TMP(rankingTab, "MyRankText", Center(0, 0, 760, 70), 24, UI_TEXT, "My Rank: -", LobbyRankingMyRankEmpty, TextCategory.Normal);
+            TopAnchor(myRank.rectTransform, new Vector2(760, 70), -265);
+
+            // VirtualizedScrollRect: directly below MyRankText, vertical-stretch (responsive),
+            // width 900 to match RankingItemPrefab Final width.
             var scrollRectGo = Child(rankingTab, "VirtualizedScrollRect");
             var srRt = RT(scrollRectGo);
             srRt.anchorMin = new Vector2(0.5f, 0f);
             srRt.anchorMax = new Vector2(0.5f, 1f);
             srRt.pivot = new Vector2(0.5f, 0.5f);
-            srRt.sizeDelta = new Vector2(820, -380); // height margin top = 380, bottom = 0
-            srRt.anchoredPosition = new Vector2(0, -190); // y center offset = -190
+            srRt.sizeDelta = new Vector2(900, -485);          // top inset 345 (below MyRankText) + bottom inset 140 (above MyRankPin)
+            srRt.anchoredPosition = new Vector2(0, -102.5f);   // (bottomInset - topInset) / 2
+
+            // EntriesText empty-state message overlays the scroll region (responsive)
+            var entries = TMP(rankingTab, "EntriesText", Center(0, 0, 820, 100), 20, UI_TEXT, "Ranking unavailable", LobbyRankingUnavailable, TextCategory.Normal);
+            var entRt = entries.rectTransform;
+            entRt.anchorMin = new Vector2(0.5f, 0f);
+            entRt.anchorMax = new Vector2(0.5f, 1f);
+            entRt.pivot = new Vector2(0.5f, 0.5f);
+            entRt.sizeDelta = new Vector2(820, -485);
+            entRt.anchoredPosition = new Vector2(0, -102.5f);
+            entries.alignment = TextAlignmentOptions.Center;
 
             var rankScrollRect = Comp<ScrollRect>(scrollRectGo);
             rankScrollRect.horizontal = false;
@@ -719,10 +744,10 @@ namespace Game.Editor
                 var pinRt = myRankPin.GetComponent<RectTransform>();
                 if (pinRt != null)
                 {
-                    pinRt.anchorMin        = new Vector2(0.5f, 0.5f);
-                    pinRt.anchorMax        = new Vector2(0.5f, 0.5f);
-                    pinRt.pivot            = new Vector2(0.5f, 0.5f);
-                    pinRt.anchoredPosition = new Vector2(0, -700);
+                    pinRt.anchorMin        = new Vector2(0.5f, 0f);
+                    pinRt.anchorMax        = new Vector2(0.5f, 0f);
+                    pinRt.pivot            = new Vector2(0.5f, 0f);
+                    pinRt.anchoredPosition = new Vector2(0, 24);   // hugs bottom edge, above BottomNavBar on any device
                     pinRt.sizeDelta        = new Vector2(860, 90);
                 }
                 var pinBg = myRankPin.GetComponent<Image>();
@@ -796,7 +821,6 @@ namespace Game.Editor
             soLobby.FindProperty("_shopTabRoot").objectReferenceValue = shopTab;
             soLobby.FindProperty("_rankingTabRoot").objectReferenceValue = rankingTab;
             soLobby.FindProperty("_achievementTabRoot").objectReferenceValue = achievementTab;
-            soLobby.FindProperty("_rankingTabView").objectReferenceValue = rankingView;
             soLobby.ApplyModifiedProperties();
 
             var soRanking = new SerializedObject(rankingView);
@@ -851,7 +875,7 @@ namespace Game.Editor
 
             // Populate the Stage score icon on RankingTabView (star rating removed)
             string stageKey = soRanking.FindProperty("_stageResourceKey").stringValue;
-            if (string.IsNullOrEmpty(stageKey)) stageKey = "nav_home";
+            if (string.IsNullOrEmpty(stageKey)) stageKey = "ui_flag_icon";
 
             if (resMap.TryGetValue(stageKey, out string stagePath))
             {
@@ -891,6 +915,18 @@ namespace Game.Editor
         // Signal Sort scene canvas: authored chrome (HUD / Signal Panel container / Lanes container /
         // booster bar / flight layer) + BoardView binder. Lanes/chips/panel nodes are instantiated at
         // runtime from the Game prefabs; stuck/clear popups route through UIManager.
+        // Attaches a TutorialTarget with the given tutorial_step.csv target_ui_id(s) so TutorialOverlay
+        // resolves the element by id (no name coupling). Sets the private _targetIds via SerializedObject.
+        static void RegisterTutorialTarget(GameObject go, params string[] ids)
+        {
+            var tt = Comp<TutorialTarget>(go);
+            var so = new SerializedObject(tt);
+            var prop = so.FindProperty("_targetIds");
+            prop.arraySize = ids.Length;
+            for (int i = 0; i < ids.Length; i++) prop.GetArrayElementAtIndex(i).stringValue = ids[i];
+            so.ApplyModifiedProperties();
+        }
+
         static void SetupInGame()
         {
             // Reuse the existing Base prefab + children (Child()/Comp<> are Find-or-create) so the Final
@@ -925,6 +961,7 @@ namespace Game.Editor
             TMP(hud, "MovesCaption", Center(120, 30, 200, 46), 22, Hex("A6B0C9"), "MOVES", IngameMovesLabel, TextCategory.Normal);
             var movesText = TMP(hud, "MovesText", Center(120, -32, 200, 70), 40, UI_TEXT, "0", null, TextCategory.Header);
             Comp<UITextStyle>(movesText.gameObject).ApplyStyle();
+            RegisterTutorialTarget(movesText.gameObject, "hud_moves_count"); // tutorial_step.csv target
 
             TMP(hud, "BestCaption", Center(310, 30, 180, 46), 22, Hex("A6B0C9"), "BEST", IngameBestLabel, TextCategory.Normal);
             var bestText = TMP(hud, "BestText", Center(310, -32, 180, 70), 40, UI_TEXT, "-", null, TextCategory.Header);
@@ -950,10 +987,12 @@ namespace Game.Editor
             // Booster bar — Undo / Shuffle / Add Lane (spec 3 boosters) (child of safeRoot)
             var bar = Child(safeRoot, "BoosterBar"); BottomStrip(bar, 200);
             Img(bar, UI_BG_MID);
+            RegisterTutorialTarget(bar, "booster_bar"); // tutorial_step.csv FailRepeat target
 
-            var undoBtn    = Btn(bar, "UndoButton",    new Vector2(-320, 0), new Vector2(150, 150), UI_BG_DEEP,  "");
+            // Boosters share one unified button color (no per-item color split).
+            var undoBtn    = Btn(bar, "UndoButton",    new Vector2(-320, 0), new Vector2(150, 150), UI_PRIMARY,  "");
             var shuffleBtn = Btn(bar, "ShuffleButton", new Vector2(0, 0),    new Vector2(150, 150), UI_PRIMARY,  "");
-            var addLaneBtn = Btn(bar, "AddLaneButton", new Vector2(320, 0),  new Vector2(150, 150), UI_SUCCESS,  "");
+            var addLaneBtn = Btn(bar, "AddLaneButton", new Vector2(320, 0),  new Vector2(150, 150), UI_PRIMARY,  "");
 
             var undoVisual = undoBtn.transform.Find("Visual").gameObject;
             var undoLabelGo = Child(undoVisual, "Label");
@@ -1413,17 +1452,37 @@ namespace Game.Editor
             string path = $"{BaseCommonPath}/CosmeticItemCell.prefab";
             bool loaded = AssetDatabase.LoadAssetAtPath<GameObject>(path) != null;
             var cell = loaded ? PrefabUtility.LoadPrefabContents(path) : new GameObject("CosmeticItemCell");
-            RT(cell).sizeDelta = new Vector2(200, 230);
+            RT(cell).sizeDelta = new Vector2(300, 360);
             var bg = Img(cell, UI_BG_DEEP);
             var btn = Comp<Button>(cell); btn.targetGraphic = bg;
             Comp<UIButtonAnimator>(cell);
 
             var preview = Child(cell, "Preview");
-            Fixed(preview, new Vector2(0, 25), new Vector2(150, 130));
+            Fixed(preview, new Vector2(0, 50), new Vector2(220, 180));
             var pImg = Img(preview, UI_BG_MID); pImg.preserveAspect = true;
 
-            TMP(cell, "NameText", Center(0, -70, 190, 44), 18, UI_TEXT, "Name", null, TextCategory.Normal);
-            TMP(cell, "StateText", Center(0, -105, 190, 40), 18, UI_CTA, "800", null, TextCategory.Normal);
+            var highlight = Child(preview, "SelectedHighlight"); Stretch(highlight);
+            var hlImg = Img(highlight, UI_BORDER);
+            hlImg.rectTransform.offsetMin = new Vector2(-4, -4);
+            hlImg.rectTransform.offsetMax = new Vector2(4, 4);
+            hlImg.raycastTarget = false;
+            highlight.SetActive(false);
+
+            var lockOverlay = Child(preview, "LockOverlay"); Stretch(lockOverlay);
+            var loImg = Img(lockOverlay, new Color(0, 0, 0, 0.6f)); loImg.raycastTarget = false;
+            var lockIcon = Child(lockOverlay, "LockIcon");
+            Fixed(lockIcon, new Vector2(0, 10), new Vector2(40, 40));
+            var lockIconImg = Img(lockIcon, Color.white); lockIconImg.preserveAspect = true;
+            var resMap = LoadDynamicResourceMap();
+            if (resMap.TryGetValue("ui_lock_icon", out string lockIconPath))
+            {
+                var spr = AssetDatabase.LoadAssetAtPath<Sprite>(lockIconPath);
+                if (spr != null) lockIconImg.sprite = spr;
+            }
+            lockOverlay.SetActive(false);
+
+            TMP(cell, "NameText", Center(0, -110, 280, 50), 18, UI_TEXT, "Name", null, TextCategory.Normal);
+            TMP(cell, "StateText", Center(0, -160, 280, 44), 18, UI_CTA, "800", null, TextCategory.Normal);
 
             PrefabUtility.SaveAsPrefabAsset(cell, path);
             if (loaded) PrefabUtility.UnloadPrefabContents(cell); else Object.DestroyImmediate(cell);
@@ -1474,11 +1533,11 @@ namespace Game.Editor
             Img(root, DIM); Comp<AttendancePopupView>(root); Comp<UIPanelAppear>(root); Comp<CanvasGroup>(root);
             var backdrop = Child(root, "Backdrop"); Stretch(backdrop); Img(backdrop, DIM);
 
-            var panel = Panel(root, "Panel", new Vector2(980, 720), UI_BG_MID);
+            var panel = Panel(root, "Panel", new Vector2(980, 820), UI_BG_MID);
             RibbonTitle(panel, "TitleText", "Daily Reward", "popup.attendance.title");
 
             var dayContainer = Child(panel, "DayContainer");
-            Fixed(dayContainer, new Vector2(0, 60), new Vector2(920, 220));
+            Fixed(dayContainer, new Vector2(0, 90), new Vector2(920, 220));
             var hlg = Comp<HorizontalLayoutGroup>(dayContainer);
             hlg.spacing = 8; hlg.childAlignment = TextAnchor.MiddleCenter;
             hlg.childControlWidth = false; hlg.childControlHeight = false;
@@ -1493,6 +1552,13 @@ namespace Game.Editor
 
                 TMP(card, "DayLabel", Center(0, 70, 110, 40), 18, UI_TEXT, $"D{i}", null, TextCategory.Normal);
 
+                // RewardSlot: runtime mount point for that day's RewardItemCell preview(s).
+                // Plain RT (NO layout group) — the View stacks all group items vertically and
+                // scales them via localScale (a LayoutGroup would ignore scale). Placed before the
+                // Dim overlay so a claimed day's ✓ dim renders over the rewards.
+                var slot = Child(card, "RewardSlot");
+                Fixed(slot, new Vector2(0, -28), new Vector2(108, 150));
+
                 var pulse = Child(card, "PulseRing"); Stretch(pulse);
                 var pulseImg = Img(pulse, UI_PRIMARY); pulseImg.raycastTarget = false;
                 Comp<UIScalePulse>(pulse);
@@ -1502,18 +1568,31 @@ namespace Game.Editor
                 var dim = Child(card, "Dim"); Stretch(dim);
                 var dimImg = Img(dim, DIM); dimImg.raycastTarget = false;
                 TMP(dim, "Check", Center(0, 0, 110, 110), 40, UI_SUCCESS, "✓", null, TextCategory.Header);
+                dim.transform.SetAsLastSibling();
                 dim.SetActive(false);
             }
 
-            var todayReward = TMP(panel, "TodayRewardText", Center(0, -120, 700, 60), 24, UI_CTA, "Today: 100", null, TextCategory.Normal);
+            var todayLabel = TMP(panel, "TodayRewardText", Center(0, -50, 700, 50), 24, UI_CTA, "Today's reward", "popup.attendance.today_reward", TextCategory.Normal);
 
-            var claim = Btn(panel, "ClaimButton", new Vector2(0, -250), new Vector2(420, 96), UI_CTA, "Claim", "popup.attendance.btn_claim");
+            // TodayRewardRow: runtime row of RewardItemCells for today's full reward group.
+            var todayRow = Child(panel, "TodayRewardRow");
+            Fixed(todayRow, new Vector2(0, -150), new Vector2(920, 130));
+            var rowHlg = Comp<HorizontalLayoutGroup>(todayRow);
+            rowHlg.spacing = 12; rowHlg.childAlignment = TextAnchor.MiddleCenter;
+            rowHlg.childControlWidth = rowHlg.childControlHeight = false;
+            rowHlg.childForceExpandWidth = rowHlg.childForceExpandHeight = false;
+
+            var claim = Btn(panel, "ClaimButton", new Vector2(0, -300), new Vector2(420, 96), UI_CTA, "Claim", "popup.attendance.btn_claim");
             var claimLabel = claim.transform.Find("Visual/Label")?.GetComponent<TextMeshProUGUI>();
-            var closeBtn = CloseBtnAt(panel, new Vector2(460, 325));
+            var closeBtn = CloseBtnAt(panel, new Vector2(460, 375));
+
+            var rewardCellPrefab = AssetDatabase.LoadAssetAtPath<GameObject>($"{BaseCommonPath}/RewardItemCell.prefab");
 
             var so = new SerializedObject(root.GetComponent<AttendancePopupView>());
             so.FindProperty("_dayContainer").objectReferenceValue = dayContainer.transform;
-            so.FindProperty("_todayRewardText").objectReferenceValue = todayReward;
+            so.FindProperty("_todayRewardText").objectReferenceValue = todayLabel;
+            so.FindProperty("_todayRewardRow").objectReferenceValue = todayRow.transform;
+            so.FindProperty("_rewardCellPrefab").objectReferenceValue = rewardCellPrefab;
             so.FindProperty("_claimButton").objectReferenceValue = claim.GetComponent<Button>();
             so.FindProperty("_claimLabel").objectReferenceValue = claimLabel;
             so.FindProperty("_closeButton").objectReferenceValue = closeBtn;
@@ -1622,10 +1701,11 @@ namespace Game.Editor
             var hlImg = Img(highlight, UI_BORDER);
             hlImg.rectTransform.offsetMin = new Vector2(-4, -4);
             hlImg.rectTransform.offsetMax = new Vector2(4, 4);
+            hlImg.raycastTarget = false;
             highlight.SetActive(false);
 
             var lockOverlay = Child(visual, "LockOverlay"); Stretch(lockOverlay);
-            Img(lockOverlay, new Color(0, 0, 0, 0.6f));
+            var loImg = Img(lockOverlay, new Color(0, 0, 0, 0.6f)); loImg.raycastTarget = false;
             var lockIcon = Child(lockOverlay, "LockIcon");
             Fixed(lockIcon, new Vector2(0, 10), new Vector2(40, 40));
             var lockIconImg = Img(lockIcon, Color.white); lockIconImg.preserveAspect = true;
@@ -1707,36 +1787,51 @@ namespace Game.Editor
             Save(root, "AchievementToastView");
         }
 
-        static void CreateDailyChallengePopup()
+        static void CreateWeeklyMissionPopup()
         {
-            var root = FullScreen("DailyChallengePopupView");
-            Img(root, DIM); Comp<DailyChallengePopupView>(root); Comp<UIPanelAppear>(root); Comp<CanvasGroup>(root);
+            var root = FullScreen("WeeklyMissionPopupView");
+            Img(root, DIM); Comp<WeeklyMissionPopupView>(root); Comp<UIPanelAppear>(root); Comp<CanvasGroup>(root);
             var backdrop = Child(root, "Backdrop"); Stretch(backdrop); Img(backdrop, DIM);
 
-            var panel = Panel(root, "Panel", new Vector2(820, 760), UI_BG_MID);
-            var title = RibbonTitle(panel, "TitleText", "Daily Challenge", "popup.challenge.title");
+            var panel = Panel(root, "Panel", new Vector2(860, 1000), UI_BG_MID);
+            var title = RibbonTitle(panel, "TitleText", "This Week's Missions", "popup.weekly_mission.title");
 
-            var date = TMP(panel, "DateText", Center(0, 200, 700, 60), 24, UI_TEXT, "2026-01-01", null, TextCategory.Normal);
-            var diff = TMP(panel, "DifficultyText", Center(0, 110, 700, 70), 30, UI_CTA, "Difficulty", null, TextCategory.Header);
-            var part = TMP(panel, "ParticipantsText", Center(0, 30, 700, 50), 22, UI_TEXT, "Participants", null, TextCategory.Normal);
-            var streak = TMP(panel, "StreakText", Center(0, -40, 700, 50), 22, UI_TEXT, "Streak", null, TextCategory.Normal);
+            var daysLeft = TMP(panel, "DaysLeftText", Center(280, 380, 240, 60), 24, UI_CTA, "D-7", null, TextCategory.Normal);
+            var ep = TMP(panel, "EpText", Center(0, 300, 720, 50), 26, UI_TEXT, "0 / 1200 EP", null, TextCategory.Normal);
 
-            var start = Btn(panel, "StartButton", new Vector2(0, -160), new Vector2(480, 96), UI_CTA, "Start", "popup.challenge.btn_start");
-            var ranking = Btn(panel, "RankingButton", new Vector2(0, -270), new Vector2(480, 90), UI_BG_DEEP, "Ranking", "popup.challenge.btn_ranking");
-            var closeBtn = CloseBtnAt(panel, new Vector2(330, 345));
+            // EP gauge: background bar + left-anchored fill (View sets anchorMax.x = totalEp / maxThreshold).
+            var epBg = Child(panel, "EpBarBg"); Fixed(epBg, new Vector2(0, 250), new Vector2(720, 32)); Img(epBg, UI_BG_DEEP);
+            var epFill = Child(epBg, "EpBarFill"); Img(epFill, UI_SUCCESS);
+            var epFillRt = epFill.GetComponent<RectTransform>();
+            epFillRt.anchorMin = new Vector2(0f, 0f); epFillRt.anchorMax = new Vector2(0f, 1f);
+            epFillRt.pivot = new Vector2(0f, 0.5f); epFillRt.offsetMin = Vector2.zero; epFillRt.offsetMax = Vector2.zero;
 
-            var so = new SerializedObject(root.GetComponent<DailyChallengePopupView>());
+            var track = TMP(panel, "TrackText", Center(0, 195, 720, 50), 22, UI_TEXT, "●200  ●500  ○900  ○1200", null, TextCategory.Normal);
+
+            var missions = Child(panel, "MissionContainer"); Fixed(missions, new Vector2(0, -70), new Vector2(760, 420));
+            var vlg = Comp<VerticalLayoutGroup>(missions);
+            vlg.spacing = 8; vlg.padding = new RectOffset(24, 24, 12, 12);
+            vlg.childAlignment = TextAnchor.UpperLeft;
+            vlg.childControlWidth = true; vlg.childControlHeight = true;
+            vlg.childForceExpandWidth = true; vlg.childForceExpandHeight = false;
+
+            var claim = Btn(panel, "ClaimButton", new Vector2(0, -390), new Vector2(480, 96), UI_CTA, "Claim", "popup.weekly_mission.btn_claim_fmt");
+            var claimLabel = claim.GetComponentInChildren<TMP_Text>();
+            var closeBtn = CloseBtnAt(panel, new Vector2(350, 465));
+
+            var so = new SerializedObject(root.GetComponent<WeeklyMissionPopupView>());
             so.FindProperty("_titleText").objectReferenceValue = title;
-            so.FindProperty("_dateText").objectReferenceValue = date;
-            so.FindProperty("_difficultyText").objectReferenceValue = diff;
-            so.FindProperty("_participantsText").objectReferenceValue = part;
-            so.FindProperty("_streakText").objectReferenceValue = streak;
-            so.FindProperty("_startButton").objectReferenceValue = start.GetComponent<Button>();
-            so.FindProperty("_rankingButton").objectReferenceValue = ranking.GetComponent<Button>();
+            so.FindProperty("_daysLeftText").objectReferenceValue = daysLeft;
+            so.FindProperty("_epText").objectReferenceValue = ep;
+            so.FindProperty("_epBarFill").objectReferenceValue = epFillRt;
+            so.FindProperty("_trackText").objectReferenceValue = track;
+            so.FindProperty("_missionContainer").objectReferenceValue = missions.transform;
+            so.FindProperty("_claimButton").objectReferenceValue = claim.GetComponent<Button>();
+            so.FindProperty("_claimLabel").objectReferenceValue = claimLabel;
             so.FindProperty("_closeButton").objectReferenceValue = closeBtn;
             so.ApplyModifiedProperties();
 
-            Save(root, "DailyChallengePopupView");
+            Save(root, "WeeklyMissionPopupView");
         }
 
         static void CreateReLoginView()
@@ -1894,7 +1989,6 @@ namespace Game.Editor
 
         static void CreateFailOverlay()
         {
-            var resMap = LoadDynamicResourceMap();
             var root = FullScreen("FailOverlayView");
             Img(root, DIM); Comp<FailOverlayView>(root); Comp<UIPanelAppear>(root); Comp<CanvasGroup>(root);
 
@@ -1905,57 +1999,24 @@ namespace Game.Editor
             var addLaneRow = Child(panel, "AddLaneRow"); Fixed(addLaneRow, new Vector2(0, 80), new Vector2(680, 150));
             Img(addLaneRow, Color.clear);
             var addLaneBtn = Btn(addLaneRow, "AddLaneButton", Vector2.zero, new Vector2(660, 140), UI_SUCCESS, "Add Lane", PopupFailBtnAddLane);
-            AddButtonIcon(addLaneBtn, "item_add_lane", resMap);
-            // "Watch Ad" badge — signals Add Lane is granted by a rewarded ad, not gold.
+            // "Watch Ad" badge — signals Add Lane is granted by a rewarded ad, not gold. The badge image
+            // is assigned directly on the prefab/Final variant in the inspector (not via dynamic_resource).
             var adBadge = Child(addLaneBtn, "AdBadge");
             Fixed(adBadge, new Vector2(235, 42), new Vector2(180, 56));
             Img(adBadge, UI_CTA);
             TMP(adBadge, "Label", Center(0, 0, 168, 52), 24, UI_TEXT, "Watch Ad", PopupFailWatchAd, TextCategory.Button);
 
-            // Shuffle (gold) — icon + live price label.
-            var shuffleBtn = Btn(panel, "ShuffleButton", new Vector2(0, -90), new Vector2(660, 140), UI_PRIMARY, "Shuffle", PopupFailBtnShuffle);
-            AddButtonIcon(shuffleBtn, "item_shuffle", resMap);
-            var costGo = Child(shuffleBtn, "ShuffleCost");
-            Fixed(costGo, new Vector2(210, 0), new Vector2(140, 60));
-            var costTmp = Comp<TextMeshProUGUI>(costGo);
-            ApplyAutoFontSize(costTmp, TextCategory.Button);
-            costTmp.color = UI_TEXT; costTmp.alignment = TextAlignmentOptions.Midline; costTmp.text = "0"; costTmp.raycastTarget = false;
-            Comp<LocalizedText>(costGo); Comp<UITextStyle>(costGo).ApplyStyle();
-            var goldIcon = Child(shuffleBtn, "CostIcon"); Fixed(goldIcon, new Vector2(285, 0), new Vector2(48, 48));
-            var goldImg = Img(goldIcon, Color.white); goldImg.preserveAspect = true; goldImg.raycastTarget = false;
-            if (resMap.TryGetValue("ui_gold_icon", out var goldPath))
-            {
-                var gs = AssetDatabase.LoadAssetAtPath<Sprite>(goldPath);
-                if (gs != null) goldImg.sprite = gs;
-            }
-
-            var forfeitBtn = Btn(panel, "ForfeitButton", new Vector2(0, -270), new Vector2(420, 110), UI_DANGER, "Give Up", PopupFailBtnForfeit);
-
-            // Shuffle spend confirm — in-panel modal (kept inside this popup, not a second UIManager
-            // popup, so closing never races on the popup stack). Hidden until Shuffle is tapped.
-            var confirmPanel = Child(root, "ShuffleConfirmPanel");
-            Stretch(confirmPanel);
-            Img(confirmPanel, DIM);
-            var confirmCard = Panel(confirmPanel, "ConfirmCard", new Vector2(640, 440), UI_BG_MID);
-            RibbonTitle(confirmCard, "TitleText", "Shuffle", PopupFailBtnShuffle);
-            var confirmBody = TMP(confirmCard, "BodyText", Center(0, 50, 560, 150), 28, UI_TEXT, "Spend 0 Gold to shuffle the board?", null, TextCategory.Normal);
-            var confirmYes = Btn(confirmCard, "ConfirmYesButton", new Vector2( 150, -130), new Vector2(260, 100), UI_CTA,     "Confirm", CommonBtnConfirm);
-            var confirmNo  = Btn(confirmCard, "ConfirmNoButton",  new Vector2(-150, -130), new Vector2(260, 100), UI_BG_DEEP, "Cancel",  CommonBtnCancel);
-            confirmPanel.transform.SetAsLastSibling();
-            // Left active in the prefab so the card/buttons are positionable in the Final variant;
-            // runtime visibility is owned by Configure (SetActive(false) on open, shown on Shuffle tap).
+            // Retry (restart the same stage) + Forfeit (give up to lobby), side by side. The only stuck
+            // rescue is Add Lane (ad); there is no gold-spend Shuffle here, so fail = continue or restart.
+            var retryBtn   = Btn(panel, "RetryButton",   new Vector2(-175, -270), new Vector2(330, 110), UI_CTA,    "Retry",   CommonBtnRetry);
+            var forfeitBtn = Btn(panel, "ForfeitButton", new Vector2( 175, -270), new Vector2(330, 110), UI_DANGER, "Give Up", PopupFailBtnForfeit);
 
             var so = new SerializedObject(root.GetComponent<FailOverlayView>());
             so.FindProperty("_titleText").objectReferenceValue       = title;
             so.FindProperty("_addLaneRow").objectReferenceValue      = addLaneRow;
             so.FindProperty("_addLaneButton").objectReferenceValue   = addLaneBtn.GetComponent<Button>();
-            so.FindProperty("_shuffleButton").objectReferenceValue   = shuffleBtn.GetComponent<Button>();
-            so.FindProperty("_shuffleCostText").objectReferenceValue = costTmp;
+            so.FindProperty("_retryButton").objectReferenceValue     = retryBtn.GetComponent<Button>();
             so.FindProperty("_forfeitButton").objectReferenceValue   = forfeitBtn.GetComponent<Button>();
-            so.FindProperty("_shuffleConfirmPanel").objectReferenceValue = confirmPanel;
-            so.FindProperty("_shuffleConfirmBody").objectReferenceValue  = confirmBody;
-            so.FindProperty("_shuffleConfirmYes").objectReferenceValue   = confirmYes.GetComponent<Button>();
-            so.FindProperty("_shuffleConfirmNo").objectReferenceValue    = confirmNo.GetComponent<Button>();
             so.ApplyModifiedProperties();
 
             Save(root, "FailOverlayView");
@@ -1983,16 +2044,18 @@ namespace Game.Editor
             Stretch(backdrop);
             Img(backdrop, DIM);
 
-            var panel = Panel(root, "Panel", new Vector2(600, 500), UI_BG_MID);
+            var panel = Panel(root, "Panel", new Vector2(600, 620), UI_BG_MID);
             var title = RibbonTitle(panel, "TitleText", "Paused", PopupPauseTitle);
 
-            var resume  = Btn(panel, "ResumeButton",      new Vector2(0,   80), new Vector2(480, 96), UI_CTA,     "Resume",       PopupPauseBtnResume);
-            var restart = Btn(panel, "RestartButton",     new Vector2(0,  -30), new Vector2(480, 96), UI_DANGER,  "Restart",      PopupPauseBtnRestart);
-            var select  = Btn(panel, "StageSelectButton", new Vector2(0, -140), new Vector2(480, 96), UI_BG_DEEP, "Stage Select", PopupPauseBtnStageSelect);
-            var closeBtn = CloseBtnAt(panel, new Vector2(250, 208));
+            var resume    = Btn(panel, "ResumeButton",      new Vector2(0,  150), new Vector2(480, 96), UI_CTA,     "Resume",       PopupPauseBtnResume);
+            var howToPlay = Btn(panel, "HowToPlayButton",   new Vector2(0,   40), new Vector2(480, 96), UI_PRIMARY, "How to Play",  PopupPauseBtnHowToPlay);
+            var restart   = Btn(panel, "RestartButton",     new Vector2(0,  -70), new Vector2(480, 96), UI_DANGER,  "Restart",      PopupPauseBtnRestart);
+            var select    = Btn(panel, "StageSelectButton", new Vector2(0, -180), new Vector2(480, 96), UI_BG_DEEP, "Stage Select", PopupPauseBtnStageSelect);
+            var closeBtn = CloseBtnAt(panel, new Vector2(250, 268));
 
             var so = new SerializedObject(root.GetComponent<PausePopupView>());
             so.FindProperty("_resumeButton").objectReferenceValue      = resume.GetComponent<Button>();
+            so.FindProperty("_howToPlayButton").objectReferenceValue    = howToPlay.GetComponent<Button>();
             so.FindProperty("_restartButton").objectReferenceValue     = restart.GetComponent<Button>();
             so.FindProperty("_stageSelectButton").objectReferenceValue = select.GetComponent<Button>();
             so.FindProperty("_closeButton").objectReferenceValue       = closeBtn;
@@ -2169,76 +2232,62 @@ namespace Game.Editor
             var snv = Comp<StageNodeView>(root);
             Comp<UIButtonAnimator>(root);
 
-            // Pulse Ring
-            var pulseRing = Child(root, "PulseRing");
-            Fixed(pulseRing, Vector2.zero, new Vector2(150f, 150f));
-            Img(pulseRing, UI_CTA);
-            Comp<UIScalePulse>(pulseRing);
-            pulseRing.SetActive(false);
+            // Legacy cleanup: old star-rating + pulse ring / difficulty outline / cleared / lock /
+            // skull / fill (named removal keeps surviving fileIDs stable)
+            foreach (var legacy in new[] { "PulseRing", "DifficultyOutline", "ClearedBadge", "LockOverlay", "SkullBadge", "Stars", "Fill" })
+            {
+                var t = root.transform.Find(legacy);
+                if (t != null) Object.DestroyImmediate(t.gameObject);
+            }
 
-            // Difficulty outline (colored at runtime by DifficultyStyle; hidden for Easy)
-            var diffOutline = Child(root, "DifficultyOutline");
-            Fixed(diffOutline, Vector2.zero, new Vector2(148f, 148f));
-            var diffOutlineImg = Img(diffOutline, Color.white);
-            diffOutline.SetActive(false);
+            // Difficulty glow (behind node; colored + gently pulsed at runtime by DifficultyStyle; off for Easy/locked)
+            // Stretch + outset so the aura is always larger than the (stretched) Visual regardless
+            // of the node's actual size — a Fixed size could end up smaller than an overridden root
+            // and hide behind the node.
+            var glow = Child(root, "Glow");
+            Stretch(glow);
+            var glowRt = RT(glow);
+            glowRt.offsetMin = new Vector2(-25f, -25f);
+            glowRt.offsetMax = new Vector2(25f, 25f);
+            var glowImg = Img(glow, Color.white);
+            glowImg.raycastTarget = false;
+            glow.transform.SetAsFirstSibling();
+            glow.SetActive(false);
 
-            // Visual background border
+            // Node visual (ui_stage_node sprite; tinted per chapter, or static power-off when locked)
             var visual = Child(root, "Visual");
             Stretch(visual);
-            var borderImg = Img(visual, Color.white);
-            
-            // Inner circle
-            var inner = Child(visual, "Inner");
-            Fixed(inner, Vector2.zero, new Vector2(110f, 110f));
-            Img(inner, UI_PRIMARY);
-            
-            // Label
-            var stageLabel = TMP(inner, "StageLabel", Center(0, 0, 110, 110), 22, UI_TEXT, "1", null, TextCategory.Button);
-            
-            // Cleared badge — single marker shown when the stage has been cleared (star rating removed)
-            var clearedBadge = Child(root, "ClearedBadge");
-            Fixed(clearedBadge, new Vector2(0f, -60f), new Vector2(36f, 36f));
-            Img(clearedBadge, UI_SUCCESS);
-            clearedBadge.SetActive(false);
+            var nodeImg = Img(visual, Color.white);
 
-            // Lock Overlay
-            var lockOverlay = Child(root, "LockOverlay");
-            Stretch(lockOverlay);
-            Img(lockOverlay, new Color(0f, 0f, 0f, 0f));
-            var lockIcon = Child(lockOverlay, "LockIcon");
-            Fixed(lockIcon, Vector2.zero, new Vector2(40f, 40f));
-            Img(lockIcon, Color.white);
-            lockOverlay.SetActive(false);
+            // Label (centered on node)
+            var stageLabel = TMP(visual, "StageLabel", Center(0, 0, 110, 110), 22, UI_TEXT, "1", null, TextCategory.Button);
 
-            // Skull badge (Hard only — top-right corner of 130x130 root)
-            var skullBadge = Child(root, "SkullBadge");
-            Fixed(skullBadge, new Vector2(45f, 45f), new Vector2(40f, 40f));
-            var skullBadgeImg = Img(skullBadge, Color.white);
-            skullBadge.SetActive(false);
+            // Legacy inner circle / fill no longer used (label now lives directly under Visual)
+            foreach (var legacy in new[] { "Inner", "Fill" })
+            {
+                var t = visual.transform.Find(legacy);
+                if (t != null) Object.DestroyImmediate(t.gameObject);
+            }
 
             // Button
             var btn = Comp<Button>(root);
-            btn.targetGraphic = borderImg;
+            btn.targetGraphic = nodeImg;
 
             // Wire StageNodeView properties
             var so = new SerializedObject(snv);
-            so.FindProperty("_stageLabel").objectReferenceValue       = stageLabel;
-            so.FindProperty("_lockOverlay").objectReferenceValue      = lockOverlay;
-            var pulseRingProp = so.FindProperty("_pulseRing");
-            if (pulseRingProp != null) pulseRingProp.objectReferenceValue = pulseRing;
-            so.FindProperty("_button").objectReferenceValue           = btn;
-            so.FindProperty("_border").objectReferenceValue           = borderImg;
-            so.FindProperty("_difficultyOutline").objectReferenceValue = diffOutlineImg;
-            so.FindProperty("_skullIcon").objectReferenceValue        = skullBadge;
-            so.FindProperty("_clearedBadge").objectReferenceValue     = clearedBadge;
+            so.FindProperty("_stageLabel").objectReferenceValue = stageLabel;
+            so.FindProperty("_button").objectReferenceValue     = btn;
+            so.FindProperty("_node").objectReferenceValue        = nodeImg;
+            so.FindProperty("_glow").objectReferenceValue        = glowImg;
             so.ApplyModifiedProperties();
 
-            var resMap = LoadDynamicResourceMap();
-            var lockSpr    = resMap.TryGetValue("ui_lock_icon", out string lp) ? AssetDatabase.LoadAssetAtPath<Sprite>(lp) : null;
-            var lockImgComp = lockIcon.GetComponent<Image>();
-            if (lockImgComp != null && lockSpr != null) { lockImgComp.sprite = lockSpr; lockImgComp.preserveAspect = true; }
-            var skullSpr = resMap.TryGetValue("ui_hard_skull", out string skulp) ? AssetDatabase.LoadAssetAtPath<Sprite>(skulp) : null;
-            if (skullSpr != null) { skullBadgeImg.sprite = skullSpr; skullBadgeImg.preserveAspect = true; }
+            // Node + glow share the ui_stage_node sprite; glow is the larger tinted aura behind.
+            var nodeSpr = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Resources/Sprites/Icons/ui_stage_node.png");
+            if (nodeSpr != null)
+            {
+                nodeImg.sprite = nodeSpr; nodeImg.preserveAspect = true;
+                glowImg.sprite = nodeSpr; glowImg.preserveAspect = true;
+            }
 
             Save(root, "StageNodeView");
         }
@@ -2470,6 +2519,15 @@ namespace Game.Editor
             rt.anchorMin = new Vector2(0, 0); rt.anchorMax = new Vector2(1, 0);
             rt.pivot     = new Vector2(0.5f, 0);
             rt.sizeDelta = new Vector2(0, h); rt.anchoredPosition = Vector2.zero;
+        }
+
+        // Top-center anchored, fixed size, offset downward from parent top (yTop negative)
+        static void TopAnchor(RectTransform rt, Vector2 size, float yTop, float x = 0f)
+        {
+            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 1f);
+            rt.pivot     = new Vector2(0.5f, 1f);
+            rt.sizeDelta = size;
+            rt.anchoredPosition = new Vector2(x, yTop);
         }
 
         // Stretch with uniform padding from each edge (using offsetMin/offsetMax)
@@ -3178,10 +3236,12 @@ namespace Game.Editor
                 var line = lines[i].Trim();
                 if (string.IsNullOrEmpty(line)) continue;
                 var cols = line.Split(',');
-                if (cols.Length >= 2)
+                // Columns: id(0), resource_key(1), sprite_path(2), category(3), comment(4).
+                // Map MUST be keyed by resource_key → sprite_path (consumers look up by key like "avatar_1").
+                if (cols.Length >= 3)
                 {
-                    string key = cols[0].Trim();
-                    string path = cols[1].Trim();
+                    string key = cols[1].Trim();
+                    string path = cols[2].Trim();
                     map[key] = path;
                 }
             }
@@ -3322,7 +3382,7 @@ namespace Game.Editor
             Fixed(scoreIcon, new Vector2(200, 0), new Vector2(48, 48));
             var scoreImg = Img(scoreIcon, Color.white);
             scoreImg.preserveAspect = true;
-            if (resMap.TryGetValue("nav_home", out string sfp))
+            if (resMap.TryGetValue("ui_flag_icon", out string sfp))
             {
                 var spr = AssetDatabase.LoadAssetAtPath<Sprite>(sfp);
                 if (spr != null) scoreImg.sprite = spr;

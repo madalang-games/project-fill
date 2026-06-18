@@ -8,7 +8,8 @@ namespace Game.InGame.View
     // a circuit "back" for Blind lanes, and a pulsing overload glow. Fits its container.
     public class ChipView : MonoBehaviour
     {
-        private SpriteRenderer _glow, _fill, _outline, _back, _backCirc;
+        private SpriteRenderer _glow, _fill, _outline, _sheen, _finish, _back, _backCirc;
+        private SpriteRenderer _overloadBadge, _badgeBack, _sweep; // Ch5 overload markers
         private SpriteRenderer[] _pinsL;
         private SpriteRenderer[] _pinsR;
         private SpriteRenderer _indexDot;
@@ -20,6 +21,16 @@ namespace Game.InGame.View
 
         private bool _built;
         private Vector2 _size;
+
+        // Skin tokens (from SpriteSet/BoardTheme); defaults reproduce the original look.
+        private Color _outlineColor = new(0.10f, 0.11f, 0.15f, 1f);
+        private float _fillAlpha    = 1f;
+        private float _glowAlpha    = 0.18f;
+        private bool  _neonEdge;
+        private bool  _outlinePulse;  // premium: rim brightness breathes (animated in Update)
+        private bool  _ghost;         // chip_ghost: holographic flicker (body wavers + glitch blinks)
+        private bool  _spectrum;      // top-tier: rim cycles through the colour spectrum (red→…→blue)
+        private Color _accent       = new(0.21f, 0.84f, 0.95f);
 
         public Transform Rt => transform;
 
@@ -36,6 +47,15 @@ namespace Game.InGame.View
         private void Construct(SpriteSet s, Vector2 size)
         {
             _built = true;
+
+            _outlineColor = s.ChipOutlineColor;
+            _fillAlpha    = s.ChipFillAlpha;
+            _glowAlpha    = s.ChipGlowAlpha;
+            _neonEdge     = s.ChipNeonEdge;
+            _outlinePulse = s.ChipOutlinePulse;
+            _ghost        = s.ChipGhost;
+            _spectrum     = s.ChipSpectrum;
+            _accent       = s.Accent;
 
             _glow = WorldUtil.CreateSprite(transform, "Glow", s.Glow, new Color(1, 1, 1, 0f), size + new Vector2(0.12f, 0.12f), sortingOrder: 7);
 
@@ -63,8 +83,21 @@ namespace Game.InGame.View
             // Casual token look: hide the IC side-pins (kept in the hierarchy for legacy sprite skins).
             for (int i = 0; i < 3; i++) { _pinsL[i].gameObject.SetActive(false); _pinsR[i].gameObject.SetActive(false); }
 
-            _fill = WorldUtil.CreateSprite(transform, "Fill", s.Chip, Color.white, size, sortingOrder: 9);
-            _outline = WorldUtil.CreateSprite(transform, "Outline", s.ChipOutline, Color.white, size, sortingOrder: 10);
+            // Fill is inset slightly inside the outline so the solid rim fully frames the signal colour —
+            // the body never pokes past the rounded corners (outline drawn at full `size`, sortingOrder 11).
+            _fill = WorldUtil.CreateSprite(transform, "Fill", s.Chip, Color.white, size * 0.94f, sortingOrder: 9);
+
+            // Top gloss sheen: a soft bright band across the upper third so the tinted square reads as a
+            // luminous data cell (emissive register) rather than a flat sticker. Hidden on blind cells.
+            _sheen = WorldUtil.CreateSprite(transform, "Sheen", s.Chip, new Color(1f, 1f, 1f, 0.14f), new Vector2(size.x * 0.78f, size.y * 0.34f), sortingOrder: 10);
+            _sheen.transform.localPosition = new Vector3(0f, size.y * 0.24f, 0f);
+
+            // Cosmetic surface finish (dither/scanline/bevel/gloss) masked to the chip shape, over the
+            // fill, under the outline. The look is baked into the sprite → draw with white. null = Flat.
+            _finish = WorldUtil.CreateSprite(transform, "Finish", s.ChipFinishSprite, Color.white, size * 0.94f, sliced: false, sortingOrder: 10);
+            if (s.ChipFinishSprite == null) _finish.gameObject.SetActive(false);
+
+            _outline = WorldUtil.CreateSprite(transform, "Outline", s.ChipOutline, Color.white, size, sortingOrder: 11);
 
             _label = WorldUtil.CreateLabel(transform, "Glyph", "", 30f, size);
             _label.fontStyle = FontStyles.Bold;
@@ -83,6 +116,20 @@ namespace Game.InGame.View
             _backCirc = WorldUtil.CreateSprite(transform, "Circ", s.Circuit, new Color(0.32f, 0.62f, 0.68f, 0.9f), size, sliced: false, sortingOrder: 13);
             _back.gameObject.SetActive(false);
             _backCirc.gameObject.SetActive(false);
+
+            // Ch5 overload markers: a corner lightning badge (static identifier, on a dark disc so it
+            // reads against any signal colour) + an in-bounds bright sweep bar (periodic discharge,
+            // animated in Update). Gameplay-fixed, not a cosmetic axis → drawn straight from TextureFactory.
+            float badge = size.x * 0.40f;
+            var badgePos = new Vector3(size.x * 0.32f, size.y * 0.32f, -0.02f);
+            _badgeBack = WorldUtil.CreateSprite(transform, "OverloadBack", s.Disc, new Color(0.08f, 0.05f, 0.02f, 0.85f), new Vector2(badge, badge), sliced: false, sortingOrder: 14);
+            _overloadBadge = WorldUtil.CreateSprite(transform, "OverloadBolt", TextureFactory.Bolt(), new Color(1f, 0.62f, 0.16f), new Vector2(badge * 0.82f, badge * 0.82f), sliced: false, sortingOrder: 15);
+            _badgeBack.transform.localPosition = badgePos;
+            _overloadBadge.transform.localPosition = badgePos;
+            _sweep = WorldUtil.CreateSprite(transform, "OverloadSweep", s.Chip, new Color(1f, 0.85f, 0.5f, 0f), new Vector2(size.x * 0.94f, size.y * 0.22f), sortingOrder: 12);
+            _badgeBack.gameObject.SetActive(false);
+            _overloadBadge.gameObject.SetActive(false);
+            _sweep.gameObject.SetActive(false);
         }
 
         public void SetChip(Chip chip, bool revealed)
@@ -102,27 +149,37 @@ namespace Game.InGame.View
             {
                 _back.gameObject.SetActive(false);
                 _backCirc.gameObject.SetActive(false);
+                _sheen.gameObject.SetActive(true);
+                if (_finish != null && _finish.sprite != null) _finish.gameObject.SetActive(true);
                 var col = _chip.Type.ToColor();
 
                 // Casual color token: body = the signal color, bold dark outline, dark glyph for
                 // contrast. (When a real sprite is slotted into SpriteSet it drives the shape; these
                 // colors still tint it.)
-                _fill.color    = col;
-                _outline.color = new Color(0.10f, 0.11f, 0.15f, 1f);
+                _fill.color    = new Color(col.r, col.g, col.b, _fillAlpha);
+                _outline.color = _outlineColor;
                 _label.text    = _chip.Type.ToLabel();
                 _label.color   = Color.Lerp(col, Color.black, 0.72f);
                 _indexDot.gameObject.SetActive(true);
                 _indexDot.color = Color.Lerp(col, Color.white, 0.5f);
+
+                _badgeBack.gameObject.SetActive(_chip.Overload);
+                _overloadBadge.gameObject.SetActive(_chip.Overload);
             }
             else
             {
                 _back.gameObject.SetActive(true);
                 _backCirc.gameObject.SetActive(true);
+                _sheen.gameObject.SetActive(false);
+                if (_finish != null) _finish.gameObject.SetActive(false);
                 _fill.color    = new Color(0.09f, 0.11f, 0.14f);
                 _outline.color = new Color(0.25f, 0.45f, 0.52f);
                 _label.text    = "";
                 _indexDot.gameObject.SetActive(false);
-                
+                _badgeBack.gameObject.SetActive(false);
+                _overloadBadge.gameObject.SetActive(false);
+                _sweep.gameObject.SetActive(false);
+
                 Color pinCol = new Color(0.38f, 0.40f, 0.45f);
                 for (int i = 0; i < 3; i++)
                 {
@@ -144,8 +201,9 @@ namespace Game.InGame.View
             a = Mathf.Clamp01(a);
             _flashing = a > 0f;
             var col = _chip.Type.ToColor();
-            _fill.color    = Color.Lerp(col, Color.white, a);
-            _outline.color = Color.Lerp(new Color(0.10f, 0.11f, 0.15f, 1f), Color.white, a);
+            var fc = Color.Lerp(col, Color.white, a); fc.a = _fillAlpha;
+            _fill.color    = fc;
+            _outline.color = Color.Lerp(_outlineColor, Color.white, a);
             _label.color   = Color.Lerp(Color.Lerp(col, Color.black, 0.72f), Color.white, a);
             if (_glow != null) _glow.color = new Color(1f, 1f, 1f, Mathf.Lerp(0.18f, 0.95f, a));
         }
@@ -193,6 +251,7 @@ namespace Game.InGame.View
 
             if (_selected)
             {
+                if (_sweep != null && _sweep.gameObject.activeSelf) _sweep.gameObject.SetActive(false);
                 var col = _revealed ? _chip.Type.ToColor() : new Color(0.4f, 0.7f, 0.8f);
                 _punch = Mathf.MoveTowards(_punch, 0f, Time.deltaTime * 5f);
                 _glow.color = new Color(col.r, col.g, col.b, Mathf.Lerp(0.7f, 1f, pulse));
@@ -208,27 +267,82 @@ namespace Game.InGame.View
             }
             else if (_revealed && _chip.Overload)
             {
-                // Ch5 overload chip: red-orange pulse glow.
-                _glow.color = new Color(1f, 0.35f, 0.12f, Mathf.Lerp(0.35f, 0.75f, pulse));
-                
-                Color overloadPinCol = new Color(1f, 0.5f, 0.15f);
-                for (int i = 0; i < 3; i++)
+                // Ch5 overload chip: a periodic charge→discharge GlowSweep so the "can't sit alone"
+                // chips read at a glance. Charge ramps the orange halo up; discharge flashes it, throbs
+                // the body brighter, and runs a bright bar up through the cell (kept in-bounds — alpha
+                // fades to 0 at both travel ends so it never clips past the chip).
+                const float period = 1.8f;
+                float cyc       = (Time.unscaledTime % period) / period;
+                bool  discharge = cyc >= 0.7f;
+                float chargeT   = Mathf.InverseLerp(0f, 0.7f, cyc);
+                float dischT    = discharge ? Mathf.InverseLerp(0.7f, 1f, cyc) : 0f;
+
+                float glowA = discharge ? Mathf.Lerp(1f, 0.3f, dischT) : Mathf.Lerp(0.3f, 0.8f, chargeT);
+                _glow.color = new Color(1f, 0.4f, 0.12f, glowA);
+
+                var   col  = _chip.Type.ToColor();
+                float thr  = discharge ? Mathf.Lerp(0.4f, 0f, dischT) : 0f; // brief whiten on discharge
+                _fill.color = Color.Lerp(new Color(col.r, col.g, col.b, _fillAlpha), new Color(1f, 0.72f, 0.4f, _fillAlpha), thr);
+
+                if (discharge)
                 {
-                    _pinsL[i].color = overloadPinCol;
-                    _pinsR[i].color = overloadPinCol;
+                    _sweep.gameObject.SetActive(true);
+                    float py = Mathf.Lerp(-_size.y * 0.42f, _size.y * 0.42f, dischT);
+                    _sweep.transform.localPosition = new Vector3(0f, py, 0.01f);
+                    _sweep.color = new Color(1f, 0.85f, 0.5f, 0.55f * Mathf.Sin(dischT * Mathf.PI));
+                }
+                else
+                {
+                    _sweep.gameObject.SetActive(false);
                 }
             }
             else
             {
-                // Soft constant ambient glow behind chips for electronic motherboard feel
+                // Soft constant ambient glow behind chips for electronic motherboard feel.
+                // Neon-edge skins (dynamic boards/chips) animate a signal↔accent gradient halo.
                 if (_revealed)
                 {
                     var col = _chip.Type.ToColor();
-                    _glow.color = new Color(col.r, col.g, col.b, 0.18f);
+                    if (_neonEdge)
+                    {
+                        float g = Mathf.Sin(Time.unscaledTime * 3f) * 0.5f + 0.5f;
+                        var a   = Color.Lerp(col, _accent, g);
+                        _glow.color = new Color(a.r, a.g, a.b, Mathf.Lerp(_glowAlpha, _glowAlpha * 2.2f, g));
+                    }
+                    else
+                    {
+                        _glow.color = new Color(col.r, col.g, col.b, _glowAlpha);
+                    }
                 }
                 else
                 {
                     _glow.color = new Color(0.25f, 0.45f, 0.52f, 0.08f);
+                }
+            }
+
+            // Premium chip identity (only while resting & revealed — selected/overload own the visuals).
+            if (_revealed && !_selected && !(_chip.Overload))
+            {
+                // Spectrum (top-tier): rim cycles continuously through the colour wheel.
+                if (_spectrum)
+                {
+                    float h = (Time.unscaledTime * 0.16f) % 1f;
+                    _outline.color = Color.HSVToRGB(h, 0.85f, 1f);
+                }
+                // Holographic ghost: body alpha wavers + brief glitch dropouts, rim shimmers to accent.
+                else if (_ghost)
+                {
+                    float sh     = Mathf.Sin(Time.unscaledTime * 3.3f) * 0.5f + 0.5f;
+                    float glitch = Mathf.PerlinNoise(Time.unscaledTime * 8f, 0.37f) > 0.86f ? 0.45f : 1f;
+                    var   col    = _chip.Type.ToColor();
+                    _fill.color    = new Color(col.r, col.g, col.b, _fillAlpha * Mathf.Lerp(0.55f, 1f, sh) * glitch);
+                    _outline.color = Color.Lerp(_outlineColor, _accent, 0.35f + 0.45f * sh);
+                }
+                // Pulsing rim: outline breathes toward white so a costly chip reads as "lit".
+                else if (_outlinePulse)
+                {
+                    float p = Mathf.Sin(Time.unscaledTime * 4f) * 0.5f + 0.5f;
+                    _outline.color = Color.Lerp(_outlineColor, Color.Lerp(_outlineColor, Color.white, 0.6f), p);
                 }
             }
         }

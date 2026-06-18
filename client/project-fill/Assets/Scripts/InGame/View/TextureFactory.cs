@@ -84,6 +84,79 @@ namespace Game.InGame.View
             });
         }
 
+        // Solid rounded-rect rim: a fully-opaque band from the outer boundary inward by
+        // `thicknessFrac`. Unlike RoundedOutline (a thin centred AA band that lets a bright fill peek
+        // through at the rounded corners → colour bleed), this OCCLUDES the fill rim completely, so the
+        // chip edge reads as a clean finished border. 9-sliced → corners stay crisp at any size.
+        public static Sprite RoundedRimSolid(int size = 64, float cornerFrac = 0.28f, float thicknessFrac = 0.09f)
+        {
+            return Get($"rim_{size}_{cornerFrac}_{thicknessFrac}", () =>
+            {
+                var tex = NewTex(size);
+                float r = size * cornerFrac;
+                float th = size * thicknessFrac;
+                for (int y = 0; y < size; y++)
+                for (int x = 0; x < size; x++)
+                {
+                    float d     = RoundedBoxSdf(x + 0.5f, y + 0.5f, size, r);
+                    float outer = Mathf.Clamp01(0.5f - d);          // full body coverage (AA at boundary)
+                    float inner = Mathf.Clamp01(0.5f - (d + th));   // body inset by the rim thickness
+                    tex.SetPixel(x, y, new Color(1f, 1f, 1f, outer - inner)); // opaque ring, AA both edges
+                }
+                tex.Apply();
+                return Make9(tex, Mathf.CeilToInt(r) + 1);
+            });
+        }
+
+        // Chip surface-finish overlay: a pattern masked to the rounded-chip shape, composited over the
+        // signal-colour body to give the cosmetic "material" (stipple / scanline / emboss / gloss). The
+        // body hue is untouched — this only modulates the surface. Returns null for Flat. The full look
+        // (colour + alpha) is baked here, so ChipView draws it with SpriteRenderer.color = white.
+        public static Sprite ChipFinishOverlay(ChipFinish finish, int size = 64, float cornerFrac = 0.28f)
+        {
+            if (finish == ChipFinish.Flat) return null;
+            return Get($"finish_{finish}_{size}_{cornerFrac}", () =>
+            {
+                var tex = NewTex(size);
+                float r = size * cornerFrac;
+                for (int y = 0; y < size; y++)
+                for (int x = 0; x < size; x++)
+                {
+                    float d    = RoundedBoxSdf(x + 0.5f, y + 0.5f, size, r);
+                    float mask = Mathf.Clamp01(0.5f - d);   // inside-chip coverage (kills edge bleed)
+                    float v    = (float)y / (size - 1);     // 0 = bottom, 1 = top
+                    var c = new Color(0f, 0f, 0f, 0f);
+                    switch (finish)
+                    {
+                        case ChipFinish.Dither:   // 4-px ordered checker, TWO-tone (dark + light) → bold
+                            // retro pixel shading that survives the small on-screen chip size. (2-px single-
+                            // tone aliased to flat grey when scaled down — hence the coarser high-contrast block.)
+                            c = (((x >> 2) + (y >> 2)) & 1) == 0
+                                ? new Color(0f, 0f, 0f, 0.50f)
+                                : new Color(1f, 1f, 1f, 0.16f);
+                            break;
+                        case ChipFinish.Scanline: // dark CRT line + faint bright line between → readable lines
+                            c = ((y >> 1) & 1) == 0
+                                ? new Color(0f, 0f, 0f, 0.48f)
+                                : new Color(1f, 1f, 1f, 0.10f);
+                            break;
+                        case ChipFinish.Gloss:    // bright sheen fading down from the top → glassy
+                            c = new Color(1f, 1f, 1f, Mathf.SmoothStep(0f, 0.74f, Mathf.InverseLerp(0.28f, 1f, v)));
+                            break;
+                        case ChipFinish.Bevel:    // top highlight + bottom shadow → embossed cell
+                            if (v > 0.78f)      c = new Color(1f, 1f, 1f, (v - 0.78f) / 0.22f * 0.70f);
+                            else if (v < 0.22f) c = new Color(0f, 0f, 0f, (0.22f - v) / 0.22f * 0.64f);
+                            break;
+                    }
+                    c.a *= mask;
+                    tex.SetPixel(x, y, c);
+                }
+                tex.Apply();
+                // Non-9-sliced full-field pattern (WorldUtil scales the transform to the chip size).
+                return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f);
+            });
+        }
+
         // Soft radial glow: small bright core fading smoothly to fully transparent at the texture
         // edge. Plain (NOT 9-sliced) so the radial falloff isn't stretched — WorldUtil scales the
         // transform to fit. `coreFrac` = solid-core radius as a fraction of size; keep it small so the
@@ -187,6 +260,53 @@ namespace Game.InGame.View
                 tex.Apply();
                 return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f);
             });
+        }
+
+        // Lightning bolt: gameplay-fixed Ch5 overload marker (NOT a cosmetic axis). White/neutral so
+        // ChipView can tint it orange. Filled from a normalized (0..1, y-up) zig-bolt polygon with a
+        // 2×2 supersample for edge AA at the small on-chip badge size.
+        public static Sprite Bolt(int size = 64)
+        {
+            return Get($"bolt_{size}", () =>
+            {
+                var poly = new[]
+                {
+                    new Vector2(0.58f, 0.96f),
+                    new Vector2(0.18f, 0.46f),
+                    new Vector2(0.42f, 0.46f),
+                    new Vector2(0.30f, 0.04f),
+                    new Vector2(0.82f, 0.54f),
+                    new Vector2(0.50f, 0.54f),
+                };
+                var tex = NewTex(size);
+                for (int y = 0; y < size; y++)
+                for (int x = 0; x < size; x++)
+                {
+                    float cov = 0f;
+                    for (int sy = 0; sy < 2; sy++)
+                    for (int sx = 0; sx < 2; sx++)
+                    {
+                        float u = (x + 0.25f + sx * 0.5f) / size;
+                        float v = (y + 0.25f + sy * 0.5f) / size;
+                        if (PointInPoly(poly, u, v)) cov += 0.25f;
+                    }
+                    tex.SetPixel(x, y, new Color(1f, 1f, 1f, cov));
+                }
+                tex.Apply();
+                return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f);
+            });
+        }
+
+        private static bool PointInPoly(Vector2[] p, float x, float y)
+        {
+            bool inside = false;
+            for (int i = 0, j = p.Length - 1; i < p.Length; j = i++)
+            {
+                if (((p[i].y > y) != (p[j].y > y)) &&
+                    (x < (p[j].x - p[i].x) * (y - p[i].y) / (p[j].y - p[i].y) + p[i].x))
+                    inside = !inside;
+            }
+            return inside;
         }
 
         // Circuit-board texture: dark base, faint grid, traces and solder nodes. Used for the

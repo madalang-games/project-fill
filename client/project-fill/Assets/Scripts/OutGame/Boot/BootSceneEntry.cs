@@ -93,6 +93,8 @@ namespace Game.OutGame.Boot
 
         private void FetchProgressThenGoToLobby(bool showNewGuestToast)
         {
+            Services.Tutorial.TutorialManager.Instance?.LoadProgress();
+
             PlayerApiService.Instance.FetchProgress((ok, response) =>
             {
                 if (ok && response != null)

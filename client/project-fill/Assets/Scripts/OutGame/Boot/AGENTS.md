@@ -14,6 +14,7 @@ Namespace: `Game.OutGame.Boot`
 | symbol | kind | note |
 |--------|------|------|
 | `BootSceneEntry.Start()` | method | Entry point; shows loading, runs BootstrapService gate (or auth if absent) |
+| `BootSceneEntry.FetchProgressThenGoToLobby(bool)` | method | Post-auth: triggers `TutorialManager.LoadProgress` + `PlayerApiService.FetchProgress`, then FadeToScene("Lobby") |
 | `BootSceneEntry.OnBootstrapResult(BootstrapResult)` | method | ForceUpdate → ForceUpdateView popup; PatchFailed → network error retry; OK → AuthService.Initialize |
 | `ForceUpdateView.Init()` | method | Wires Update button to open store; logs error if button unassigned |
 | `BootSceneEntry.OnContinueAsGuestConfirmed()` | method | Calls `AuthService.ContinueAsGuest` — NOT Initialize; only explicit user action creates guest session |

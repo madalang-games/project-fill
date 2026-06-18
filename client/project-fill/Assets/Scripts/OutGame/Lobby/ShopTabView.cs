@@ -17,8 +17,16 @@ namespace Game.OutGame.Lobby
     public class ShopTabView : MonoBehaviour
     {
         [SerializeField] private RectTransform _contentContainer;
-        [SerializeField] private RectTransform _cosmeticSection; // built in SetupLobby; kept below IAP cards
-        [SerializeField] private RectTransform _avatarSection;   // built in SetupLobby; kept below the cosmetic section
+        [SerializeField] private RectTransform _cosmeticSection; // built in SetupLobby; shown only on the Skin sub-tab
+        [SerializeField] private RectTransform _avatarSection;   // built in SetupLobby; shown only on the Avatar sub-tab
+
+        [SerializeField] private Button _productTabButton;
+        [SerializeField] private Button _skinTabButton;
+        [SerializeField] private Button _avatarTabButton;
+        [SerializeField] private Color _activeTabColor = new Color(1f, 0.145f, 0.522f);     // UI_CTA
+        [SerializeField] private Color _inactiveTabColor = new Color(0.094f, 0.094f, 0.212f); // UI_BG_MID
+
+        private ShopSubTab _currentTab = ShopSubTab.Product;
 
         private Dictionary<string, Button> _buttons = new Dictionary<string, Button>();
         private Dictionary<string, GameObject> _cards = new Dictionary<string, GameObject>();
@@ -27,13 +35,20 @@ namespace Game.OutGame.Lobby
         private List<GeneratedRewardItem> _rewardItems = new List<GeneratedRewardItem>();
         private List<GeneratedIapCategory> _categories = new List<GeneratedIapCategory>();
 
+        private void Awake()
+        {
+            _productTabButton?.onClick.AddListener(() => SwitchTab(ShopSubTab.Product));
+            _skinTabButton?.onClick.AddListener(() => SwitchTab(ShopSubTab.Skin));
+            _avatarTabButton?.onClick.AddListener(() => SwitchTab(ShopSubTab.Avatar));
+        }
+
         private void OnEnable()
         {
             if (PlayerProgressService.Instance != null)
                 PlayerProgressService.Instance.OnNoAdsChanged += OnNoAdsChanged;
             if (LocalizationService.Instance != null)
                 LocalizationService.Instance.OnLanguageChanged += OnLanguageChanged;
-            RefreshUI();
+            ApplyTabVisibility();
             VerifyNoAdsOwnershipIfNeeded();
         }
 
@@ -71,8 +86,37 @@ namespace Game.OutGame.Lobby
             LoadRewardItems();
             LoadCategories();
             InitializeCards();
-            RefreshUI();
+            ApplyTabVisibility();
             IAPService.Instance?.FetchProductStatuses((_) => RefreshUI());
+        }
+
+        private void SwitchTab(ShopSubTab tab)
+        {
+            _currentTab = tab;
+            ApplyTabVisibility();
+        }
+
+        // Shows only the selected sub-tab's content: Product=IAP cards, Skin=cosmetic, Avatar=avatar.
+        // IAP card visibility is gated inside RefreshUI on _currentTab == Product.
+        private void ApplyTabVisibility()
+        {
+            if (_cosmeticSection != null) _cosmeticSection.gameObject.SetActive(_currentTab == ShopSubTab.Skin);
+            if (_avatarSection != null) _avatarSection.gameObject.SetActive(_currentTab == ShopSubTab.Avatar);
+            RefreshUI();
+            UpdateTabColors();
+        }
+
+        private void UpdateTabColors()
+        {
+            SetTab(_productTabButton, _currentTab == ShopSubTab.Product);
+            SetTab(_skinTabButton, _currentTab == ShopSubTab.Skin);
+            SetTab(_avatarTabButton, _currentTab == ShopSubTab.Avatar);
+        }
+
+        private void SetTab(Button button, bool active)
+        {
+            if (button != null && button.targetGraphic != null)
+                button.targetGraphic.color = active ? _activeTabColor : _inactiveTabColor;
         }
 
         private void LoadRewardItems()
@@ -297,37 +341,22 @@ namespace Game.OutGame.Lobby
 
             foreach (var item in items)
             {
+                var (iconKey, nameKey, descKey) = RewardDisplay.ResolveVisual(item.reward_type, item.target_id);
                 switch (item.reward_type)
                 {
                     case "NO_ADS":
-                        list.Add(("ui_iap_no_ads", "", "shop.reward.no_ads", ""));
+                        list.Add((iconKey, "", nameKey, descKey));
                         break;
                     case "SOFT_CURRENCY":
-                        var goldCurrency = Services.CurrencyDataService.Instance?.GetByRewardType("SOFT_CURRENCY");
-                        list.Add(("ui_gold_icon", $"+{item.amount}", goldCurrency?.name_key ?? "", goldCurrency?.desc_key ?? ""));
+                        list.Add((iconKey, $"+{item.amount}", nameKey, descKey));
                         break;
                     case "ITEM":
-                        var itemData = Services.ItemDataService.Instance?.GetItem(item.target_id);
-                        list.Add((GetItemIconKey(item.target_id), $"x{item.amount}", itemData?.name_key ?? "", itemData?.desc_key ?? ""));
+                        list.Add((iconKey, $"x{item.amount}", nameKey, descKey));
                         break;
                 }
             }
 
             return list;
-        }
-
-        private static string GetItemIconKey(int itemId)
-        {
-            switch (itemId)
-            {
-                case 1: return "item_add_turn";
-                case 2: return "item_bomb";
-                case 3: return "item_h_rocket";
-                case 4: return "item_color_sweep";
-                case 5: return "item_row_shift";
-                case 6: return "item_cell_swap";
-                default: return "";
-            }
         }
 
         public void RefreshUI()
@@ -351,7 +380,7 @@ namespace Game.OutGame.Lobby
                     if (remaining <= 0) isLimitNoneAndReached = true;
                 }
 
-                bool showCard = !(isNonConsumable && isNoAds) && !isLimitNoneAndReached;
+                bool showCard = _currentTab == ShopSubTab.Product && !(isNonConsumable && isNoAds) && !isLimitNoneAndReached;
                 cardGo.SetActive(showCard);
 
                 var limitTrans = cardGo.transform.Find("Visual/LimitText");
