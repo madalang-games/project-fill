@@ -8,7 +8,7 @@
 | `ClearPlayerPrefs.cs` | `PlayerPrefsResetMenu` | [MenuItem] clears all PlayerPrefs for local reset/debug |
 | `IconAutomator.cs` | `IconAutomator` | [MenuItem] icon DPI generator — resizes source icon and applies to all Android/iOS DPI slots |
 | `GoogleMobileAdsGradleManifestPostprocessor.cs` | `GoogleMobileAdsGradleManifestPostprocessor` | Android Gradle postprocessor for GMA plugin conflicts |
-| `BuildCleanupPostProcessor.cs` | `BuildCleanupPostProcessor` | IPostprocessBuildWithReport; deletes large unwanted artifacts (`_BackUpThisFolder...`, `_BurstDebugInformation...`) after successful build |
+| `BuildCleanupPostProcessor.cs` | `BuildCleanupPostProcessor` | IPostprocessBuildWithReport; deletes large unwanted artifacts (`_BackUpThisFolder...`, `_BurstDebugInformation...` folders + `*_mapping.txt` R8 minify file) after successful build |
 | `UIColorPalette.cs` | `UIColorPalette` | **project-fill UI palette** — Dark Neon Puzzle; 10 color constants (UI_BG_DEEP/MID, UI_PRIMARY/CTA/SUCCESS/DANGER/TEXT/BORDER, DIM, UI_SHADOW); imported into UIEditorSetup via `using static`; UI-only (InGame colors → CSV → generated data) |
 | `UIEditorSetup.cs` | `UIEditorSetup` | [MenuItem] one-shot prefab/scene builders; attaches LocalizedText with stringId from StringIds.cs; auto-creates missing Final variants. Now `partial` (shares private helpers with `UISpecInterpreter.cs`, `UIEditorSetup.Cheat.cs`) |
 | `UIEditorSetup.Cheat.cs` | `UIEditorSetup` (partial) | DEV-ONLY cheat overlay prefab builder (`CreateCheatOverlay` → `Resources/Prefabs/UI/CheatOverlayView`); raw dev labels (TMP stringId=null → font-only, no `client_string.csv`) |
