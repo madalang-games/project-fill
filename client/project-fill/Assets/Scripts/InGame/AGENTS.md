@@ -24,7 +24,7 @@ slot-in via `BoardSkin`.
 | `BoardSolver.cs` | `BoardSolver` | Capped DFS solvability check for Soft Stuck + generation insurance |
 | `BoardFactory.cs` | `BoardFactory` | Seeded random-fill + solvability verify; **fallback** generator when a stage row has no `board`; in-place Reshuffle for Shuffle booster |
 | `BoardCodec.cs` | `BoardCodec` | Encode/decode the `board` column layout (4 chars/lane; lower=overload; `-`=empty); mirror of editor `board-codec.ts` |
-| `StageDefinition.cs` | `StageDefinition`, `StageLibrary` | Declarative stage layout; one sample stage per chapter (gimmick verification) |
+| `StageDefinition.cs` | `StageDefinition`, `StageLibrary` | Declarative stage layout (incl. `Difficulty` 0/1/2 → HUD badge tint); one sample stage per chapter (gimmick verification) |
 
 ## Symbols
 | symbol | kind | note |

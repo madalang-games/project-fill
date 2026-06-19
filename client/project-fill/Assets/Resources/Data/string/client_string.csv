@@ -383,3 +383,4 @@ id,string_key,EN,KO,ZH_CN,ZH_TW,JA,RU,ES,PT,FR,DE,TH,AR,IT,TR,ID
 398,shop.iap.bundle_large.price,$11.99,$11.99,,,,,,,,,,,,,
 399,popup.booster_buy.title,Buy Booster,부스터 구매,,,,,,,,,,,,,
 400,popup.booster_buy.body_fmt,Buy {0} for {1} gold?,{0}을(를) {1} 골드에 구매하시겠어요?,,,,,,,,,,,,,
+401,popup.attendance.claimed_today,Reward claimed! See you tomorrow.,오늘 보상을 받았어요. 내일 또 만나요!,,,,,,,,,,,,,

@@ -952,8 +952,20 @@ namespace Game.Editor
             Img(hud, UI_BG_MID);
 
             // Positioning relative to center of the 240px HUD (vertical center is Y = -120 local)
-            var stageText = TMP(hud, "StageText", Center(-200, 40, 600, 90), 40, UI_TEXT, "Stage", null, TextCategory.Header);
-            stageText.alignment = TextAlignmentOptions.Left;
+            // Stage label sits inside a difficulty-tinted badge (color set at runtime by BoardView via
+            // DifficultyStyle; authored color = Easy fallback) with a pixel drop shadow. Root carries no
+            // Image so the shadow (first sibling) renders behind the colored Fill layer.
+            var oldStageText = hud.transform.Find("StageText");           // migrate pre-badge layouts
+            var stageBadge = Child(hud, "StageBadge");
+            Fixed(stageBadge, new Vector2(-300, 40), new Vector2(380, 100));
+            PixelShadow(stageBadge);
+            var stageBadgeFill = Child(stageBadge, "StageBadgeFill");
+            Stretch(stageBadgeFill);
+            Img(stageBadgeFill, Hex("5FB86A"));                          // Easy tint — calm soft green (easiest); DifficultyStyle fallback
+            if (oldStageText != null && oldStageText.parent != stageBadgeFill.transform)
+                oldStageText.SetParent(stageBadgeFill.transform, false);
+            var stageText = TMP(stageBadgeFill, "StageText", Center(0, 0, 360, 90), 40, UI_TEXT, "Stage", null, TextCategory.Header);
+            stageText.alignment = TextAlignmentOptions.Center;
             Comp<LocalizedText>(stageText.gameObject);
             Comp<UITextStyle>(stageText.gameObject).ApplyStyle();
 
@@ -1599,6 +1611,12 @@ namespace Game.Editor
             rowHlg.childControlWidth = rowHlg.childControlHeight = false;
             rowHlg.childForceExpandWidth = rowHlg.childForceExpandHeight = false;
 
+            // Claimed-state filler: replaces label+row in the today-reward area once claimed.
+            // Hidden by default; the View toggles it against TodayRewardText/TodayRewardRow.
+            var claimedText = TMP(panel, "AlreadyClaimedText", Center(0, -127, 820, 200), 24, UI_SUCCESS, "Reward claimed! See you tomorrow.", "popup.attendance.claimed_today", TextCategory.Normal);
+            claimedText.alignment = TextAlignmentOptions.Center;
+            claimedText.gameObject.SetActive(false);
+
             var claim = Btn(panel, "ClaimButton", new Vector2(0, -350), new Vector2(420, 96), UI_CTA, "Claim", "popup.attendance.btn_claim");
             var claimLabel = claim.transform.Find("Visual/Label")?.GetComponent<TextMeshProUGUI>();
             var closeBtn = CloseBtnAt(panel, new Vector2(460, 415));
@@ -1609,6 +1627,7 @@ namespace Game.Editor
             so.FindProperty("_dayContainer").objectReferenceValue = dayContainer.transform;
             so.FindProperty("_todayRewardText").objectReferenceValue = todayLabel;
             so.FindProperty("_todayRewardRow").objectReferenceValue = todayRow.transform;
+            so.FindProperty("_alreadyClaimedText").objectReferenceValue = claimedText;
             so.FindProperty("_rewardCellPrefab").objectReferenceValue = rewardCellPrefab;
             so.FindProperty("_claimButton").objectReferenceValue = claim.GetComponent<Button>();
             so.FindProperty("_claimLabel").objectReferenceValue = claimLabel;

@@ -171,8 +171,9 @@ namespace Game.InGame.Controller
 
             return new StageDefinition
             {
-                Name          = $"STAGE {s.chapter_id}-{s.stage_order}",
+                Name          = $"STAGE {s.stage_id}",
                 Chapter       = s.chapter_id,
+                Difficulty    = s.difficulty,
                 Types         = s.types,
                 LaneKinds     = kinds,
                 LockUnlock    = unlock,

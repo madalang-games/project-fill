@@ -145,6 +145,7 @@ namespace Game.Editor
         public const string PopupWeeklyMissionLocked = "popup.weekly_mission.locked";
         public const string PopupBoosterBuyTitle = "popup.booster_buy.title";
         public const string PopupBoosterBuyBodyFmt = "popup.booster_buy.body_fmt";
+        public const string PopupAttendanceClaimedToday = "popup.attendance.claimed_today";
 
         // toast
         public const string ToastAccountAlreadyActive = "toast.account_already_active";

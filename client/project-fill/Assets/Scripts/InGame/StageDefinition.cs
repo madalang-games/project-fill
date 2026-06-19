@@ -7,6 +7,7 @@ namespace Game.InGame
     {
         public string       Name;
         public int          Chapter;
+        public int          Difficulty;       // 0=Easy 1=Normal 2=Hard (stage.csv); drives HUD badge tint
         public int          Types;            // number of Signal Types (= number of sets)
         public LaneKind[]   LaneKinds;        // length = lane count; order = left→right
         public SignalType[] LockUnlock;       // parallel to LaneKinds; unlock type for Locked lanes

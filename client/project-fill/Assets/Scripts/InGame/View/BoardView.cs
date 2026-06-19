@@ -28,8 +28,13 @@ namespace Game.InGame.View
 
         [Header("HUD (authored)")]
         [SerializeField] private TMP_Text _stageText;
+        [SerializeField] private Image    _stageBadge;   // difficulty-tinted container behind the stage label
         [SerializeField] private TMP_Text _movesText;
         [SerializeField] private TMP_Text _bestText;
+
+        // Authored badge color = Easy fallback (DifficultyStyle.Get returns it for difficulty 0).
+        private Color _stageBadgeDefault = Color.white;
+        private bool  _stageBadgeDefaultSet;
 
         // Personal best for the active stage, pushed by the controller (0 = no record).
         private int _bestMoves;
@@ -452,6 +457,8 @@ namespace Game.InGame.View
             if (hud)
             {
                 if (!_stageText)   _stageText   = FindTMP(hud, "StageText");
+                if (!_stageBadge)  { var sb = FindDeep(hud, "StageBadgeFill"); if (sb) _stageBadge = sb.GetComponent<Image>(); }
+                if (_stageBadge && !_stageBadgeDefaultSet) { _stageBadgeDefault = _stageBadge.color; _stageBadgeDefaultSet = true; }
                 if (!_movesText)   _movesText   = FindTMP(hud, "MovesText");
                 if (!_bestText)    _bestText    = FindTMP(hud, "BestText");
                 if (!_pauseBtn)    _pauseBtn    = FindBtn(hud, "PauseButton");
@@ -606,6 +613,7 @@ namespace Game.InGame.View
         public void UpdateHud()
         {
             if (_stageText)   _stageText.text   = _def.Name;
+            if (_stageBadge && _def != null) _stageBadge.color = DifficultyStyle.Get(_def.Difficulty, _stageBadgeDefault);
             if (_movesText)   _movesText.text   = _board.MoveCount.ToString();
             if (_bestText)    _bestText.text    = _bestMoves > 0 ? _bestMoves.ToString() : "-";
         }
