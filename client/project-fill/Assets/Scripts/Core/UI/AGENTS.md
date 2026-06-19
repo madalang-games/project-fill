@@ -32,7 +32,7 @@ Namespace: `Game.Core.UI`
 | `TutorialTarget.cs` | `TutorialTarget` | Attach to any scene/UI GameObject; registers itself by `_targetId` so TutorialOverlay resolves targets without name coupling |
 | `UIPulseGlowEffect.cs` | `UIPulseGlowEffect` | Visual micro-animation component handling scale pulsing and rotational glow |
 | `UIVerticalGradient.cs` | `UIVerticalGradient` | MaskableGraphic 2-color vertical gradient via vertex colors; `SetColors(top,bottom)` |
-| `UILineStrip.cs` | `UILineStrip` | MaskableGraphic polyline mesh (chapter map path): textured/scrolling/outlined/procedural-dash; `SetPoints`/`SetTexture`. `activeLength`+`inactiveColor` fade the locked tail (HomeTabView lights the trace only up to the furthest unlocked node) |
+| `UILineStrip.cs` | `UILineStrip` | MaskableGraphic polyline mesh (chapter map path): textured/scrolling/outlined/procedural-dash; `SetPoints`/`SetTexture`. `activeLength`+`inactiveColor` dim the locked tail with a hard cutoff at the boundary node — a segment lights only if its far end is within `activeLength`, so the route past the current challenge node (→ first locked node) stays fully unlit (HomeTabView lights the trace only up to the furthest unlocked node) |
 
 ## Scene Background Symbols
 | symbol | kind | note |
