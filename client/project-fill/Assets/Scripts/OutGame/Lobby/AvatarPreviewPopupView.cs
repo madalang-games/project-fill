@@ -47,12 +47,22 @@ namespace Game.OutGame.Lobby
             RefreshActionState();
         }
 
+        private bool IsRewardOnly => !_unlocked && _unlockCost <= 0;
+
         private void RefreshActionState()
         {
             bool isEquipped = AuthService.Instance != null && AuthService.Instance.AvatarId == _avatarId;
 
             if (_stateText != null)
-                _stateText.text = _unlocked ? "" : $"{_unlockCost}";
+            {
+                var loc = LocalizationService.Instance;
+                _stateText.text = _unlocked
+                    ? ""
+                    : (IsRewardOnly ? (loc != null ? loc.Get("shop.avatar.locked_reward") : "") : $"{_unlockCost}");
+            }
+
+            // Gold icon only for an actual gold price (centered text left untouched).
+            GoldPriceLabel.Set(_stateText, !_unlocked && !IsRewardOnly);
 
             if (_actionButton == null) return;
 
@@ -66,6 +76,11 @@ namespace Game.OutGame.Lobby
                 _actionButton.interactable = true;
                 SetLabel("shop.cosmetic.btn_apply");
             }
+            else if (IsRewardOnly)
+            {
+                _actionButton.interactable = false;
+                SetLabel("shop.avatar.locked_reward");
+            }
             else
             {
                 _actionButton.interactable = true;
@@ -76,6 +91,7 @@ namespace Game.OutGame.Lobby
         private void OnAction()
         {
             if (_unlocked) { Equip(); return; }
+            if (IsRewardOnly) return;
 
             if (PlayerProgressService.Instance != null && !PlayerProgressService.Instance.CanAfford(_unlockCost))
             {

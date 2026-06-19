@@ -19,6 +19,7 @@ namespace Game.OutGame.Lobby
         [SerializeField] private Transform _dayContainer;
         [SerializeField] private TMP_Text _todayRewardText;
         [SerializeField] private Transform _todayRewardRow;
+        [SerializeField] private TMP_Text _alreadyClaimedText;
         [SerializeField] private GameObject _rewardCellPrefab;
         [SerializeField] private Button _claimButton;
         [SerializeField] private TMP_Text _claimLabel;
@@ -61,6 +62,18 @@ namespace Game.OutGame.Lobby
 
             int todayGroup = status.Days?.FirstOrDefault(d => d.IsToday)?.RewardGroupId ?? 0;
             BuildTodayRow(todayGroup);
+
+            // Once claimed, swap the today-reward label+row for a "come back tomorrow" filler
+            // so the area never shows a bare label over an empty row.
+            bool claimed = status.ClaimedToday;
+            if (_todayRewardText != null) _todayRewardText.gameObject.SetActive(!claimed);
+            if (_todayRewardRow != null) _todayRewardRow.gameObject.SetActive(!claimed);
+            if (_alreadyClaimedText != null)
+            {
+                _alreadyClaimedText.gameObject.SetActive(claimed);
+                if (claimed && loc != null)
+                    _alreadyClaimedText.text = loc.Get("popup.attendance.claimed_today");
+            }
 
             if (_claimButton != null) _claimButton.interactable = !status.ClaimedToday;
             if (_claimLabel != null && loc != null) _claimLabel.text = loc.Get("popup.attendance.btn_claim");

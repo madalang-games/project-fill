@@ -96,7 +96,15 @@ namespace Game.OutGame.Lobby
                 if (nameText != null) nameText.text = loc != null ? loc.Get(item.NameKey) : item.NameKey;
 
                 var stateText = go.transform.Find("StateText")?.GetComponent<TMP_Text>();
-                if (stateText != null) stateText.text = StateLabel(item, loc);
+                if (stateText != null)
+                {
+                    stateText.text = StateLabel(item, loc);
+
+                    // Gold icon only for an actual gold price (centered text left untouched).
+                    bool showGoldPrice = !IsActive(item) && !item.Unlocked &&
+                                         (CosmeticUnlockType)item.UnlockType == CosmeticUnlockType.Gold;
+                    GoldPriceLabel.Set(stateText, showGoldPrice);
+                }
 
                 var btn = go.GetComponent<Button>();
                 if (btn != null)

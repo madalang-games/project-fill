@@ -16,14 +16,14 @@ PK,NN,NN,NN
 12,avatar_12,2500,rare
 13,avatar_13,2500,rare
 14,avatar_14,2500,rare
-15,avatar_15,2500,rare
+15,avatar_15,0,achievement
 16,avatar_16,12500,epic
 17,avatar_17,12500,epic
 18,avatar_18,12500,epic
 19,avatar_19,12500,epic
-20,avatar_20,12500,epic
+20,avatar_20,0,achievement
 21,avatar_21,62500,legendary
 22,avatar_22,62500,legendary
 23,avatar_23,62500,legendary
 24,avatar_24,62500,legendary
-25,avatar_25,62500,legendary
+25,avatar_25,0,achievement

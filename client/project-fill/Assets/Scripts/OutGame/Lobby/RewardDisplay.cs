@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine.UI;
 using Game.Core.UI;
 using Game.Services;
 using Game.Utils;
@@ -8,6 +10,7 @@ using ProjectFill.Contracts.GameTypes;
 using ProjectFill.Contracts.Rewards;
 using GeneratedRewardItem = ProjectFill.Data.Generated.RewardItem;
 using GeneratedCosmeticItem = ProjectFill.Data.Generated.CosmeticItem;
+using GeneratedAchievement = ProjectFill.Data.Generated.Achievement;
 
 namespace Game.OutGame.Lobby
 {
@@ -21,6 +24,7 @@ namespace Game.OutGame.Lobby
     {
         private static List<GeneratedRewardItem> _rewardItems;
         private static List<GeneratedCosmeticItem> _cosmeticItems;
+        private static List<GeneratedAchievement> _achievements;
 
         public static List<RewardItem> Build(IReadOnlyList<GrantedRewardDto> rewards)
         {
@@ -83,6 +87,56 @@ namespace Game.OutGame.Lobby
             return list;
         }
 
+        /// <summary>
+        /// Representative reward renderer for an achievement cell, applied to the cell's RewardIcon Image.
+        /// Priority: any cosmetic the achievement unlocks comes first (headline) and renders procedurally
+        /// via <see cref="CosmeticPreview.Build"/> (cosmetics have no flat sprite); otherwise the reward
+        /// group's highest sort_order item as a flat icon. Both pick highest sort_order (descending).
+        /// Returns null when neither resolves.
+        /// </summary>
+        public static Action<Image> RepresentativeRewardRender(string achievementId)
+        {
+            if (string.IsNullOrEmpty(achievementId)) return null;
+
+            EnsureCosmeticItems();
+            var cos = _cosmeticItems
+                .Where(c => c.unlock_type == CosmeticUnlockType.Achievement &&
+                            c.unlock_condition_id == achievementId)
+                .OrderByDescending(c => c.sort_order)
+                .FirstOrDefault();
+            if (cos != null)
+            {
+                var dto = new CosmeticItemDto
+                {
+                    CosmeticId = cos.cosmetic_id,
+                    Category   = (int)cos.category,
+                    NameKey    = cos.name_key,
+                    DescKey    = cos.desc_key,
+                };
+                return img => CosmeticPreview.Build(img, dto);
+            }
+
+            EnsureAchievements();
+            var ach = _achievements.FirstOrDefault(a => a.achievement_id == achievementId);
+            if (ach == null) return null;
+
+            EnsureRewardItems();
+            var row = _rewardItems
+                .Where(r => r.reward_group_id == ach.reward_group_id)
+                .OrderByDescending(r => r.sort_order)
+                .FirstOrDefault();
+            if (row == null) return null;
+
+            var (iconKey, _, _) = ResolveVisual(row.reward_type, row.target_id);
+            var spr = GetSprite(iconKey);
+            if (spr == null) return null;
+            return img =>
+            {
+                img.sprite = spr;
+                img.color  = UnityEngine.Color.white;
+            };
+        }
+
         private static RewardItem MapReward(string rewardType, int targetId, int amount)
         {
             var (iconKey, nameKey, descKey) = ResolveVisual(rewardType, targetId);
@@ -140,6 +194,17 @@ namespace Game.OutGame.Lobby
                 _cosmeticItems = loaded != null ? new List<GeneratedCosmeticItem>(loaded) : new List<GeneratedCosmeticItem>();
             }
             catch { _cosmeticItems = new List<GeneratedCosmeticItem>(); }
+        }
+
+        private static void EnsureAchievements()
+        {
+            if (_achievements != null) return;
+            try
+            {
+                var loaded = CsvLoader.Load<GeneratedAchievement>(GeneratedAchievement.ResourcePath);
+                _achievements = loaded != null ? new List<GeneratedAchievement>(loaded) : new List<GeneratedAchievement>();
+            }
+            catch { _achievements = new List<GeneratedAchievement>(); }
         }
 
         private static UnityEngine.Sprite GetSprite(string key)

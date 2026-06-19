@@ -12,6 +12,8 @@ Types: `feat` `fix` `refactor` `docs` `test` `chore` `build`
 - Issue number: from `$ARGUMENTS` only — never fetch remotely.
 - Message: Korean, concise, no verbose explanation.
 - Subject line ≤ 50 chars.
+- **Subject line only — no commit body/description.**
+- **No `Co-Authored-By` / AI attribution trailer. Author is the user only.**
 
 ## Rules
 - Never stage: `.env*`, files in `.gitignore` (gitignored = do not stage; reading for reference is allowed)

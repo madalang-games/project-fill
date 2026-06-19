@@ -1,0 +1,125 @@
+<en-US>
+Fresh goals, a brighter shop, and clearer rewards await!
+
+• New Weekly Missions — fresh challenges and rewards every week
+• Revamped Shop & Lobby with cleaner gold prices and reward tiers
+• Improved daily attendance with clear "claimed" markers
+• New difficulty badges so you always know the challenge
+</en-US>
+<ko-KR>
+새로운 목표, 산뜻해진 샵, 더 명확해진 보상이 기다려요!
+
+• 주간 미션 추가 — 매주 새로운 도전과 보상
+• 샵·로비 개편 — 깔끔한 골드 가격과 보상 등급 표시
+• 출석 보상 개선 — 수령 완료 표시 추가
+• 난이도 뱃지 추가 — 도전 난도를 한눈에
+</ko-KR>
+<zh-CN>
+全新目标、焕新商店与更清晰的奖励，等你来体验！
+
+• 全新每周任务 —— 每周都有新挑战与奖励
+• 商店与大厅焕新 —— 金币价格与奖励等级更清晰
+• 优化每日签到 —— 新增「已领取」标记
+• 全新难度徽章 —— 一眼看清挑战难度
+</zh-CN>
+<zh-TW>
+全新目標、煥新商店與更清晰的獎勵，等你來體驗！
+
+• 全新每週任務 —— 每週都有新挑戰與獎勵
+• 商店與大廳煥新 —— 金幣價格與獎勵等級更清晰
+• 優化每日簽到 —— 新增「已領取」標記
+• 全新難度徽章 —— 一眼看清挑戰難度
+</zh-TW>
+<ja-JP>
+新たな目標、明るくなったショップ、わかりやすい報酬が登場！
+
+• ウィークリーミッション追加 — 毎週新しい挑戦と報酬
+• ショップ・ロビー刷新 — ゴールド価格と報酬ランクを見やすく
+• デイリー出席を改善 — 「受取済み」表示を追加
+• 難易度バッジ追加 — 挑戦のレベルがひと目で
+</ja-JP>
+<ru-RU>
+Новые цели, обновлённый магазин и понятные награды уже здесь!
+
+• Новые еженедельные миссии — свежие задания и награды каждую неделю
+• Обновлённые магазин и лобби с понятными ценами и уровнями наград
+• Улучшенные ежедневные награды с пометкой «получено»
+• Новые значки сложности — всегда видно уровень испытания
+</ru-RU>
+<es-ES>
+¡Nuevas metas, una tienda renovada y recompensas más claras te esperan!
+
+• Nuevas misiones semanales: desafíos y recompensas cada semana
+• Tienda y vestíbulo renovados con precios y niveles de recompensa más claros
+• Asistencia diaria mejorada con marcas de "reclamado"
+• Nuevas insignias de dificultad para conocer el reto al instante
+</es-ES>
+<pt-PT>
+Novos objetivos, uma loja renovada e recompensas mais claras à tua espera!
+
+• Novas missões semanais — desafios e recompensas todas as semanas
+• Loja e lobby renovados com preços e níveis de recompensa mais claros
+• Presença diária melhorada com marcas de "recebido"
+• Novos crachás de dificuldade para conheceres o desafio num instante
+</pt-PT>
+<fr-FR>
+De nouveaux objectifs, une boutique relookée et des récompenses plus claires vous attendent !
+
+• Nouvelles missions hebdomadaires — défis et récompenses chaque semaine
+• Boutique et hall repensés avec prix en or et niveaux de récompense plus clairs
+• Présence quotidienne améliorée avec un repère « récupéré »
+• Nouveaux badges de difficulté pour connaître le défi en un coup d'œil
+</fr-FR>
+<de-DE>
+Neue Ziele, ein frischer Shop und klarere Belohnungen warten auf dich!
+
+• Neue wöchentliche Missionen – jede Woche neue Herausforderungen und Belohnungen
+• Überarbeiteter Shop und Lobby mit klaren Goldpreisen und Belohnungsstufen
+• Verbesserte tägliche Belohnungen mit „Abgeholt"-Markierung
+• Neue Schwierigkeits-Abzeichen – die Herausforderung auf einen Blick
+</de-DE>
+<th>
+เป้าหมายใหม่ ร้านค้าที่สดใสขึ้น และรางวัลที่ชัดเจนขึ้นรอคุณอยู่!
+
+• ภารกิจรายสัปดาห์ใหม่ — ความท้าทายและรางวัลใหม่ทุกสัปดาห์
+• ปรับปรุงร้านค้าและล็อบบี้ ราคาทองและระดับรางวัลชัดเจนขึ้น
+• ปรับปรุงการเช็คอินรายวัน เพิ่มเครื่องหมาย "รับแล้ว"
+• ป้ายระดับความยากใหม่ รู้ความท้าทายได้ในพริบตา
+</th>
+<ar>
+أهداف جديدة، ومتجر أكثر إشراقًا، ومكافآت أوضح في انتظارك!
+
+• مهام أسبوعية جديدة — تحديات ومكافآت جديدة كل أسبوع
+• متجر ولوبي مُجددان بأسعار ذهب ومستويات مكافآت أوضح
+• تحسين الحضور اليومي مع علامة "تم الاستلام"
+• شارات صعوبة جديدة لتعرف التحدي بنظرة واحدة
+</ar>
+<it-IT>
+Nuovi obiettivi, un negozio rinnovato e ricompense più chiare ti aspettano!
+
+• Nuove missioni settimanali — sfide e ricompense ogni settimana
+• Negozio e lobby rinnovati con prezzi in oro e livelli di ricompensa più chiari
+• Presenza giornaliera migliorata con il segno "riscosso"
+• Nuovi badge di difficoltà per conoscere la sfida a colpo d'occhio
+</it-IT>
+<tr-TR>
+Yeni hedefler, daha parlak bir mağaza ve daha net ödüller seni bekliyor!
+
+• Yeni Haftalık Görevler — her hafta yeni meydan okumalar ve ödüller
+• Yenilenen Mağaza ve Lobi, net altın fiyatları ve ödül seviyeleri
+• Geliştirilmiş günlük giriş, "alındı" işaretiyle
+• Yeni zorluk rozetleri, meydan okumayı bir bakışta gör
+</tr-TR>
+<id>
+Tujuan baru, toko yang lebih cerah, dan hadiah yang lebih jelas menantimu!
+
+• Misi Mingguan baru — tantangan dan hadiah baru setiap minggu
+• Toko & Lobi yang diperbarui dengan harga emas dan tingkat hadiah lebih jelas
+• Absensi harian yang disempurnakan dengan tanda "sudah diklaim"
+• Lencana kesulitan baru agar kamu tahu tantangannya sekilas
+</id>
+
+---
+Commit: e01ad8c53e6aac9814d11da7c45560badd125f83
+</content>
+</invoke>

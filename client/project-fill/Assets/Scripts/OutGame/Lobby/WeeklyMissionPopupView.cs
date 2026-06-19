@@ -20,11 +20,18 @@ namespace Game.OutGame.Lobby
         [SerializeField] private TMP_Text _daysLeftText;
         [SerializeField] private TMP_Text _epText;
         [SerializeField] private RectTransform _epBarFill;
-        [SerializeField] private TMP_Text _trackText;
+        [SerializeField] private RectTransform _trackMarkerContainer;
         [SerializeField] private Transform _missionContainer;
+        [SerializeField] private GameObject _missionCellPrefab;
         [SerializeField] private Button _claimButton;
         [SerializeField] private TMP_Text _claimLabel;
         [SerializeField] private Button _closeButton;
+
+        private const float CompletedDimAlpha = 220f / 255f; // completed cell dims to ~0.86 (badge excluded)
+
+        // Track marker tints (UI palette is editor-only; reached mirrors UI_SUCCESS, unreached is dim slate).
+        private static readonly Color ReachedColor = new Color(0.024f, 0.839f, 0.627f);
+        private static readonly Color UnreachedColor = new Color(0.42f, 0.42f, 0.52f);
 
         private int _claimableThreshold = -1;
 
@@ -58,56 +65,107 @@ namespace Game.OutGame.Lobby
                 _epBarFill.anchorMax = new Vector2(ratio, 1f);
             }
 
-            BuildTrackText(res, loc);
+            BuildTrackMarkers(res, maxThreshold);
             BuildMissionRows(res, loc);
             BuildClaim(res, loc);
         }
 
-        private void BuildTrackText(WeeklyMissionResponse res, LocalizationService loc)
+        // Spawns one marker per milestone, anchored at threshold/maxThreshold along the bar so each tick
+        // lines up with the EP fill edge (container shares the bar's rect, matching the fill coordinate space).
+        private void BuildTrackMarkers(WeeklyMissionResponse res, int maxThreshold)
         {
-            if (_trackText == null || res.Track == null) return;
-            var sb = new System.Text.StringBuilder();
+            if (_trackMarkerContainer == null || res.Track == null || maxThreshold <= 0) return;
+            for (int i = _trackMarkerContainer.childCount - 1; i >= 0; i--)
+                Destroy(_trackMarkerContainer.GetChild(i).gameObject);
+
+            var font = LocalizationService.Instance?.GetFont(LocalizationService.Instance.CurrentLanguage);
             foreach (var t in res.Track.OrderBy(t => t.EpThreshold))
             {
-                if (sb.Length > 0) sb.Append("  ");
-                sb.Append(t.IsReached ? '●' : '○').Append(t.EpThreshold);
+                float r = Mathf.Clamp01((float)t.EpThreshold / maxThreshold);
+
+                var marker = new GameObject("Marker", typeof(RectTransform));
+                var mrt = (RectTransform)marker.transform;
+                mrt.SetParent(_trackMarkerContainer, false);
+                mrt.anchorMin = mrt.anchorMax = new Vector2(r, 0.5f);
+                mrt.pivot = new Vector2(0.5f, 0.5f);
+                mrt.anchoredPosition = Vector2.zero; mrt.sizeDelta = Vector2.zero;
+
+                var dot = new GameObject("Dot", typeof(RectTransform), typeof(Image));
+                var drt = (RectTransform)dot.transform;
+                drt.SetParent(mrt, false);
+                drt.sizeDelta = new Vector2(18, 18); drt.anchoredPosition = Vector2.zero;
+                var dotImg = dot.GetComponent<Image>();
+                dotImg.color = t.IsReached ? ReachedColor : UnreachedColor;
+                dotImg.raycastTarget = false;
+
+                var label = new GameObject("Label", typeof(RectTransform));
+                var lrt = (RectTransform)label.transform;
+                lrt.SetParent(mrt, false);
+                lrt.sizeDelta = new Vector2(96, 36); lrt.anchoredPosition = new Vector2(0, -34);
+                var tmp = label.AddComponent<TextMeshProUGUI>();
+                tmp.text = t.EpThreshold.ToString();
+                tmp.alignment = TextAlignmentOptions.Center;
+                tmp.raycastTarget = false;
+                tmp.enableAutoSizing = true; tmp.fontSizeMin = 24; tmp.fontSizeMax = 30; tmp.fontSize = 30;
+                tmp.color = t.IsReached ? ReachedColor : UnreachedColor;
+                if (font != null) tmp.font = font;
             }
-            _trackText.text = sb.ToString();
         }
 
         private void BuildMissionRows(WeeklyMissionResponse res, LocalizationService loc)
         {
-            if (_missionContainer == null) return;
+            if (_missionContainer == null || _missionCellPrefab == null) return;
             for (int i = _missionContainer.childCount - 1; i >= 0; i--)
                 Destroy(_missionContainer.GetChild(i).gameObject);
             if (res.Missions == null) return;
 
-            foreach (var m in res.Missions)
+            // Incomplete first (closest-to-done on top), completed sink to the bottom.
+            var ordered = res.Missions
+                .OrderBy(m => m.IsCompleted)
+                .ThenByDescending(m => m.TargetValue > 0 ? (float)m.Progress / m.TargetValue : 0f);
+
+            foreach (var m in ordered)
             {
-                string glyph = m.IsCompleted ? "✓" : (m.Progress > 0 ? "▶" : "○");
-                string name = loc != null ? loc.Get(m.NameKey) : m.NameKey;
-                string progress = string.Format(loc != null ? loc.Get("popup.weekly_mission.progress_fmt") : "{0}/{1}", m.Progress, m.TargetValue);
-                CreateRow($"{glyph}  {name}   {progress}   +{m.EpReward} EP");
+                var go = Instantiate(_missionCellPrefab, _missionContainer);
+                go.SetActive(true);
+                go.name = $"Mission_{m.MissionId}";
+                BindCell(go, m, loc);
             }
         }
 
-        private void CreateRow(string text)
+        private void BindCell(GameObject go, WeeklyMissionDto m, LocalizationService loc)
         {
-            var go = new GameObject("MissionRow", typeof(RectTransform));
-            go.transform.SetParent(_missionContainer, false);
-            var le = go.AddComponent<LayoutElement>();
-            le.preferredHeight = 64;
+            var cg = go.GetComponent<CanvasGroup>();
+            if (cg != null) cg.alpha = m.IsCompleted ? CompletedDimAlpha : 1f; // badge has ignoreParentGroups → stays full alpha
 
-            var tmp = go.AddComponent<TextMeshProUGUI>();
-            tmp.text = text;
-            tmp.raycastTarget = false;
-            tmp.enableAutoSizing = true;
-            tmp.fontSizeMin = 32;
-            tmp.fontSizeMax = 40;
-            tmp.fontSize = 40;
-            tmp.alignment = TextAlignmentOptions.Left;
-            var font = LocalizationService.Instance?.GetFont(LocalizationService.Instance.CurrentLanguage);
-            if (font != null) tmp.font = font;
+            var badge = go.transform.Find("StatusBadge");
+            if (badge != null)
+            {
+                badge.gameObject.SetActive(m.IsCompleted);
+                var badgeImg = badge.GetComponent<Image>();
+                if (badgeImg != null) badgeImg.color = Color.white; // FFFFFF, no dim
+            }
+
+            var nameText = go.transform.Find("NameText")?.GetComponent<TMP_Text>();
+            if (nameText != null) nameText.text = loc != null ? loc.Get(m.NameKey) : m.NameKey;
+
+            var descText = go.transform.Find("DescText")?.GetComponent<TMP_Text>();
+            if (descText != null) descText.text = loc != null ? loc.Get(m.DescKey) : m.DescKey;
+
+            var bar = go.transform.Find("ProgressBar")?.GetComponent<AnimatedProgressBar>();
+            if (bar != null)
+            {
+                float ratio = m.TargetValue > 0 ? Mathf.Clamp01((float)m.Progress / m.TargetValue) : (m.IsCompleted ? 1f : 0f);
+                bar.SetProgress(ratio, m.IsCompleted);
+            }
+
+            var progressText = go.transform.Find("ProgressText")?.GetComponent<TMP_Text>();
+            if (progressText != null)
+                progressText.text = string.Format(loc != null ? loc.Get("popup.weekly_mission.progress_fmt") : "{0}/{1}", Mathf.Min(m.Progress, m.TargetValue), m.TargetValue);
+
+            var epText = go.transform.Find("EpText")?.GetComponent<TMP_Text>();
+            if (epText != null)
+                epText.text = string.Format(loc != null ? loc.Get("popup.weekly_mission.ep_reward_fmt") : "+{0} EP", m.EpReward);
         }
 
         private void BuildClaim(WeeklyMissionResponse res, LocalizationService loc)

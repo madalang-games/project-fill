@@ -36,6 +36,7 @@ Signal Sort board views. UI Chrome (HUD, Booster Bar, Stuck/Clear/Pause popups) 
 | `BoardView.ShowStuckPanel(addLaneAvailable,onAddLane,onRetry,onGiveUp)` | method | Facade → `UIManager.ShowPopup<FailOverlayView>` (runtime fallback overlay if no UIManager); wraps each action with `BlockInput(false)`. `onRetry` reloads the same stage. No Shuffle action (gold rescue removed) |
 | `BoardView.ShowClearPanel(stageId,attemptId,rewards,canDouble,summary,onNext,onLobby)` | method | Facade → `UIManager.ShowPopup<ResultOverlayView>`; passes granted rewards + double-reward eligibility + `ClearSummary?` (moves/best/new-best; null for daily challenge) |
 | `BoardView.SetBestMoves(int)` | method | Caches the stage personal best (controller-pushed) then redraws HUD; `UpdateHud` writes live `MoveCount`→`MovesText` and best→`BestText` (`-` if none) |
+| `BoardView._stageBadge` | SerializeField | `StageBadgeFill` Image behind the stage label (auto-wired by name in `WireAuthored`); `UpdateHud` tints it `DifficultyStyle.Get(_def.Difficulty, authoredEasyColor)` (Easy=authored soft green #5FB86A / Normal=teal / Hard=crimson). StageText shows the unified global `stage_id` (not chapter-order) |
 | `BoardView.On{LaneTapped,BoosterTapped,PauseTapped}` | event | Taps on lanes are caught via 2D physics raycasts |
 | `LaneView.Initialize(i,sprites,lane,chipPrefab,size)` | method | Sets up BoxCollider2D size and builds procedural World layouts |
 | `LaneView.SlotWorldPos(i)` / `ChipPixelSize()` | method | Return world-coordinate targets for moving chips |
