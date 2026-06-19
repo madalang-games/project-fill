@@ -25,7 +25,7 @@ namespace Game.Core
         public const string AdMobAndroidAppIdReward     = "ca-app-pub-5332715773102134/9691985318";
 
         // Google Mobile Ads App IDs (SDK Settings)
-        public const string AdMobAndroidAppId           = "ca-app-pub-3940256099942544~3347511713"; // Test ID (Replace with production App ID before release)
+        public const string AdMobAndroidAppId           = "ca-app-pub-5332715773102134~4555208704"; // Production Android App ID
         public const string AdMobIOSAppId               = "ca-app-pub-3940256099942544~1458002511"; // Test ID (Replace with production App ID before release)
 
         // Store URLs for force update flow — TODO: update before release
