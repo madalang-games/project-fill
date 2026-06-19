@@ -77,3 +77,6 @@ id,reward_group_id,version,sort_order,reward_type,target_id,amount,duration_seco
 86,7003,1,1,SOFT_CURRENCY,0,300,0,NONE
 87,7003,1,2,ITEM,1,2,0,NONE
 88,7004,1,1,SOFT_CURRENCY,0,200,0,NONE
+105,6018,1,2,AVATAR,15,1,0,NONE
+106,6010,1,2,AVATAR,20,1,0,NONE
+107,6023,1,2,AVATAR,25,1,0,NONE

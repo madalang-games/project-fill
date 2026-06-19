@@ -771,12 +771,13 @@ namespace Game.Editor
             var achievementTab = Child(tabContent, "AchievementTab"); Stretch(achievementTab); achievementTab.SetActive(false);
             var achView = Comp<AchievementTabView>(achievementTab);
 
-            TMP(achievementTab, "TitleText", Center(0, 700, 760, 70), 30, UI_CTA, "Achievements", "popup.achievement.title", TextCategory.Header);
+            var achTitle = TMP(achievementTab, "TitleText", Center(0, 0, 760, 70), 30, UI_CTA, "Achievements", "popup.achievement.title", TextCategory.Header);
+            TopAnchor(achTitle.rectTransform, new Vector2(760, 70), -10);
 
             var achTabRow = Child(achievementTab, "TabRow");
             var achTabRowRt = RT(achTabRow);
             achTabRowRt.anchorMin = new Vector2(0.5f, 1f); achTabRowRt.anchorMax = new Vector2(0.5f, 1f); achTabRowRt.pivot = new Vector2(0.5f, 1f);
-            achTabRowRt.anchoredPosition = new Vector2(0, -80); achTabRowRt.sizeDelta = new Vector2(920, 80);
+            achTabRowRt.anchoredPosition = new Vector2(0, -95); achTabRowRt.sizeDelta = new Vector2(920, 80);
             var achTabHlg = Comp<HorizontalLayoutGroup>(achTabRow);
             achTabHlg.spacing = 8; achTabHlg.childAlignment = TextAnchor.MiddleCenter;
             achTabHlg.childControlWidth = true; achTabHlg.childControlHeight = true;
@@ -1381,18 +1382,25 @@ namespace Game.Editor
             RT(cellGo).sizeDelta = new Vector2(160, 160);
             Img(cellGo, UI_BG_DEEP);
 
+            // Responsive children: anchor as a fraction of the cell (stretch, zero offsets) so they
+            // resize with the cell's sizeDelta. The View shrinks the cell (160 native → 104 day card)
+            // by setting sizeDelta; absolute-sized children would overflow, fractional anchors scale.
             var cellIcon = Child(cellGo, "Icon");
-            Fixed(cellIcon, new Vector2(0, 10), new Vector2(100, 100));
+            var cellIconRt = RT(cellIcon);
+            cellIconRt.anchorMin = new Vector2(0.15f, 0.18f);
+            cellIconRt.anchorMax = new Vector2(0.85f, 0.90f);
+            cellIconRt.offsetMin = Vector2.zero;
+            cellIconRt.offsetMax = Vector2.zero;
             var cellIconImg = Img(cellIcon, Color.white);
             cellIconImg.preserveAspect = true;
 
             var qtyGo = Child(cellGo, "Quantity");
             var qtyRt = RT(qtyGo);
-            qtyRt.anchorMin = new Vector2(1, 0);
-            qtyRt.anchorMax = new Vector2(1, 0);
-            qtyRt.pivot     = new Vector2(1, 0);
-            qtyRt.anchoredPosition = new Vector2(-6, 8);
-            qtyRt.sizeDelta        = new Vector2(80, 36);
+            qtyRt.anchorMin = new Vector2(0.42f, 0.04f);
+            qtyRt.anchorMax = new Vector2(0.97f, 0.30f);
+            qtyRt.offsetMin = Vector2.zero;
+            qtyRt.offsetMax = Vector2.zero;
+            qtyRt.pivot     = new Vector2(0.5f, 0.5f);
             var qtyTmp = Comp<TextMeshProUGUI>(qtyGo);
             ApplyAutoFontSize(qtyTmp, TextCategory.Normal);
             qtyTmp.color             = UI_CTA;
@@ -1482,7 +1490,8 @@ namespace Game.Editor
             lockOverlay.SetActive(false);
 
             TMP(cell, "NameText", Center(0, -110, 280, 50), 18, UI_TEXT, "Name", null, TextCategory.Normal);
-            TMP(cell, "StateText", Center(0, -160, 280, 44), 18, UI_CTA, "800", null, TextCategory.Normal);
+            var cosmeticState = TMP(cell, "StateText", Center(0, -160, 280, 44), 18, UI_CTA, "800", null, TextCategory.Normal);
+            AttachGoldIcon(cosmeticState, 34f);
 
             PrefabUtility.SaveAsPrefabAsset(cell, path);
             if (loaded) PrefabUtility.UnloadPrefabContents(cell); else Object.DestroyImmediate(cell);
@@ -1509,6 +1518,7 @@ namespace Game.Editor
 
             var desc = TMP(panel, "DescText", Center(0, -60, 600, 120), 22, UI_TEXT, "Description", null, TextCategory.Normal);
             var state = TMP(panel, "StateText", Center(0, -190, 600, 60), 24, UI_CTA, "800", null, TextCategory.Normal);
+            AttachGoldIcon(state, 48f);
 
             var action = Btn(panel, "ActionButton", new Vector2(0, -330), new Vector2(420, 96), UI_CTA, "Buy & Apply", "shop.cosmetic.btn_buy_apply");
             var actionLabel = action.transform.Find("Visual/Label")?.GetComponent<TextMeshProUGUI>();
@@ -1533,11 +1543,11 @@ namespace Game.Editor
             Img(root, DIM); Comp<AttendancePopupView>(root); Comp<UIPanelAppear>(root); Comp<CanvasGroup>(root);
             var backdrop = Child(root, "Backdrop"); Stretch(backdrop); Img(backdrop, DIM);
 
-            var panel = Panel(root, "Panel", new Vector2(980, 820), UI_BG_MID);
+            var panel = Panel(root, "Panel", new Vector2(980, 900), UI_BG_MID);
             RibbonTitle(panel, "TitleText", "Daily Reward", "popup.attendance.title");
 
             var dayContainer = Child(panel, "DayContainer");
-            Fixed(dayContainer, new Vector2(0, 90), new Vector2(920, 220));
+            Fixed(dayContainer, new Vector2(0, 175), new Vector2(920, 250));
             var hlg = Comp<HorizontalLayoutGroup>(dayContainer);
             hlg.spacing = 8; hlg.childAlignment = TextAnchor.MiddleCenter;
             hlg.childControlWidth = false; hlg.childControlHeight = false;
@@ -1546,22 +1556,23 @@ namespace Game.Editor
             for (int i = 1; i <= 7; i++)
             {
                 var card = Child(dayContainer, $"Day{i}");
-                RT(card).sizeDelta = new Vector2(120, 200);
-                var le = Comp<LayoutElement>(card); le.preferredWidth = 120; le.preferredHeight = 200;
+                RT(card).sizeDelta = new Vector2(120, 230);
+                var le = Comp<LayoutElement>(card); le.preferredWidth = 120; le.preferredHeight = 230;
                 Img(card, i == 7 ? UI_CTA : UI_BG_DEEP);
 
-                TMP(card, "DayLabel", Center(0, 70, 110, 40), 18, UI_TEXT, $"D{i}", null, TextCategory.Normal);
+                TMP(card, "DayLabel", Center(0, 88, 110, 40), 18, UI_TEXT, $"D{i}", null, TextCategory.Normal);
 
                 // RewardSlot: runtime mount point for that day's RewardItemCell preview(s).
                 // Plain RT (NO layout group) — the View stacks all group items vertically and
                 // scales them via localScale (a LayoutGroup would ignore scale). Placed before the
                 // Dim overlay so a claimed day's ✓ dim renders over the rewards.
                 var slot = Child(card, "RewardSlot");
-                Fixed(slot, new Vector2(0, -28), new Vector2(108, 150));
+                Fixed(slot, new Vector2(0, 3), new Vector2(108, 150));
 
-                // "+N" badge (top-left) — set active + filled by the View when the day's group
-                // has more than one reward kind. Font-only (dynamic text), hidden by default.
-                var badge = TMP(card, "CountBadge", Center(-32, 58, 60, 38), 18, UI_CTA, "+1", null, TextCategory.Normal);
+                // "+N" badge — centered below the reward cell (card bottom strip), clear of both the
+                // reward icon and DayLabel. Set active + filled by the View when the day's group has
+                // more than one reward kind. Font-only (dynamic text), hidden by default.
+                var badge = TMP(card, "CountBadge", Center(0, -92, 100, 34), 18, UI_CTA, "+1", null, TextCategory.Normal);
                 badge.alignment = TextAlignmentOptions.Center;
                 badge.gameObject.SetActive(false);
 
@@ -1578,19 +1589,19 @@ namespace Game.Editor
                 dim.SetActive(false);
             }
 
-            var todayLabel = TMP(panel, "TodayRewardText", Center(0, -50, 700, 50), 24, UI_CTA, "Today's reward", "popup.attendance.today_reward", TextCategory.Normal);
+            var todayLabel = TMP(panel, "TodayRewardText", Center(0, -70, 700, 50), 24, UI_CTA, "Today's reward", "popup.attendance.today_reward", TextCategory.Normal);
 
             // TodayRewardRow: runtime row of RewardItemCells for today's full reward group.
             var todayRow = Child(panel, "TodayRewardRow");
-            Fixed(todayRow, new Vector2(0, -150), new Vector2(920, 130));
+            Fixed(todayRow, new Vector2(0, -185), new Vector2(920, 130));
             var rowHlg = Comp<HorizontalLayoutGroup>(todayRow);
             rowHlg.spacing = 12; rowHlg.childAlignment = TextAnchor.MiddleCenter;
             rowHlg.childControlWidth = rowHlg.childControlHeight = false;
             rowHlg.childForceExpandWidth = rowHlg.childForceExpandHeight = false;
 
-            var claim = Btn(panel, "ClaimButton", new Vector2(0, -300), new Vector2(420, 96), UI_CTA, "Claim", "popup.attendance.btn_claim");
+            var claim = Btn(panel, "ClaimButton", new Vector2(0, -350), new Vector2(420, 96), UI_CTA, "Claim", "popup.attendance.btn_claim");
             var claimLabel = claim.transform.Find("Visual/Label")?.GetComponent<TextMeshProUGUI>();
-            var closeBtn = CloseBtnAt(panel, new Vector2(460, 375));
+            var closeBtn = CloseBtnAt(panel, new Vector2(460, 415));
 
             var rewardCellPrefab = AssetDatabase.LoadAssetAtPath<GameObject>($"{BaseCommonPath}/RewardItemCell.prefab");
 
@@ -1619,6 +1630,15 @@ namespace Game.Editor
             var badge = Child(cell, "TierBadge");
             Fixed(badge, new Vector2(-360, 30), new Vector2(80, 80));
             Img(badge, UI_PRIMARY);
+
+            // Representative reward icon (reward group's highest sort_order item), inset within the tier-colored frame.
+            var rewardIcon = Child(badge, "RewardIcon");
+            Stretch(rewardIcon);
+            var rewardIconImg = Img(rewardIcon, Color.white);
+            rewardIconImg.preserveAspect = true;
+            rewardIconImg.raycastTarget = false;
+            rewardIconImg.rectTransform.offsetMin = new Vector2(12, 12);
+            rewardIconImg.rectTransform.offsetMax = new Vector2(-12, -12);
 
             var nm = TMP(cell, "NameText", new Rect(40, 40, 480, 50), 22, UI_TEXT, "Name", null, TextCategory.Normal);
             nm.alignment = TextAlignmentOptions.Left;
@@ -1653,6 +1673,57 @@ namespace Game.Editor
             Debug.Log($"[UIEditorSetup] Saved Base Popup → {path}");
             // Reference the Final variant so user customization on it is what gets instantiated at runtime.
             return AssetDatabase.LoadAssetAtPath<GameObject>($"{PrefabRoot}/AchievementItemCell.prefab")
+                ?? AssetDatabase.LoadAssetAtPath<GameObject>(path);
+        }
+
+        // Weekly-mission list cell (mirrors BuildAchievementCell): status badge + name/desc + progress bar + EP reward.
+        // No per-cell claim button — claiming is at the popup level (lowest reached-unclaimed EP milestone).
+        static GameObject BuildWeeklyMissionCell()
+        {
+            string path = $"{BaseCommonPath}/WeeklyMissionItemCell.prefab";
+            bool loaded = AssetDatabase.LoadAssetAtPath<GameObject>(path) != null;
+            var cell = loaded ? PrefabUtility.LoadPrefabContents(path) : new GameObject("WeeklyMissionItemCell");
+            RT(cell).sizeDelta = new Vector2(720, 150);
+            Img(cell, UI_BG_DEEP);
+            var le = Comp<LayoutElement>(cell); le.preferredHeight = 150; le.preferredWidth = 720;
+            Comp<CanvasGroup>(cell); // View dims the whole cell when completed (badge excluded via its own CanvasGroup)
+
+            // Status badge dot: shown only when completed (View). Own CanvasGroup ignores parent dim so it stays full alpha.
+            var badge = Child(cell, "StatusBadge");
+            Fixed(badge, new Vector2(-300, 0), new Vector2(56, 56));
+            Img(badge, Color.white);
+            var badgeCg = Comp<CanvasGroup>(badge); badgeCg.ignoreParentGroups = true; badgeCg.alpha = 1f;
+
+            var nm = TMP(cell, "NameText", new Rect(30, 40, 400, 50), 22, UI_TEXT, "Mission", null, TextCategory.Normal);
+            nm.alignment = TextAlignmentOptions.Left;
+            var desc = TMP(cell, "DescText", new Rect(30, -8, 400, 44), 18, UI_TEXT, "Desc", null, TextCategory.Normal);
+            desc.alignment = TextAlignmentOptions.Left;
+
+            var bar = Child(cell, "ProgressBar");
+            Fixed(bar, new Vector2(-60, -52), new Vector2(360, 24));
+            Img(bar, UI_BG_MID);
+            var fill = Child(bar, "Fill");
+            var fillRt = RT(fill);
+            fillRt.anchorMin = new Vector2(0, 0); fillRt.anchorMax = new Vector2(0, 1); fillRt.pivot = new Vector2(0, 0.5f);
+            fillRt.offsetMin = Vector2.zero; fillRt.offsetMax = Vector2.zero;
+            var fillImg = Img(fill, UI_SUCCESS);
+            var barAnim = Comp<AnimatedProgressBar>(bar);
+            var soBar = new SerializedObject(barAnim);
+            soBar.FindProperty("_fill").objectReferenceValue = fillRt;
+            soBar.FindProperty("_fillImage").objectReferenceValue = fillImg;
+            soBar.ApplyModifiedProperties();
+
+            TMP(cell, "ProgressText", new Rect(200, -52, 140, 36), 16, UI_TEXT, "0/10", null, TextCategory.Normal);
+
+            var ep = TMP(cell, "EpText", new Rect(285, 35, 120, 70), 20, UI_SUCCESS, "+0 EP", null, TextCategory.Normal);
+            ep.alignment = TextAlignmentOptions.Right;
+
+            PrefabUtility.SaveAsPrefabAsset(cell, path);
+            if (loaded) PrefabUtility.UnloadPrefabContents(cell); else Object.DestroyImmediate(cell);
+            CreateCommonVariantIfMissing("WeeklyMissionItemCell");
+            AssetDatabase.SaveAssets();
+            Debug.Log($"[UIEditorSetup] Saved Base Popup → {path}");
+            return AssetDatabase.LoadAssetAtPath<GameObject>($"{PrefabRoot}/WeeklyMissionItemCell.prefab")
                 ?? AssetDatabase.LoadAssetAtPath<GameObject>(path);
         }
 
@@ -1723,7 +1794,8 @@ namespace Game.Editor
             }
             lockOverlay.SetActive(false);
 
-            TMP(cell, "StateText", Center(0, -85, 170, 40), 18, UI_CTA, "0", null, TextCategory.Normal);
+            var avatarState = TMP(cell, "StateText", Center(0, -85, 170, 40), 18, UI_CTA, "0", null, TextCategory.Normal);
+            AttachGoldIcon(avatarState, 32f);
 
             PrefabUtility.SaveAsPrefabAsset(cell, path);
             if (loaded) PrefabUtility.UnloadPrefabContents(cell); else Object.DestroyImmediate(cell);
@@ -1749,6 +1821,7 @@ namespace Game.Editor
             var pImg = Img(preview, UI_BG_DEEP); pImg.preserveAspect = true;
 
             var state = TMP(panel, "StateText", Center(0, -140, 600, 60), 24, UI_CTA, "800", null, TextCategory.Normal);
+            AttachGoldIcon(state, 48f);
 
             var action = Btn(panel, "ActionButton", new Vector2(0, -280), new Vector2(420, 96), UI_CTA, "Buy & Equip", "shop.cosmetic.btn_buy_apply");
             var actionLabel = action.transform.Find("Visual/Label")?.GetComponent<TextMeshProUGUI>();
@@ -1812,16 +1885,33 @@ namespace Game.Editor
             epFillRt.anchorMin = new Vector2(0f, 0f); epFillRt.anchorMax = new Vector2(0f, 1f);
             epFillRt.pivot = new Vector2(0f, 0.5f); epFillRt.offsetMin = Vector2.zero; epFillRt.offsetMax = Vector2.zero;
 
-            var track = TMP(panel, "TrackText", Center(0, 195, 720, 50), 22, UI_TEXT, "●200  ●500  ○900  ○1200", null, TextCategory.Normal);
+            // Track milestone markers: empty container spanning the bar (same rect as Fill). View spawns a
+            // marker per milestone anchored at threshold/maxThreshold so each tick lines up with the fill edge.
+            var trackMarkers = Child(epBg, "TrackMarkers"); Stretch(trackMarkers);
+            Img(trackMarkers, new Color(0, 0, 0, 0)).raycastTarget = false;
 
-            var missions = Child(panel, "MissionContainer"); Fixed(missions, new Vector2(0, -70), new Vector2(760, 420));
+            // Mission list: scroll view + viewport (RectMask2D) + top-anchored content (VLG + CSF).
+            // Rows are WeeklyMissionItemCell prefabs the View instantiates at runtime (incomplete on top).
+            var missionCell = BuildWeeklyMissionCell();
+            var scroll = Child(panel, "MissionScroll"); Fixed(scroll, new Vector2(0, -70), new Vector2(792, 430));
+            var sr = Comp<ScrollRect>(scroll); sr.horizontal = false; sr.vertical = true;
+            sr.movementType = ScrollRect.MovementType.Clamped;
+            var vp = Child(scroll, "Viewport"); Stretch(vp); Comp<RectMask2D>(vp);
+            var vpImg = Img(vp, new Color(0, 0, 0, 0)); vpImg.raycastTarget = true;
+            sr.viewport = RT(vp);
+            var missions = Child(vp, "Content");
+            var contentRt = RT(missions);
+            contentRt.anchorMin = new Vector2(0, 1); contentRt.anchorMax = new Vector2(1, 1); contentRt.pivot = new Vector2(0.5f, 1); contentRt.sizeDelta = Vector2.zero;
+            sr.content = contentRt;
             var vlg = Comp<VerticalLayoutGroup>(missions);
-            vlg.spacing = 8; vlg.padding = new RectOffset(24, 24, 12, 12);
-            vlg.childAlignment = TextAnchor.UpperLeft;
+            vlg.spacing = 10; vlg.padding = new RectOffset(12, 12, 12, 12);
+            vlg.childAlignment = TextAnchor.UpperCenter;
             vlg.childControlWidth = true; vlg.childControlHeight = true;
-            vlg.childForceExpandWidth = true; vlg.childForceExpandHeight = false;
+            vlg.childForceExpandWidth = false; vlg.childForceExpandHeight = false;
+            var csf = Comp<ContentSizeFitter>(missions); csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-            var claim = Btn(panel, "ClaimButton", new Vector2(0, -390), new Vector2(480, 96), UI_CTA, "Claim", "popup.weekly_mission.btn_claim_fmt");
+            // stringId null → LocalizedText inert; View owns the label (format key needs string.Format args).
+            var claim = Btn(panel, "ClaimButton", new Vector2(0, -390), new Vector2(480, 96), UI_CTA, "Claim", null);
             var claimLabel = claim.GetComponentInChildren<TMP_Text>();
             var closeBtn = CloseBtnAt(panel, new Vector2(350, 465));
 
@@ -1830,8 +1920,9 @@ namespace Game.Editor
             so.FindProperty("_daysLeftText").objectReferenceValue = daysLeft;
             so.FindProperty("_epText").objectReferenceValue = ep;
             so.FindProperty("_epBarFill").objectReferenceValue = epFillRt;
-            so.FindProperty("_trackText").objectReferenceValue = track;
+            so.FindProperty("_trackMarkerContainer").objectReferenceValue = RT(trackMarkers);
             so.FindProperty("_missionContainer").objectReferenceValue = missions.transform;
+            so.FindProperty("_missionCellPrefab").objectReferenceValue = missionCell;
             so.FindProperty("_claimButton").objectReferenceValue = claim.GetComponent<Button>();
             so.FindProperty("_claimLabel").objectReferenceValue = claimLabel;
             so.FindProperty("_closeButton").objectReferenceValue = closeBtn;
@@ -2804,6 +2895,35 @@ namespace Game.Editor
         {
             if (!go.TryGetComponent<Image>(out var img)) img = Comp<Image>(go);
             img.color = color; return img;
+        }
+
+        // Adds a hidden `GoldIcon` child to a price TMP. The text itself is left untouched — it stays
+        // fixed-width + center-aligned + autosizing (so both numbers and long word states render safely,
+        // no overflow). NO ContentSizeFitter: TMP autosizing and ContentSizeFitter are mutually
+        // incompatible (autosize makes preferredWidth unreliable, so the fitter never tightly hugs the
+        // content). Instead the icon is center-anchored and `GoldPriceLabel.Set` positions it at runtime
+        // from the MEASURED rendered text width, so the coin glues flush to the left of the centered
+        // number, responsive to digit count. Hidden by default; shown only for gold-price states.
+        static void AttachGoldIcon(TMP_Text state, float iconSize)
+        {
+            // Drop any stale ContentSizeFitter baked by an earlier version (now inert/unwanted).
+            if (state.TryGetComponent<ContentSizeFitter>(out var oldCsf)) Object.DestroyImmediate(oldCsf, true);
+
+            var icon = Child(state.gameObject, "GoldIcon");
+            var irt = RT(icon);
+            irt.anchorMin = irt.anchorMax = new Vector2(0.5f, 0.5f);
+            irt.pivot = new Vector2(0.5f, 0.5f);
+            irt.sizeDelta = new Vector2(iconSize, iconSize);
+            irt.anchoredPosition = new Vector2(-iconSize, 0f); // placeholder; repositioned at runtime
+            var img = Img(icon, Color.white);
+            img.raycastTarget = false;
+            img.preserveAspect = true;
+            if (LoadDynamicResourceMap().TryGetValue("ui_gold_icon", out string gip))
+            {
+                var spr = AssetDatabase.LoadAssetAtPath<Sprite>(gip);
+                if (spr != null) img.sprite = spr;
+            }
+            icon.SetActive(false);
         }
 
         static T Comp<T>(GameObject go) where T : Component

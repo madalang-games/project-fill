@@ -59,13 +59,12 @@ namespace Game.OutGame.Lobby
             bool owned = _item.Unlocked;
             var unlockType = (CosmeticUnlockType)_item.UnlockType;
 
+            bool showGoldPrice = unlockType == CosmeticUnlockType.Gold && !owned;
             if (_stateText != null)
-            {
-                if (unlockType == CosmeticUnlockType.Gold && !owned)
-                    _stateText.text = $"{_item.UnlockCost}";
-                else
-                    _stateText.text = "";
-            }
+                _stateText.text = showGoldPrice ? $"{_item.UnlockCost}" : "";
+
+            // Gold icon only for an actual gold price (centered text left untouched).
+            GoldPriceLabel.Set(_stateText, showGoldPrice);
 
             if (_actionButton == null) return;
 

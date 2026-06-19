@@ -80,7 +80,11 @@ namespace Game.OutGame.Lobby
                 {
                     if (isEquipped) stateText.text = loc != null ? loc.Get("shop.cosmetic.applied") : "";
                     else if (isUnlocked) stateText.text = loc != null ? loc.Get("shop.cosmetic.btn_apply") : "";
-                    else stateText.text = $"{avatar.unlock_cost}";
+                    else if (avatar.unlock_cost > 0) stateText.text = $"{avatar.unlock_cost}";
+                    else stateText.text = loc != null ? loc.Get("shop.avatar.locked_reward") : "";
+
+                    // Gold icon only for an actual gold price (centered text left untouched).
+                    GoldPriceLabel.Set(stateText, !isEquipped && !isUnlocked && avatar.unlock_cost > 0);
                 }
 
                 var btn = go.GetComponent<Button>();

@@ -85,6 +85,22 @@ namespace Game.OutGame.Lobby
             var badge = go.transform.Find("TierBadge")?.GetComponent<Image>();
             if (badge != null) badge.color = TierColor((AchievementTier)a.Tier);
 
+            var rewardIcon = go.transform.Find("TierBadge/RewardIcon")?.GetComponent<Image>();
+            if (rewardIcon != null)
+            {
+                var render = RewardDisplay.RepresentativeRewardRender(a.AchievementId);
+                if (render != null)
+                {
+                    rewardIcon.enabled = true;
+                    render(rewardIcon);
+                }
+                else
+                {
+                    rewardIcon.enabled = false;
+                    rewardIcon.sprite = null;
+                }
+            }
+
             var nameText = go.transform.Find("NameText")?.GetComponent<TMP_Text>();
             if (nameText != null) nameText.text = loc != null ? loc.Get(a.NameKey) : a.NameKey;
 

@@ -137,6 +137,7 @@ namespace Game.Editor
         public const string PopupSessionInvalidBody = "popup.session_invalid.body";
         public const string PopupWeeklyMissionTitle = "popup.weekly_mission.title";
         public const string PopupWeeklyMissionEpFmt = "popup.weekly_mission.ep_fmt";
+        public const string PopupWeeklyMissionEpRewardFmt = "popup.weekly_mission.ep_reward_fmt";
         public const string PopupWeeklyMissionDaysLeftFmt = "popup.weekly_mission.days_left_fmt";
         public const string PopupWeeklyMissionProgressFmt = "popup.weekly_mission.progress_fmt";
         public const string PopupWeeklyMissionBtnClaimFmt = "popup.weekly_mission.btn_claim_fmt";
@@ -282,6 +283,7 @@ namespace Game.Editor
         public const string ShopCosmeticLockedAchievement = "shop.cosmetic.locked_achievement";
         public const string ShopCosmeticLockedAttendance = "shop.cosmetic.locked_attendance";
         public const string ShopCosmeticLockedChallenge = "shop.cosmetic.locked_challenge";
+        public const string ShopAvatarLockedReward = "shop.avatar.locked_reward";
         public const string ShopTabProduct = "shop.tab.product";
         public const string ShopTabSkin = "shop.tab.skin";
         public const string ShopTabAvatar = "shop.tab.avatar";
