@@ -53,7 +53,8 @@ namespace Game.Services
                 if (response != null)
                 {
                     PlayerProgressService.Instance?.SetInventory(response.Inventory);
-                    PlayerProgressService.Instance?.SetGold((int)response.Currency.SoftAmount);
+                    if (json.currency != null) // route through central setter; raw null-guard + authoritative post-buy balance
+                        CurrencyApiService.Instance?.UpdateGold(response.Currency, authoritative: true);
                 }
                 onSuccess?.Invoke(response);
             });

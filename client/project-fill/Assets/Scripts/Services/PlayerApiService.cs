@@ -68,11 +68,12 @@ namespace Game.Services
                         // BoardThemeId dropped from contract — equip from the raw server JSON field.
                         PlayerProgressService.Instance.SetEquippedBoardTheme(res.boardThemeId);
                     }
-                    CurrencyApiService.Instance?.UpdateGold(new ProjectFill.Contracts.Currency.CurrencySnapshot
-                    {
-                        SoftAmount = res.currency.softAmount,
-                        SoftDelta = res.currency.softDelta
-                    });
+                    if (res.currency != null) // raw field is null when server omits currency; avoids NRE + central guard skips empty 0/0
+                        CurrencyApiService.Instance?.UpdateGold(new ProjectFill.Contracts.Currency.CurrencySnapshot
+                        {
+                            SoftAmount = res.currency.softAmount,
+                            SoftDelta = res.currency.softDelta
+                        });
                     onComplete?.Invoke(true, response, null);
                 }
                 catch (Exception ex)

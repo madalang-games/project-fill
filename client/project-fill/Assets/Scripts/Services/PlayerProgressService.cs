@@ -176,7 +176,7 @@ namespace Game.Services
 
         public void ResetData()
         {
-            _gold = 500;
+            _gold = 0; // new/switched account starts at 0 (server-authoritative); FetchGold re-syncs after login
             _bestMoves.Clear();
             _unlocked.Clear();
             _unlocked[1] = true;
@@ -188,7 +188,7 @@ namespace Game.Services
 
         private void Load()
         {
-            _gold = PlayerPrefs.GetInt(KeyGold, 500);
+            _gold = PlayerPrefs.GetInt(KeyGold, 0); // server-authoritative; new account starts at 0 (no flash before first FetchGold)
             _unlocked[1] = true;
             _isNoAds = PlayerPrefs.GetInt("is_no_ads", 0) == 1;
         }
