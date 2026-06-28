@@ -9,14 +9,14 @@ Unity 6 | URP 2D | C# | New Input System
 | `project-fill/Assets/Scripts/` | C# code root: Core, InGame, OutGame, Services, Editor | → `Scripts/AGENTS.md` |
 | `project-fill/Assets/Resources/Prefabs/Game/` | Runtime-loaded gameplay prefabs |
 | `project-fill/Assets/Sprites/PlayerSettings/` | PlayerSettings splash/background/logo/icon source sprites |
-| `project-fill/Assets/Resources/Data/` | Runtime CSVs — generated, DO NOT EDIT |
+| `project-fill/Assets/Resources/data/` | Runtime CSVs — generated, DO NOT EDIT |
 | `project-fill/Assets/Resources/Prefabs/UI/` | Runtime-loaded popup prefabs |
 | `project-fill/Assets/Plugins/` | Platform native plugins |
 | `project-fill/Assets/Scenes/` | Unity scenes |
 | `project-fill/Assets/Audio/SFX/` | SFX WAV files (10 clips from Casual Game Sounds U6 + Free UI Click SFX Pack) |
 
 ## Rules
-- NEVER edit `Assets/Resources/Data/` — source is `shared/datas/`, regenerate with `npm run gen:info`
+- NEVER edit `Assets/Resources/data/` — source is `shared/datas/`, regenerate with `npm run gen:info`
 - NEVER edit `Assets/Scripts/Data/Generated/` or `Assets/Scripts/Generated/` — regenerate with gen tools
 - **UI Prefabs — NO DIRECT EDIT**: NEVER create or modify `.prefab` files manually. NEVER add UI objects directly in Scene files. Only define structure in `UIEditorSetup.cs`; generate from Unity Editor menu.
 - **Sprite/icon refs are NOT static prefab data — never grep-and-edit `m_Sprite`**: A UI Image's sprite is assigned by one of two real sources, never by hand-editing the prefab YAML:

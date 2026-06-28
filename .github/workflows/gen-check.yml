@@ -10,7 +10,7 @@ on:
       - 'server/db/schema.json'
       - 'server/generated/**'
       - 'server/src/ProjectFill.Infrastructure/Generated/**'
-      - 'client/project-fill/Assets/Resources/Data/**'
+      - 'client/project-fill/Assets/Resources/data/**'
       - 'client/project-fill/Assets/Scripts/Data/Generated/**'
       - 'client/project-fill/Assets/Scripts/Generated/**'
       - 'tools/**'

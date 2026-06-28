@@ -28,7 +28,7 @@ Row 5+: data
 ```
 
 ## Output (after `npm run gen:info`)
-- `client/project-fill/Assets/Resources/Data/`
+- `client/project-fill/Assets/Resources/data/`
 - `server/generated/data/`
 - `server/generated/scripts/*/Xxx.g.cs`
 - `client/.../Data/Generated/`
@@ -81,6 +81,6 @@ Row 5+: data
 - Signal Sort is the current baseline. Do not add turn-limit, stamina, tube/bottle sort, or non-circuit data unless the design SoT (signal_sort_system_design_kr.md) changes first.
 
 ## Cross-refs
-- Gen output: `client/project-fill/Assets/Resources/Data/`, `server/generated/data/`
+- Gen output: `client/project-fill/Assets/Resources/data/`, `server/generated/data/`
 - Consumed by: `ProjectFill.Infrastructure.StaticData.StaticDataService`
 - Consumed by: `client/project-fill/Assets/Scripts/Services/`

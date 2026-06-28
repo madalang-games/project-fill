@@ -15,7 +15,7 @@
 | `UISpecInterpreter.cs` | `UIEditorSetup` (partial) + `UISpec`/`UISpecElement`/`UISpecBinding` | **PROTOTYPE** declarative UI: JSON spec in `UISpecs/` → prefab via existing helpers. One menu builds all specs (adding a popup = adding a JSON file). Flat `panel>children` only; reuses Save + Final-variant path |
 | `FontLocalizationConfigGenerator.cs` | `FontLocalizationConfigGenerator` | [MenuItem] reads tools/subset_tool/config.json → creates FontLocalizationConfig.asset with per-language fonts; sets TMP fallback |
 | `StringIds.cs` | `StringIds` | **AUTO-GENERATED** by `gen:info` from `client_string.csv`; key constants; used by UIEditorSetup via `using static` |
-| `StringCsvPostprocessor.cs` | `StringCsvPostprocessor` | AssetPostprocessor; watches `Data/string/client_string.csv` reimport → calls `LocalizedText.RefreshAllInEditor()`; menu: `Tools/Localization/Refresh Editor Text Preview` |
+| `StringCsvPostprocessor.cs` | `StringCsvPostprocessor` | AssetPostprocessor; watches `data/string/client_string.csv` reimport → calls `LocalizedText.RefreshAllInEditor()`; menu: `Tools/Localization/Refresh Editor Text Preview` |
 | `UnityStageFileWatcher.cs` | `UnityStageFileWatcher` | [InitializeOnLoad] watches changes to shared `stage.csv` and auto-runs generation scripts |
 | `AdMobEditorSetup.cs` | `AdMobEditorSetup` | [InitializeOnLoad] automatically ensures GOOGLE_MOBILE_ADS scripting define symbol is set for Android, iOS, and Standalone |
 | `DebugSocketScale.cs` | `DebugSocketScale` | [MenuItem "Tools/UI Setup/Debug Sockets and Cells"] editor-only socket/cell scale debug helper |
