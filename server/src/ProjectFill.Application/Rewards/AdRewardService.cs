@@ -41,7 +41,7 @@ public sealed class AdRewardService
                     RequestJson = "{}",
                     CorrelationId = correlationId
                 };
-                await _redis.StringSetAsync($"pending_claim:{request.AdToken}", System.Text.Json.JsonSerializer.Serialize(pending), TimeSpan.FromMinutes(5));
+                await _redis.StringSetAsync($"pending_claim:{request.AdToken}", System.Text.Json.JsonSerializer.Serialize(pending), TimeSpan.FromHours(24));
                 throw new GameApiException(ErrorCodes.AdSsvPending, "Ad SSV callback not yet received.");
             }
 
