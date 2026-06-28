@@ -57,6 +57,8 @@ namespace Game.InGame.Controller
                 _boardView.OnPauseTapped   += HandlePause;
                 _subscribed = true;
             }
+            // Escape on InGame (no popup open) opens the Pause popup.
+            if (UIManager.Instance != null) UIManager.Instance.SetEscapeHandler(HandlePause);
             LoadCurrent();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             DevSkinSwitcher.Ensure(this, _boardView); // dev-only in-game skin/stage switcher overlay
@@ -72,6 +74,11 @@ namespace Game.InGame.Controller
             LoadCurrent();
         }
 #endif
+
+        private void OnDestroy()
+        {
+            if (UIManager.Instance != null) UIManager.Instance.ClearEscapeHandler(HandlePause);
+        }
 
         private void HandlePause()
         {
@@ -215,6 +222,7 @@ namespace Game.InGame.Controller
                 if (src.IsEmpty || src.Pending || src.Locked) return; // nothing selectable
                 _selectedLane = lane;
                 _boardView.SetSelection(lane);
+                SfxEventBus.Play(SfxId.LaneSelected);
                 TutorialManager.NotifyAction(TutorialAdvanceMode.Select); // advance a "select" tutorial step
             }
             else if (_selectedLane == lane)
@@ -240,6 +248,9 @@ namespace Game.InGame.Controller
                     {
                         _boardView.BlockInput(false);
                         _animating = false;
+                        SfxEventBus.Play(SfxId.GravityLand); // chips finished dropping into dest lane
+                        if (absorbed != null && absorbed.Count > 0)
+                            SfxEventBus.Play(SfxId.RewardClaimed); // completed set lit the Signal Panel
                         TutorialManager.NotifyAction(TutorialAdvanceMode.Move); // advance a "move" tutorial step
                         PostMoveCheck();
                         DrainTapQueue();
@@ -249,6 +260,7 @@ namespace Game.InGame.Controller
                 {
                     _boardView.ClearHighlights();
                     _boardView.PlayInvalid(lane);
+                    SfxEventBus.Play(SfxId.ActionBlocked); // illegal drop onto an invalid lane
                 }
             }
         }
@@ -384,6 +396,7 @@ namespace Game.InGame.Controller
             if (_board.IsCleared)
             {
                 _boardView.BlockInput(true);
+                SfxEventBus.Play(SfxId.StageClear);
                 _tapQueue.Clear(); // drop buffered taps — board is done, no phantom move after clear
                 SubmitClear(_stageIndex + 1);
                 return;

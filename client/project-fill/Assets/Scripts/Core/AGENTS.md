@@ -30,6 +30,8 @@
 | `UIManager.HideLoading()` | method | Deactivates LoadingOverlayView |
 | `UIManager.ShowNetworkError(onRetry)` | method | Hides loading, shows NetworkErrorView |
 | `UIManager.CloseTopPopup()` | method | Destroys top of popup stack |
+| `UIManager.SetEscapeHandler(Action)` | method | Registers the escape behavior used when no popup is open (last caller wins); InGame→Pause, Lobby→Exit confirm |
+| `UIManager.ClearEscapeHandler(Action)` | method | Clears the fallback only if the caller still owns it (scene-teardown order-safe) |
 | `UIManager.CloseOverlay()` | method | Destroys current overlay |
 | `UIManager.GetCurrentOverlay<T>()` | method | Returns T from current overlay; null if none |
 | `SafeAreaHandler` | component | Attach to Lobby Header, BottomNavBar, InGame HUD, Canvas_Loading panel |
@@ -50,7 +52,7 @@
 | `GoogleSignInBridge.Instance` | prop | DDOL singleton; auto-created at BeforeSceneLoad on Android |
 | `GoogleSignInBridge.SignIn(webClientId,cb)` | method | Starts Google Sign-In flow; cb(idToken, errorCode) |
 | `GoogleSignInBridge.SignOut(webClientId)` | method | Clears Google account session |
-| `SfxId` | enum | ConfirmClick/CancelClick/RewardClaimed/StageClear/StageFail/CellGroupRemoved/BoardRotated/ToastError/ItemUsed/ActionBlocked/GravityLand — NOTE: CellGroupRemoved/BoardRotated/GravityLand are legacy names; rename to Signal Sort semantics (e.g. CompleteSetClear) when implementing InGame audio |
+| `SfxId` | enum | ConfirmClick/CancelClick/RewardClaimed/StageClear/StageFail/LaneSelected/BoardRotated/ToastError/ItemUsed/ActionBlocked/GravityLand — InGame wiring (InGameController): LaneSelected=scatter(select lane), GravityLand=gravity(chips landed), RewardClaimed=claim(set absorbed→Signal Panel lit), StageClear=clear, ActionBlocked=invalid drop. NOTE: BoardRotated/GravityLand still legacy names; rename to Signal Sort semantics when reused |
 | `SfxEntry` | class | id + clip + volume + pitchRange + cooldownSeconds |
 | `SfxCatalog.TryGet(id, out entry)` | method | ScriptableObject; linear search; loaded from Resources/SfxCatalog |
 | `SfxEventBus.Play(id)` | static method | Fire-and-forget; SoundManager subscribes |
@@ -59,6 +61,8 @@
 
 ## Rules
 - UIManager canvases: Sort Order 10/20/30/100. Scene canvases always Sort 0.
+- Escape / Android-back handled centrally in `UIManager.Update` (`EscapePressedThisFrame`): popup open → `CloseTopPopup`; empty stack → registered scene `_escapeFallback` (`SetEscapeHandler`/`ClearEscapeHandler`). Scenes register their own behavior; never poll escape in a scene script (would double-handle with the popup-close path).
+- **Android back button requires Active Input Handling = Both** (`ProjectSettings.activeInputHandler: 2`). New Input System `Keyboard.escapeKey` covers desktop Esc but does NOT surface the Android hardware back on touch-only devices; `EscapePressedThisFrame` ORs in legacy `Input.GetKeyDown(KeyCode.Escape)` for it. Changing this setting needs a Unity Editor restart.
 - All popup/overlay prefabs must be in Resources/Prefabs/UI/ named exactly {ClassName}.prefab
 - Static instances (Toast, LoadingOverlay, NetworkError): pre-instantiated at Awake; Show/Hide only
 - Dynamic instances (Popup, Overlay): Instantiate/Destroy per call
