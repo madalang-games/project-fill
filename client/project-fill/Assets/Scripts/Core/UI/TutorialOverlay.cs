@@ -45,8 +45,12 @@ namespace Game.Core.UI
         private bool _dragEndpointsValid;
 
         // Highlight = a hole punched in the dim (the target shows through), NOT a colored glow.
-        // 4 runtime border quads surround the hole; _holeScale drives a quick 3x reveal blink on appear.
-        private Image[] _dimBorders;
+        // Driven by the UI/TutorialCutout shader on the dim image (viewport-space rect hole, smooth edges);
+        // _holeScale drives a quick 3x reveal blink on appear.
+        private const int MaxHoles = 16;
+        private Material _dimMaterial;
+        private readonly Vector4[] _holes = new Vector4[MaxHoles];
+        private readonly float[] _holeTypes = new float[MaxHoles];
         private bool _hasSpotlight;
         private float _holeScale = 1f;
         private Coroutine _holeBlinkCoroutine;
@@ -59,32 +63,20 @@ namespace Game.Core.UI
                 ? Services.DynamicResourceService.Instance.GetSprite("ui_drag_pointer")
                 : null;
 
-            // Highlight is the dim-hole, not the old yellow frame/glow — keep those off.
+            // Highlight is the dim-hole (shader cutout), not the old yellow frame/glow — keep those off.
             if (_spotlightCutout != null) _spotlightCutout.gameObject.SetActive(false);
             if (_spotlightGlow != null) _spotlightGlow.gameObject.SetActive(false);
-            CreateDimBorders();
+            EnsureCutoutMaterial();
         }
 
-        // Four dim quads that frame the spotlight hole (reuse the dim color). Visual only — tap blocking
-        // for Tap steps is the fullscreen dismiss button; action steps leave the board reachable.
-        private void CreateDimBorders()
+        private void EnsureCutoutMaterial()
         {
-            if (_dimLayer == null) return;
-            var parent = _dimLayer.transform.parent != null ? _dimLayer.transform.parent : transform;
-            int after = _dimLayer.transform.GetSiblingIndex() + 1;
-            _dimBorders = new Image[4];
-            for (int i = 0; i < 4; i++)
+            if (_dimMaterial != null || _dimLayer == null) return;
+            var shader = Shader.Find("UI/TutorialCutout");
+            if (shader != null)
             {
-                var go = new GameObject($"DimBorder{i}", typeof(RectTransform), typeof(Image));
-                go.transform.SetParent(parent, false);
-                var rt = go.GetComponent<RectTransform>();
-                rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0.5f, 0.5f);
-                rt.SetSiblingIndex(after + i);
-                var img = go.GetComponent<Image>();
-                img.color = _dimLayer.color;
-                img.raycastTarget = false;
-                go.SetActive(false);
-                _dimBorders[i] = img;
+                _dimMaterial = new Material(shader);
+                _dimLayer.material = _dimMaterial;
             }
         }
 
@@ -123,6 +115,8 @@ namespace Game.Core.UI
             if (_holeBlinkCoroutine != null) StopCoroutine(_holeBlinkCoroutine);
             if (_fingerTapCoroutine != null) StopCoroutine(_fingerTapCoroutine);
             if (_dragCoroutine != null) StopCoroutine(_dragCoroutine);
+
+            if (_dimMaterial != null) Destroy(_dimMaterial);
         }
 
         private void LateUpdate()
@@ -383,7 +377,7 @@ namespace Game.Core.UI
             if (!haveTarget)
             {
                 // Whole-board / unresolved target: full dim, centered tooltip, no pointer.
-                SetFullDim();
+                ClearHole();
                 if (!_isDragStep && _fingerOverlay != null) _fingerOverlay.gameObject.SetActive(false);
                 _dragEndpointsValid = false;
                 if (_tooltipBubble != null) _tooltipBubble.anchoredPosition = Vector2.zero;
@@ -393,7 +387,15 @@ namespace Game.Core.UI
             RectTransformUtility.ScreenPointToLocalPointInRectangle(
                 overlayRt, screenPos, overlayCanvas.worldCamera, out Vector2 localPoint);
 
-            LayoutDimHole(overlayRt, localPoint, targetSize);
+            // Cutout hole in viewport (0-1) space: canvas-unit size / canvas rect = viewport fraction
+            // (the dim image stretches to the full screen, so its uv matches viewport coords).
+            _hasSpotlight = true;
+            float vpW = targetSize.x / Mathf.Max(1f, overlayRt.rect.width);
+            float vpH = targetSize.y / Mathf.Max(1f, overlayRt.rect.height);
+            _holes[0] = new Vector4(screenPos.x / Screen.width, screenPos.y / Screen.height,
+                                    vpW + 0.012f, vpH + 0.012f);
+            _holeTypes[0] = 1f; // Rect
+            ApplyHoles(1);
 
             if (_isDragStep)
             {
@@ -432,43 +434,23 @@ namespace Game.Core.UI
             _tooltipBubble.anchoredPosition = new Vector2(0f, by);
         }
 
-        // Frames the spotlight hole with 4 dim quads so the target shows through the dim (no colored glow).
-        // _holeScale (0..1) shrinks the hole for the reveal blink; at 0 the borders meet → full dim.
-        private void LayoutDimHole(RectTransform overlayRt, Vector2 center, Vector2 size)
+        // Pushes the current hole array to the cutout material, applying the reveal blink scale to sizes.
+        private void ApplyHoles(int count)
         {
-            if (_dimBorders == null) { return; }
-            if (_dimLayer != null && _dimLayer.gameObject.activeSelf) _dimLayer.gameObject.SetActive(false);
-
-            float hw = overlayRt.rect.width * 0.5f;
-            float hh = overlayRt.rect.height * 0.5f;
-            Vector2 half = size * 0.5f * _holeScale + new Vector2(6f, 6f);
-
-            float left   = Mathf.Clamp(center.x - half.x, -hw, hw);
-            float right  = Mathf.Clamp(center.x + half.x, -hw, hw);
-            float bottom = Mathf.Clamp(center.y - half.y, -hh, hh);
-            float top    = Mathf.Clamp(center.y + half.y, -hh, hh);
-
-            SetBorder(_dimBorders[0], new Vector2(0f, (top + hh) * 0.5f),       new Vector2(hw * 2f, hh - top));      // above hole
-            SetBorder(_dimBorders[1], new Vector2(0f, (bottom - hh) * 0.5f),    new Vector2(hw * 2f, bottom + hh));   // below hole
-            SetBorder(_dimBorders[2], new Vector2((left - hw) * 0.5f,  (top + bottom) * 0.5f), new Vector2(left + hw, top - bottom)); // left
-            SetBorder(_dimBorders[3], new Vector2((right + hw) * 0.5f, (top + bottom) * 0.5f), new Vector2(hw - right, top - bottom)); // right
+            if (_dimMaterial == null) return;
+            var scaled = new Vector4[MaxHoles];
+            for (int i = 0; i < count; i++)
+                scaled[i] = new Vector4(_holes[i].x, _holes[i].y, _holes[i].z * _holeScale, _holes[i].w * _holeScale);
+            _dimMaterial.SetInt("_HoleCount", count);
+            _dimMaterial.SetVectorArray("_Holes", scaled);
+            _dimMaterial.SetFloatArray("_HoleTypes", _holeTypes);
         }
 
-        private static void SetBorder(Image img, Vector2 pos, Vector2 size)
+        // Whole-board / unresolved target: no hole → full-screen dim.
+        private void ClearHole()
         {
-            if (img == null) return;
-            if (!img.gameObject.activeSelf) img.gameObject.SetActive(true);
-            var rt = img.rectTransform;
-            rt.anchoredPosition = pos;
-            rt.sizeDelta = new Vector2(Mathf.Max(0f, size.x), Mathf.Max(0f, size.y));
-        }
-
-        private void SetFullDim()
-        {
-            if (_dimLayer != null && !_dimLayer.gameObject.activeSelf) _dimLayer.gameObject.SetActive(true);
-            if (_dimBorders != null)
-                foreach (var b in _dimBorders)
-                    if (b != null && b.gameObject.activeSelf) b.gameObject.SetActive(false);
+            _hasSpotlight = false;
+            ApplyHoles(0);
         }
 
         // 3 quick reveal blinks: dim closes over the target then opens, ×3, settling open.
