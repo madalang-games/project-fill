@@ -12,5 +12,6 @@
   <ItemGroup>
     <PackageReference Include="StackExchange.Redis" Version="2.*" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="8.*" />
+    <PackageReference Include="Google.Apis.AndroidPublisher.v3" Version="1.*" />
   </ItemGroup>
 </Project>

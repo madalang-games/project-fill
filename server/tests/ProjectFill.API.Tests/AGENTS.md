@@ -11,6 +11,8 @@
 | `RankingServiceTests.cs` | `RankingServiceTests` | Global ranking my-rank (stage/perfect) and not-in-redis null entry |
 | `StageServiceTests.cs` | `StageServiceTests` | Stage start unlock gate (stage1 open / locked / unlocked-after-clear / unknown) + start issues `SessionId`; clear-of-locked bypass guard + attempt-token validation (missing / mismatched → `InvalidStageAttempt`); stage clear: first/re-clear, best-moves, chapter milestone chest, ruleset/types validation |
 | `AdDoubleRewardServiceTests.cs` | `AdDoubleRewardServiceTests` | Result 2x reward: verified grant + claim-state once, duplicate, SSV-pending, not-cleared/unknown-stage guards |
+| `IapServiceTests.cs` | `IapServiceTests` | IAP verify: mock-platform rejected in prod / allowed in dev, NonConsumable→no-ads flag, duplicate order guard, purchase-limit enforcement |
+| `CurrencyServiceTests.cs` | `CurrencyServiceTests` | Soft currency read/grant/spend: lazy-row read returns 0 (not null), stored balance read, grant new-balance+delta, spend deduct+delta, insufficient throws — locks the balance the client mirrors (guards "보유 재화 0") |
 | `TutorialServiceTests.cs` | `TutorialServiceTests` | Tutorial progress get/complete persistence |
 | `FakeStaticData.cs` | `FakeStaticData` | Shared `IStaticDataService` test fake; safe empty/null defaults, override per test |
 | `CosmeticServiceTests.cs` | `CosmeticServiceTests` | Cosmetic gold unlock, condition unlock, equip validation |

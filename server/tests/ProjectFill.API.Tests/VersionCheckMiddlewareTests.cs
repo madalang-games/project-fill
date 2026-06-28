@@ -67,6 +67,11 @@ public sealed class VersionCheckMiddlewareTests
             {
                 VerifyMode = "mock",
             },
+            GooglePlay = new ProjectFillConfiguration.GooglePlayOptions
+            {
+                PackageName = "",
+                ServiceAccountJson = "",
+            },
             App = new ProjectFillConfiguration.AppOptions
             {
                 ClientId = "project-fill",

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using ProjectFill.Application.Common;
 using ProjectFill.Application.Currency;
 using ProjectFill.Application.Logging;
@@ -19,17 +20,25 @@ namespace ProjectFill.Application.Iap;
 
 public sealed class IapService
 {
+    private const string PlatformMock = "mock";
+
     private readonly AppDbContext _db;
     private readonly RewardService _rewards;
     private readonly CurrencyService _currency;
     private readonly IStaticDataService _staticData;
+    private readonly GooglePlayVerifier _googlePlay;
+    private readonly bool _allowMock;
 
-    public IapService(AppDbContext db, RewardService rewards, CurrencyService currency, IStaticDataService staticData)
+    public IapService(AppDbContext db, RewardService rewards, CurrencyService currency, IStaticDataService staticData, GooglePlayVerifier googlePlay, IConfiguration config)
     {
         _db = db;
         _rewards = rewards;
         _currency = currency;
         _staticData = staticData;
+        _googlePlay = googlePlay;
+        // Mock receipts (client-trusted, no store verification) are allowed only outside production,
+        // so a forged request can never bypass real store verification in prod.
+        _allowMock = !(config["Game:Environment"] ?? string.Empty).StartsWith("prod", StringComparison.OrdinalIgnoreCase);
     }
 
     public async Task<VerifyIapResponse> VerifyIapAsync(
@@ -44,10 +53,27 @@ public sealed class IapService
         if (!product.IsEnabled)
             throw new GameApiException(ErrorCodes.InvalidProduct, "product not available");
 
+        // Resolve the store-authoritative order id BEFORE opening the transaction so the external
+        // store call never holds a DB transaction open. Mock trusts the client id (non-prod only);
+        // real platforms verify the receipt with the store and derive the id + token from it.
+        string orderId;
+        string purchaseToken;
+        if (request.Platform == PlatformMock)
+        {
+            if (!_allowMock)
+                throw new GameApiException(ErrorCodes.IapVerificationFailed, "mock platform is not allowed in production");
+            orderId       = request.OrderId;
+            purchaseToken = request.PurchaseToken;
+        }
+        else
+        {
+            (orderId, purchaseToken) = await _googlePlay.VerifyAndAcknowledgeAsync(product.StoreProductId, request.RawReceipt, ct);
+        }
+
         await using var tx = await _db.Database.BeginTransactionAsync(ct);
 
         var exists = await _db.IapPurchases.Query()
-            .AnyAsync(x => x.Platform == request.Platform && x.OrderId == request.OrderId, ct);
+            .AnyAsync(x => x.Platform == request.Platform && x.OrderId == orderId, ct);
         if (exists)
             throw new GameApiException(ErrorCodes.DuplicateOrder, "duplicate order");
 
@@ -58,9 +84,9 @@ public sealed class IapService
             PurchaseId = Guid.NewGuid().ToString(),
             UserId = userId,
             InfoId = product.InfoId,
-            ProductId = request.StoreProductId,
-            OrderId = request.OrderId,
-            PurchaseToken = request.PurchaseToken,
+            ProductId = product.StoreProductId,
+            OrderId = orderId,
+            PurchaseToken = purchaseToken,
             Price = request.Price,
             Currency = request.Currency,
             Status = "COMPLETED",
@@ -74,16 +100,20 @@ public sealed class IapService
         var (granted, currency) = await _rewards.GrantRewardGroupAsync(
             userId, product.RewardGroupId, 1, correlationId, ct);
 
+        // A non-consumable purchase (e.g. remove-ads) flips the persistent no-ads flag.
+        var player = await _db.Players.FindAsync(userId, ct);
+        if (product.ProductType == IapProductType.NonConsumable && player != null && !player.IsNoAds)
+            player.IsNoAds = true;
+
         await IncrementPurchaseCountAsync(userId, product, ct);
 
         _db.EventLogs.Insert(EventLogFactory.IapPurchaseCompleted(
             userId, correlationId, product.InfoId, product.StoreProductId,
-            request.OrderId, request.Price, request.Currency));
+            orderId, request.Price, request.Currency));
 
         await _db.SaveAsync(ct);
         await tx.CommitAsync(ct);
 
-        var player = await _db.Players.FindAsync(userId, ct);
         var currentGold = currency?.SoftAmount ?? (await _currency.GetAsync(userId, ct)).SoftAmount;
         int? remaining = GetRemainingPurchases(product, await GetPurchaseCountAsync(userId, product.InfoId, ct));
 
