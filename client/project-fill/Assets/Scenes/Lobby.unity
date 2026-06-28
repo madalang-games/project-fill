@@ -426,7 +426,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 143147786038171949, guid: 5755d70de05ec024d976577cf0431d67, type: 3}
       propertyPath: m_fontSize
-      value: 32
+      value: 25.3
       objectReference: {fileID: 0}
     - target: {fileID: 143147786038171949, guid: 5755d70de05ec024d976577cf0431d67, type: 3}
       propertyPath: m_fontColor.b
@@ -710,7 +710,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1090273669517217060, guid: 5755d70de05ec024d976577cf0431d67, type: 3}
       propertyPath: m_fontSize
-      value: 32
+      value: 24
       objectReference: {fileID: 0}
     - target: {fileID: 1253157768525098815, guid: 5755d70de05ec024d976577cf0431d67, type: 3}
       propertyPath: m_AnchorMax.x
@@ -810,7 +810,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1823184639497460961, guid: 5755d70de05ec024d976577cf0431d67, type: 3}
       propertyPath: m_fontSize
-      value: 32
+      value: 24
       objectReference: {fileID: 0}
     - target: {fileID: 1839812626461678120, guid: 5755d70de05ec024d976577cf0431d67, type: 3}
       propertyPath: m_AnchoredPosition.y
@@ -898,7 +898,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2438625369022119412, guid: 5755d70de05ec024d976577cf0431d67, type: 3}
       propertyPath: m_fontSize
-      value: 32
+      value: 28.95
       objectReference: {fileID: 0}
     - target: {fileID: 2438625369022119412, guid: 5755d70de05ec024d976577cf0431d67, type: 3}
       propertyPath: m_isOrthographic
@@ -1222,7 +1222,7 @@ PrefabInstance:
       objectReference: {fileID: 4298312565922505745, guid: 0d74e3218f123934cbc2886fb93e0b19, type: 3}
     - target: {fileID: 4192047359794786537, guid: 5755d70de05ec024d976577cf0431d67, type: 3}
       propertyPath: m_fontSize
-      value: 32
+      value: 24
       objectReference: {fileID: 0}
     - target: {fileID: 4388459027293575464, guid: 5755d70de05ec024d976577cf0431d67, type: 3}
       propertyPath: m_Spacing
@@ -1918,7 +1918,7 @@ PrefabInstance:
       objectReference: {fileID: 21300000, guid: 1e9ede19ddb7f6f4eb385ce4e5e5b1bb, type: 3}
     - target: {fileID: 7834445298320401708, guid: 5755d70de05ec024d976577cf0431d67, type: 3}
       propertyPath: m_fontSize
-      value: 32
+      value: 24
       objectReference: {fileID: 0}
     - target: {fileID: 7834445298320401708, guid: 5755d70de05ec024d976577cf0431d67, type: 3}
       propertyPath: m_sharedMaterial
@@ -2008,6 +2008,14 @@ PrefabInstance:
       propertyPath: _stageNodePrefab
       value: 
       objectReference: {fileID: 1370778957462403263, guid: 26ec8bad348adcc45b1422b4d029c48a, type: 3}
+    - target: {fileID: 9003685790689870415, guid: 5755d70de05ec024d976577cf0431d67, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 900
+      objectReference: {fileID: 0}
+    - target: {fileID: 9003685790689870415, guid: 5755d70de05ec024d976577cf0431d67, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 80
+      objectReference: {fileID: 0}
     - target: {fileID: 9003912985631789970, guid: 5755d70de05ec024d976577cf0431d67, type: 3}
       propertyPath: m_AnchorMax.x
       value: 0
