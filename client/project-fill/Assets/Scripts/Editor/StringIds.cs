@@ -32,6 +32,7 @@ namespace Game.Editor
         public const string CommonGold = "common.gold";
         public const string CommonBtnUnlock = "common.btn_unlock";
         public const string CommonBtnSwitch = "common.btn_switch";
+        public const string CommonBtnExit = "common.btn_exit";
 
         // error
         public const string ErrorNetworkCheck = "error.network_check";
@@ -74,6 +75,7 @@ namespace Game.Editor
         public const string PopupStageInfoTitle = "popup.stage_info.title";
         public const string PopupStageInfoBestMoves = "popup.stage_info.best_moves";
         public const string PopupStageInfoNoRecord = "popup.stage_info.no_record";
+        public const string PopupStageInfoBestNone = "popup.stage_info.best_none";
         public const string PopupStageInfoOwnedItems = "popup.stage_info.owned_items";
         public const string PopupStageInfoItemCountFmt = "popup.stage_info.item_count_fmt";
         public const string PopupResultFailed = "popup.result.failed";
@@ -128,6 +130,7 @@ namespace Game.Editor
         public const string PopupStageInfoDifficultyEasy = "popup.stage_info.difficulty_easy";
         public const string PopupStageInfoDifficultyNormal = "popup.stage_info.difficulty_normal";
         public const string PopupStageInfoDifficultyHard = "popup.stage_info.difficulty_hard";
+        public const string PopupStageInfoDifficultyFmt = "popup.stage_info.difficulty_fmt";
         public const string PopupStageInfoTypesFmt = "popup.stage_info.types_fmt";
         public const string PopupFailBtnAddLane = "popup.fail.btn_add_lane";
         public const string PopupFailBtnShuffle = "popup.fail.btn_shuffle";
@@ -146,6 +149,8 @@ namespace Game.Editor
         public const string PopupBoosterBuyTitle = "popup.booster_buy.title";
         public const string PopupBoosterBuyBodyFmt = "popup.booster_buy.body_fmt";
         public const string PopupAttendanceClaimedToday = "popup.attendance.claimed_today";
+        public const string PopupExitTitle = "popup.exit.title";
+        public const string PopupExitBody = "popup.exit.body";
 
         // toast
         public const string ToastAccountAlreadyActive = "toast.account_already_active";
@@ -418,6 +423,7 @@ namespace Game.Editor
         public const string GimmickRelayNodeDesc = "gimmick.relay_node.desc";
         public const string GimmickOverloadChipName = "gimmick.overload_chip.name";
         public const string GimmickOverloadChipDesc = "gimmick.overload_chip.desc";
+        public const string GimmickSectionHeader = "gimmick.section_header";
 
         // event
         public const string EventWmStage10Name = "event.wm.stage10.name";
