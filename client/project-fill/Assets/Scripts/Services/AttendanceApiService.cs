@@ -35,7 +35,7 @@ namespace Game.Services
                 if (!ok) { onError?.Invoke(result); return; }
                 var json = JsonUtility.FromJson<AttendanceClaimResponseJson>(result);
                 var response = json.ToContract();
-                if (response?.Currency != null)
+                if (json?.currency != null) // raw field is null when server omits currency; central guard skips empty 0/0
                     CurrencyApiService.Instance?.UpdateGold(response.Currency);
                 onSuccess?.Invoke(response);
             });

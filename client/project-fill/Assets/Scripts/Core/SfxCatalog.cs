@@ -11,7 +11,7 @@ namespace Game.Core
         RewardClaimed,
         StageClear,
         StageFail,
-        CellGroupRemoved,
+        LaneSelected,
         BoardRotated,
         ToastError,
         ItemUsed,

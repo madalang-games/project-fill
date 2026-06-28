@@ -18,7 +18,7 @@ namespace Game.Core
         public const string WebTermsPath                = "/terms"; // 이용약관 경로
 
         // Google OAuth 2.0 web client ID — Google Cloud Console > APIs & Services > Credentials
-        public const string GoogleWebClientId           = "598353589064-au43ludi2ej1kqr9umvg9nab5ugltoqs.apps.googleusercontent.com";
+        public const string GoogleWebClientId           = "598353589064-33klnpsljo3sia08kaineica4dfpknsg.apps.googleusercontent.com";
 
         // Google Mobile Ads App IDs
         public const string AdMobAndroidAppIdFree       = "ca-app-pub-5332715773102134/8364681531";

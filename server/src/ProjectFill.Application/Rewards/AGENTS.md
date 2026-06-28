@@ -8,7 +8,8 @@
 | `IAdRewardVerifier.cs` | `IAdRewardVerifier`, `AdVerifyResult` | Provider reward verification boundary |
 | `DevelopmentAdRewardVerifier.cs` | `DevelopmentAdRewardVerifier` | Legacy/test verifier; not registered by default |
 | `AdMobSsvKeyCache.cs` | `AdMobSsvKeyCache` | IHostedService; fetches Google ECDSA public keys hourly |
-| `AdMobSsvCallbackService.cs` | `AdMobSsvCallbackService` | Processes AdMob SSV callback: verifies ECDSA, stores Redis ssv:{nonce}=txid |
+| `AdMobSsvCallbackService.cs` | `AdMobSsvCallbackService` | Processes AdMob SSV callback: verifies ECDSA, stores Redis ssv:{nonce}=txid (TTL 24h), then triggers `AdRewardGrantCoordinator.TryGrantPendingAsync`; logs accept/reject reason + grant outcome |
+| `AdRewardGrantCoordinator.cs` | `AdRewardGrantCoordinator`, `AdGrantOutcome` | Shared grant dispatcher (Model B); grants pending_claim:{nonce} by placement (AddLane via `AdRewardService`, DoubleReward via `AdDoubleRewardService`), idempotent; used by SSV callback + status endpoint |
 | `AdMobSsvVerifier.cs` | `AdMobSsvVerifier` | IAdRewardVerifier impl; `mock` accepts nonblank token, `ssv` consumes Redis nonce |
 
 ## Symbols
@@ -30,6 +31,7 @@
 - `AD_REWARD_VERIFY_MODE=ssv`: `AdMobSsvVerifier` requires a nonce stored by AdMob SSV callback in Redis.
 - `VerifyAsync` consumes the nonce (GETDEL); non-200 responses from SSV callback trigger Google retry.
 - `ProcessAsync` signed message = query (excl. `signature`/`key_id`) with values `Uri.UnescapeDataString`-decoded — Google signs the URL-decoded query, not the raw percent-encoded form; ECDSA verified as DER (`Rfc3279DerSequence`).
+- **Model B (callback-driven grant)** — reward is granted by whichever trigger reaches `AdRewardGrantCoordinator.TryGrantPendingAsync` first (SSV callback or client claim/poll), keyed by nonce, idempotent. SSV callback grants when `pending_claim:{nonce}` exists; never gate reward on the client polling window. `pending_claim` + `ssv` keys TTL 24h. See `conventions/ad-reward-ssv-system.md`.
 
 ## Cross-refs
 - Depends on: `shared/datas/reward/reward_source.csv`

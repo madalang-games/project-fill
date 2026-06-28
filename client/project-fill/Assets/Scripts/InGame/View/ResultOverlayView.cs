@@ -132,6 +132,14 @@ namespace Game.InGame.View
                         },
                         onError: err =>
                         {
+                            // Model B (conventions/ad-reward-ssv-system.md): AD_SSV_PENDING is not a failure —
+                            // the SSV callback grants the reward server-side. Reflect it and pull authoritative gold.
+                            if (ServerErrorCodes.Parse(err) == ServerErrorCodes.AdSsvPending)
+                            {
+                                ApplyDoubled();
+                                CurrencyApiService.Instance?.FetchGold();
+                                return;
+                            }
                             ShowError(err);
                             SetDoubleInteractable(true);
                         });

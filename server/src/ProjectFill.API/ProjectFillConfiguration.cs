@@ -10,6 +10,7 @@ public sealed class ProjectFillConfiguration
     public required RedisOptions Redis { get; init; }
     public required AuthOptions Auth { get; init; }
     public required AdRewardOptions AdReward { get; init; }
+    public required GooglePlayOptions GooglePlay { get; init; }
     public required AppOptions App { get; init; }
     public required RateLimitOptions RateLimit { get; init; }
     public required DevOptions Dev { get; init; }
@@ -44,6 +45,11 @@ public sealed class ProjectFillConfiguration
             {
                 VerifyMode = EnvOneOfRequired("AD_REWARD_VERIFY_MODE", "ssv", "mock")
             },
+            GooglePlay = new GooglePlayOptions
+            {
+                PackageName       = EnvOptional("GOOGLE_PLAY_PACKAGE_NAME") ?? string.Empty,
+                ServiceAccountJson = EnvOptional("GOOGLE_PLAY_SERVICE_ACCOUNT_JSON") ?? string.Empty
+            },
             App = new AppOptions
             {
                 ClientId = EnvRequired("APP_CLIENT_ID"),
@@ -75,6 +81,9 @@ public sealed class ProjectFillConfiguration
         configuration["Jwt:Issuer"] = Auth.JwtIssuer;
         configuration["Jwt:Audience"] = Auth.JwtAudience;
         configuration["AdReward:VerifyMode"] = AdReward.VerifyMode;
+        configuration["Game:Environment"] = GameEnvironment;
+        configuration["GooglePlay:PackageName"] = GooglePlay.PackageName;
+        configuration["GooglePlay:ServiceAccountJson"] = GooglePlay.ServiceAccountJson;
         configuration["App:ClientId"] = App.ClientId;
         configuration["App:AllowedClientVersion"] = App.AllowedClientVersion;
         configuration["App:RequiredClientVersion"] = App.RequiredClientVersion;
@@ -110,6 +119,14 @@ public sealed class ProjectFillConfiguration
     public sealed class AdRewardOptions
     {
         public required string VerifyMode { get; init; }
+    }
+
+    public sealed class GooglePlayOptions
+    {
+        // Optional: empty until Google Play IAP verification is configured.
+        // GooglePlayVerifier rejects real (non-mock) receipts with IAP_VERIFICATION_FAILED if unset.
+        public required string PackageName { get; init; }
+        public required string ServiceAccountJson { get; init; }
     }
 
     public sealed class AppOptions

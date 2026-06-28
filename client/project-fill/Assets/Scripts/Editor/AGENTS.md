@@ -15,7 +15,7 @@
 | `UISpecInterpreter.cs` | `UIEditorSetup` (partial) + `UISpec`/`UISpecElement`/`UISpecBinding` | **PROTOTYPE** declarative UI: JSON spec in `UISpecs/` → prefab via existing helpers. One menu builds all specs (adding a popup = adding a JSON file). Flat `panel>children` only; reuses Save + Final-variant path |
 | `FontLocalizationConfigGenerator.cs` | `FontLocalizationConfigGenerator` | [MenuItem] reads tools/subset_tool/config.json → creates FontLocalizationConfig.asset with per-language fonts; sets TMP fallback |
 | `StringIds.cs` | `StringIds` | **AUTO-GENERATED** by `gen:info` from `client_string.csv`; key constants; used by UIEditorSetup via `using static` |
-| `StringCsvPostprocessor.cs` | `StringCsvPostprocessor` | AssetPostprocessor; watches `Data/string/client_string.csv` reimport → calls `LocalizedText.RefreshAllInEditor()`; menu: `Tools/Localization/Refresh Editor Text Preview` |
+| `StringCsvPostprocessor.cs` | `StringCsvPostprocessor` | AssetPostprocessor; watches `data/string/client_string.csv` reimport → calls `LocalizedText.RefreshAllInEditor()`; menu: `Tools/Localization/Refresh Editor Text Preview` |
 | `UnityStageFileWatcher.cs` | `UnityStageFileWatcher` | [InitializeOnLoad] watches changes to shared `stage.csv` and auto-runs generation scripts |
 | `AdMobEditorSetup.cs` | `AdMobEditorSetup` | [InitializeOnLoad] automatically ensures GOOGLE_MOBILE_ADS scripting define symbol is set for Android, iOS, and Standalone |
 | `DebugSocketScale.cs` | `DebugSocketScale` | [MenuItem "Tools/UI Setup/Debug Sockets and Cells"] editor-only socket/cell scale debug helper |
@@ -73,12 +73,12 @@
 | `UIEditorSetup.CreateFailOverlay()` | method | [MenuItem ".../FailOverlay"] stuck-rescue overlay: AddLane(ad + "Watch Ad" badge)/Retry(CTA)+Forfeit(danger). **No Shuffle button / ShuffleConfirmPanel** (gold rescue removed). Wires `FailOverlayView` refs `_titleText`/`_addLaneRow`/`_addLaneButton`/`_retryButton`/`_forfeitButton`. AddLane button has no icon; AdBadge image is inspector-assigned (not `dynamic_resource`) |
 | `UIEditorSetup.AddButtonIcon(btn,key,resMap)` | method | Adds a left-aligned non-raycast icon Image to a wide button from a `dynamic_resource` sprite key |
 | `UIEditorSetup.CreateItemTooltip()` | method | Creates `ItemTooltipView.prefab` skeleton in Base/Common; missing Resources/Prefabs/UI variant is created automatically |
-| `UIEditorSetup.MakeGimmickBadge(parent,name,spritePath)` | method | Builds a 96×96 icon badge (sprite from `Assets/Sprites/UI/Icons/`) with `LongPressTooltipTrigger`; used by StageInfoPopup gimmick row |
+| `UIEditorSetup.MakeGimmickBadge(parent,name,spritePath)` | method | Builds a 96×96 icon badge (sprite from `Assets/Sprites/UI/Icons/`) with `LongPressTooltipTrigger`; used by StageInfoPopup "Special Rules" gimmick row |
 | `UIEditorSetup.RegisterTutorialTarget(go, ids)` | method | Attaches `TutorialTarget` and sets `_targetIds` (tutorial_step.csv `target_ui_id`) via SerializedObject; SetupInGame registers `hud_moves_count` (MovesText) + `booster_bar` (BoosterBar) |
 | `UIEditorSetup.CreateVariantIfMissing()` | method | Creates Final prefab variants from Base prefabs; skips when target variant already exists |
 | `UIEditorSetup.MapHierarchyImageSprite()` | method | Maps a sprite key from resMap to an Image at `childPath` inside a loaded prefab |
 | `UIEditorSetup.TMP(parent, name, rect, size, color, text, stringId, category)` | method | Creates TMP_Text with LocalizedText + UITextStyle; sizing via `ApplyAutoFontSize(tmp, category)` (see font size rules). `size` arg is legacy/unused for sizing — `category` drives the max |
-| `UIEditorSetup.ApplyAutoFontSize(tmp, category)` | method | Single enforcement point of the readability convention: `enableAutoSizing=true`, `fontSizeMin=32`, `fontSizeMax` by category (Header 72 / Button 56 / Normal 40), `fontSize=max`. MANDATORY for every TMP incl. hand-built. `TMP_InputField` is the sole exception (inline fixed min=max=32). No text may have autosize off or any size <32 |
+| `UIEditorSetup.ApplyAutoFontSize(tmp, category)` | method | Single enforcement point of the readability convention: `enableAutoSizing=true`, `fontSizeMin=24`, `fontSizeMax` by category (Header 72 / Button 56 / Normal 40), `fontSize=max`. MANDATORY for every TMP incl. hand-built. `TMP_InputField` is the sole exception (inline fixed min=max=32). No text may have autosize off or any size <24 |
 | `FontLocalizationConfigGenerator.Generate()` | method | [MenuItem "Tools/Localization/Generate Font Config"] creates FontLocalizationConfig.asset from config.json |
 | `StringIds` | class | All client_string.csv key constants; import with `using static Game.Editor.StringIds` |
 | `UnityStageFileWatcher` | class | Active file system watcher for local hot-reloads |
@@ -94,10 +94,10 @@
 - **Button minimum size**: All buttons must be at least **96×96px**. `Btn()` clamps `size = Max(size, 96)` before layout. `CloseBtnAt()` defaults to 96.
 - **Explicit Close Button**: Every popup and bottom-sheet MUST include a visible square `CloseButton` via `CloseBtnAt()`. Transparent backdrop-only dismiss is NOT sufficient. Place at top-right of panel or top-right of bottom-sheet. Wire to View's close handler field.
 - **Responsive Layout**: Use `Stretch()` for elements that must follow parent size. Use `Fixed()` only for fixed-size content. SafeAreaHandler required on all scene canvases.
-- **Text convention (readability)**: Every `TMP()` call MUST attach `LocalizedText` (stringId) + `UITextStyle`. AutoFontSize is **MANDATORY** and font size is **NEVER below 32px**. All sizing goes through `ApplyAutoFontSize(tmp, category)`:
+- **Text convention (readability)**: Every `TMP()` call MUST attach `LocalizedText` (stringId) + `UITextStyle`. AutoFontSize is **MANDATORY** and font size is **NEVER below 24px**. All sizing goes through `ApplyAutoFontSize(tmp, category)`:
   - `enableAutoSizing = true` — ALWAYS on; no text (incl. hand-built `Comp<TextMeshProUGUI>`) may have it off
-  - `fontSizeMin = 32` — hard readability floor
-  - `fontSizeMax` by `TextCategory`: **Header 72** (titles render large), **Button 56**, **Normal 40**. `fontSize` starts at max and autosize shrinks to fit down to 32
+  - `fontSizeMin = 24` — hard readability floor
+  - `fontSizeMax` by `TextCategory`: **Header 72** (titles render large), **Button 56**, **Normal 40**. `fontSize` starts at max and autosize shrinks to fit down to 24
   - **Hand-built TMP** MUST call `ApplyAutoFontSize(tmp, category)` — never a bare `fontSize`/`fontSizeMin`/`fontSizeMax`. Use `Header` for prominent titles, `Normal` for body/labels
   - **`TMP_InputField`** text + placeholder: sole exception — inline fixed `min=max=32` (autosize on, no resize range so the caret/scroll isn't disturbed)
 - **Button color semantics**:

@@ -1,6 +1,0 @@
-info_id,store_product_id,product_type,name_key,desc_key,price_usd,icon_res,reward_group_id,purchase_limit,reset_period,sort_order,category_id,is_enabled
-1001,no_ads,NonConsumable,shop.iap.no_ads.title,shop.iap.no_ads.desc,1.99,ui_iap_no_ads,5001,1,None,1,1,true
-1002,starter_pack,Consumable,shop.iap.starter.title,shop.iap.starter.desc,4.99,ui_iap_starter,5002,1,None,2,1,true
-1003,bundle_small,Consumable,shop.iap.bundle_small.title,shop.iap.bundle_small.desc,2.99,ui_iap_bundle_small,5004,0,None,1,2,true
-1004,bundle_normal,Consumable,shop.iap.bundle_normal.title,shop.iap.bundle_normal.desc,5.99,ui_iap_bundle_normal,5005,0,None,2,2,true
-1005,bundle_large,Consumable,shop.iap.bundle_large.title,shop.iap.bundle_large.desc,11.99,ui_iap_bundle_large,5006,0,None,3,2,true

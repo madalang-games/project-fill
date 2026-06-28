@@ -12,4 +12,4 @@
 
 ## Cross-refs
 - Consumed by: stage editor (Signal Type color picker), `client/Assets/Scripts/` (Signal Chip renderer)
-- Gen output: `client/Assets/Resources/Data/common/`
+- Gen output: `client/Assets/Resources/data/common/`

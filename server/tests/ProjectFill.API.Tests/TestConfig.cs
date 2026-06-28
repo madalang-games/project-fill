@@ -28,6 +28,7 @@ internal static class TestConfig
                 JwtAudience = "platform-games",
             },
             AdReward = new ProjectFillConfiguration.AdRewardOptions { VerifyMode = "mock" },
+            GooglePlay = new ProjectFillConfiguration.GooglePlayOptions { PackageName = "", ServiceAccountJson = "" },
             App = new ProjectFillConfiguration.AppOptions
             {
                 ClientId = "project-fill",

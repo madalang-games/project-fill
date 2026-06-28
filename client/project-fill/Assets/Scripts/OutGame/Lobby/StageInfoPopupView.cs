@@ -18,7 +18,10 @@ namespace Game.OutGame.Lobby
         [SerializeField] private Button     _backdropButton;
         [SerializeField] private Image      _ribbonImage;
 
-        // Gimmick badges: icon-only, long-press shows ItemTooltipView. Toggled per stage gimmick presence.
+        // "Special Rules" section (header + badge row). Hidden when the stage has no gimmick.
+        [SerializeField] private GameObject _gimmickSection;
+
+        // Gimmick badges: icon-only, long-press shows ItemTooltipView (name + effect). Toggled per stage gimmick presence.
         [SerializeField] private LongPressTooltipTrigger _overloadBadge;
         [SerializeField] private LongPressTooltipTrigger _relayBadge;
         [SerializeField] private LongPressTooltipTrigger _lockLaneBadge;
@@ -60,7 +63,7 @@ namespace Game.OutGame.Lobby
                 // Best moves is the campaign ranking metric (lower is better); 0 = no record yet.
                 _bestRecord.text = bestMoves > 0
                     ? string.Format(Game.Services.LocalizationService.Instance.Get("popup.stage_info.best_moves"), bestMoves)
-                    : "-";
+                    : Game.Services.LocalizationService.Instance.Get("popup.stage_info.best_none");
             }
 
             var stage = StageDataService.Instance?.GetStage(stageId);
@@ -71,16 +74,26 @@ namespace Game.OutGame.Lobby
         private void ApplyStageDetails(int difficulty, ProjectFill.Data.Generated.Stage stage)
         {
             if (_difficultyLabel != null)
-                _difficultyLabel.text = LocalizationService.Instance.Get(DifficultyKey(difficulty));
+                _difficultyLabel.text = string.Format(
+                    LocalizationService.Instance.Get("popup.stage_info.difficulty_fmt"),
+                    LocalizationService.Instance.Get(DifficultyKey(difficulty)));
 
             if (_typesLabel != null && stage != null)
                 _typesLabel.text = string.Format(LocalizationService.Instance.Get("popup.stage_info.types_fmt"), stage.types);
 
             string laneKinds = stage?.lane_kinds ?? string.Empty;
-            SetBadge(_overloadBadge,  stage != null && stage.overload_type != NoOverload, "gimmick.overload_chip.name", "gimmick.overload_chip.desc");
-            SetBadge(_relayBadge,     stage != null && !string.IsNullOrEmpty(stage.relay_order), "gimmick.relay_node.name", "gimmick.relay_node.desc");
-            SetBadge(_lockLaneBadge,  laneKinds.IndexOf(LockedLaneGlyph) >= 0, "gimmick.locked_lane.name", "gimmick.locked_lane.desc");
-            SetBadge(_blindLaneBadge, laneKinds.IndexOf(BlindLaneGlyph)  >= 0, "gimmick.blind_lane.name", "gimmick.blind_lane.desc");
+            bool overload = stage != null && stage.overload_type != NoOverload;
+            bool relay    = stage != null && !string.IsNullOrEmpty(stage.relay_order);
+            bool lockLane = laneKinds.IndexOf(LockedLaneGlyph) >= 0;
+            bool blind    = laneKinds.IndexOf(BlindLaneGlyph)  >= 0;
+            SetBadge(_overloadBadge,  overload, "gimmick.overload_chip.name", "gimmick.overload_chip.desc");
+            SetBadge(_relayBadge,     relay,    "gimmick.relay_node.name",    "gimmick.relay_node.desc");
+            SetBadge(_lockLaneBadge,  lockLane, "gimmick.locked_lane.name",   "gimmick.locked_lane.desc");
+            SetBadge(_blindLaneBadge, blind,    "gimmick.blind_lane.name",    "gimmick.blind_lane.desc");
+
+            // Hide the whole "Special Rules" section (header + row) when this stage has no gimmick.
+            if (_gimmickSection != null)
+                _gimmickSection.SetActive(overload || relay || lockLane || blind);
         }
 
         private static void SetBadge(LongPressTooltipTrigger badge, bool present, string nameKey, string descKey)

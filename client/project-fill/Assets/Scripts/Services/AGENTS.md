@@ -37,6 +37,7 @@ Namespace: `Game.Services`
 | `AttendanceApiService.cs` | `AttendanceApiService` | DDOL singleton; `/api/attendance` status + claim client; syncs gold on claim |
 | `AchievementApiService.cs` | `AchievementApiService` | DDOL singleton; `/api/achievements` list + claim client; syncs gold on claim |
 | `WeeklyMissionApiService.cs` | `WeeklyMissionApiService` | DDOL singleton; `/api/events/weekly-mission` status fetch + `claim/{threshold}`; syncs gold on claim |
+| `IAPService.cs` | `IAPService` | DDOL singleton; `IDetailedStoreListener` Unity Purchasing adapter. Initializes store from enabled IAP catalog, drives `InitiatePurchase`, verifies real store receipt server-side (Pending→ConfirmPendingPurchase, redelivery-safe), retries on `IAP_VERIFY_PENDING`; Editor routes through mock verification; applies gold/items/no-ads to `PlayerProgressService` |
 | `NetworkRetryOptions.cs` | `NetworkRetryOptions` | Options class for HTTP retries with exponential backoff, jitter, loading overlay, and toast messages |
 | `SoundManager.cs` | `SoundManager` | DDOL singleton; BGM + SFX playback; SfxCatalog-based PlaySfx(SfxId) with pitch/cooldown; volume + mute in PlayerPrefs |
 
@@ -120,7 +121,7 @@ Namespace: `Game.Services`
 | `RankingApiService.FetchMyWeeklyRank` | method | GET current user's weekly ranking card (`/api/rankings/weekly/me`) |
 | `RankingApiService.FetchMyStageRank` | method | GET current user's stage rank |
 | `CurrencyApiService.OnGoldChanged` | event | `Action<long, long>` (amount, delta); fires on any server-confirmed gold change |
-| `CurrencyApiService.UpdateGold` | method | Canonical gold setter: calls `PlayerProgressService.SetGold` + fires `OnGoldChanged`; call this from any service receiving `CurrencySnapshot` |
+| `CurrencyApiService.UpdateGold` | method | Canonical gold setter (single chokepoint): calls `PlayerProgressService.SetGold` + fires `OnGoldChanged`; call this from any service receiving `CurrencySnapshot`. Skips an empty/no-op snapshot (`SoftAmount==0 && SoftDelta==0`) so a balance-less response never wipes gold to 0. `authoritative:true` (FetchGold/SpendGold + post-buy/IAP balances) bypasses the skip so a real 0 applies |
 | `CurrencyApiService.FetchGold` | method | GET `/api/currency`; calls `UpdateGold` on success |
 | `CurrencyApiService.SpendGold` | method | POST `/api/currency/spend`; calls `UpdateGold` on success |
 | `InventoryApiService.FetchInventory` | method | GET `/api/inventory`; updates progress cache on success |
@@ -184,6 +185,7 @@ UIManager.Instance?.ShowToast(msg, ToastType.Warning);
 - AdMobService SDK-missing stub must return `null` for rewarded ads; reward success is verified or mocked only server-side.
 - pkt_generator must be run to sync Ad + Currency contracts to Generated/Contracts/ before ad flows work.
 - **NetworkService owns all HTTP transmission**: do NOT add UnityWebRequest code to individual services.
+- **Gold sync = one path only**: route every server-confirmed gold change through `CurrencyApiService.UpdateGold` — never call `PlayerProgressService.SetGold` directly from API callbacks. Guard the call on the **raw parsed JSON** currency field (`if (json.currency != null)`), NOT the mapped contract `response.Currency` (the contract default + `?? new CurrencySnapshot()` fallback make it never-null, so a balance-less response would wipe gold to 0). Use `authoritative:true` only for direct balance reads (FetchGold / post-spend / post-buy / IAP) where a real 0 must apply.
 - NetworkService._enableLogging respects the Inspector value in all environments; disable manually in Prod if log suppression is needed.
 
 ## Cross-refs

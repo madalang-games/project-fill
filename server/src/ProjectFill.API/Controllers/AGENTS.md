@@ -14,7 +14,7 @@
 | `CurrencyController.cs` | `CurrencyController` | `GET /api/currency` balance fetch; `POST /api/currency/spend` soft currency deduct |
 | `TutorialController.cs` | `TutorialController` | `/api/tutorial` progress saving and retrieving endpoints |
 | `PlayerController.cs` | `PlayerController` | `GET /api/player/progress` — unlocked avatars + no-ads state; `POST /api/player/profile` — name/avatar update |
-| `AdRewardsStatusController.cs` | `AdRewardsStatusController` | `/api/ad-rewards/status/{adToken}` polling check for verified SSV rewards |
+| `AdRewardsStatusController.cs` | `AdRewardsStatusController` | `/api/ad-rewards/status/{adToken}` poll; delegates to `AdRewardGrantCoordinator` (reports GRANTED/PENDING, triggers deferred grant) |
 | `InventoryController.cs` | `InventoryController` | `/api/inventory` endpoints for syncing, spending, and buying booster items |
 | `IapController.cs` | `IapController` | `/api/iap` purchase verification and product status listing |
 | `CosmeticController.cs` | `CosmeticController` | `/api/cosmetics` list, gold unlock, and active equip endpoints |

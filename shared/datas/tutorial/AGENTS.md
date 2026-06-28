@@ -38,5 +38,5 @@ Group 1 is interactive: 101 `Select` (tap a lane) + 102 `Move`/`DragPointer` (dr
 - `Tap` steps advance on overlay tap (scene blocked); `Select`/`Move` steps advance on the real board action (scene input passes through).
 
 ## Cross-refs
-- Gen output: `client/project-fill/Assets/Resources/Data/tutorial/tutorial_step.csv` (via `info_generator`)
+- Gen output: `client/project-fill/Assets/Resources/data/tutorial/tutorial_step.csv` (via `info_generator`)
 - Consumed by: `ProjectFill.Data.Generated.TutorialStep`

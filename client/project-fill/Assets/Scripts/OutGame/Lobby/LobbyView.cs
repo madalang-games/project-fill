@@ -21,6 +21,40 @@ namespace Game.OutGame.Lobby
             _navBar.OnTabChanged += ShowTab;
         }
 
+        private void OnEnable()
+        {
+            // Escape on the lobby (no popup open) → app-exit confirm.
+            if (Game.Core.UIManager.Instance != null)
+                Game.Core.UIManager.Instance.SetEscapeHandler(ShowExitConfirm);
+        }
+
+        private void OnDestroy()
+        {
+            if (Game.Core.UIManager.Instance != null)
+                Game.Core.UIManager.Instance.ClearEscapeHandler(ShowExitConfirm);
+        }
+
+        private void ShowExitConfirm()
+        {
+            var loc = LocalizationService.Instance;
+            Game.Core.UIManager.Instance?.ShowPopup<ConfirmDialogView>(p => p.Init(
+                title:        loc != null ? loc.Get("popup.exit.title") : "Exit Game",
+                body:         loc != null ? loc.Get("popup.exit.body")  : "Are you sure you want to exit the game?",
+                confirmLabel: loc != null ? loc.Get("common.btn_exit")  : "Exit",
+                onConfirm:    QuitApp,
+                onCancel:     null,
+                cancelLabel:  loc != null ? loc.Get("common.btn_cancel") : "Cancel",
+                danger:       true));
+        }
+
+        private static void QuitApp()
+        {
+            Application.Quit();
+#if UNITY_EDITOR
+            UnityEditor.EditorApplication.isPlaying = false;
+#endif
+        }
+
         private static bool _attendanceShownThisSession;
 
         private void Start()

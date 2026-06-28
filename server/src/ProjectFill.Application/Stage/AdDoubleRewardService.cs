@@ -75,7 +75,7 @@ public sealed class AdDoubleRewardService
                 RequestJson = System.Text.Json.JsonSerializer.Serialize(new { stageId = request.StageId, attemptId = request.AttemptId }),
                 CorrelationId = correlationId,
             };
-            await _redis.StringSetAsync($"pending_claim:{request.AdToken}", System.Text.Json.JsonSerializer.Serialize(pending), TimeSpan.FromMinutes(5));
+            await _redis.StringSetAsync($"pending_claim:{request.AdToken}", System.Text.Json.JsonSerializer.Serialize(pending), TimeSpan.FromHours(24));
             throw new GameApiException(ErrorCodes.AdSsvPending, "Ad SSV callback not yet received.");
         }
 

@@ -10,6 +10,18 @@ namespace Game.Services
         public const string InvalidStageAttempt = "INVALID_STAGE_ATTEMPT";
         public const string StageAttemptExpired = "STAGE_ATTEMPT_EXPIRED";
 
+        // Rewarded-ad SSV not yet verified. Model B: the SSV callback grants the reward server-side,
+        // so the client treats this as pending-success (not a failure). See conventions/ad-reward-ssv-system.md.
+        public const string AdSsvPending = "AD_SSV_PENDING";
+
+        // IAP verification transiently unreachable (store/Google API outage). The purchase may be
+        // valid; the client retries verification a few times behind the loading overlay before failing.
+        public const string IapVerifyPending = "IAP_VERIFY_PENDING";
+
+        // Receipt already redeemed server-side. The grant happened on a prior attempt; the client
+        // still confirms the pending store transaction so it stops being redelivered.
+        public const string DuplicateOrder = "DUPLICATE_ORDER";
+
         // Extracts the error code from a server failure body ({"code":"..."}); falls back to the raw text.
         public static string Parse(string errOrJson)
         {

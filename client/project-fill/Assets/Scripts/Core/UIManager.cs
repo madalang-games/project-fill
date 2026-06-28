@@ -23,6 +23,10 @@ namespace Game.Core
         private readonly Stack<GameObject> _popupStack = new Stack<GameObject>();
         private GameObject _currentOverlay;
 
+        // Scene-supplied escape handler invoked only when no popup is open (empty stack).
+        // Scenes register their per-scene behavior (InGame → Pause, Lobby → Exit confirm).
+        private Action _escapeFallback;
+
         private void Awake()
         {
             if (Instance != null) { Destroy(gameObject); return; }
@@ -34,10 +38,27 @@ namespace Game.Core
 
         private void Update()
         {
-            if (Keyboard.current != null &&
-                Keyboard.current.escapeKey.wasPressedThisFrame &&
-                _popupStack.Count > 0)
-                CloseTopPopup();
+            if (!EscapePressedThisFrame()) return;
+            if (_popupStack.Count > 0) { CloseTopPopup(); return; }
+            _escapeFallback?.Invoke();
+        }
+
+        // Esc / cancel this frame. New Input System covers desktop Esc; legacy Input (Active Input
+        // Handling = Both) reliably reports the Android hardware back button, which the New Input
+        // System does not surface on touch-only devices (no Keyboard device until first key).
+        private static bool EscapePressedThisFrame()
+        {
+            if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame) return true;
+            return Input.GetKeyDown(KeyCode.Escape);
+        }
+
+        // Register the escape behavior used when no popup is open. Last caller wins.
+        public void SetEscapeHandler(Action onEscape) => _escapeFallback = onEscape;
+
+        // Clear only if the caller still owns the handler (scene teardown order-safe).
+        public void ClearEscapeHandler(Action onEscape)
+        {
+            if (_escapeFallback == onEscape) _escapeFallback = null;
         }
 
         public T ShowPopup<T>(Action<T> onInit = null) where T : MonoBehaviour

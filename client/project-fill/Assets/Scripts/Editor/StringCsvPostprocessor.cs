@@ -6,7 +6,7 @@ namespace Game.Editor
 {
     class StringCsvPostprocessor : AssetPostprocessor
     {
-        private const string WatchPath = "Assets/Resources/Data/string/client_string.csv";
+        private const string WatchPath = "Assets/Resources/data/string/client_string.csv";
 
         static void OnPostprocessAllAssets(
             string[] importedAssets, string[] deletedAssets,

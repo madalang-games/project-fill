@@ -1,0 +1,123 @@
+<en-US>
+The Store goes live, watch-and-earn rewards arrive, and play feels smoother!
+
+• In-app Store is live — purchase gold and cosmetics safely
+• Watch ads to earn rewards — grab extra gold whenever you want
+• Clearer Stage Info with a dedicated special-rules section
+• Smoother back & exit controls, in-game sound, and reliable gold balance
+</en-US>
+<ko-KR>
+상점 정식 오픈, 광고 보상 추가, 더 매끄러운 플레이!
+
+• 인앱 상점 오픈 — 골드와 코스메틱을 안전하게 구매
+• 광고 보상 추가 — 원할 때 추가 골드 획득
+• 스테이지 정보 개선 — 특수 규칙 섹션 신설로 한눈에
+• 뒤로가기·종료 조작 개선, 인게임 사운드, 안정적인 골드 잔액
+</ko-KR>
+<zh-CN>
+商店正式上线，新增看广告得奖励，玩法更顺畅！
+
+• 内购商店上线 —— 安全购买金币与装扮
+• 观看广告得奖励 —— 随时领取额外金币
+• 关卡信息更清晰 —— 新增特殊规则专区
+• 优化返回与退出操作、加入游戏内音效、金币余额更稳定
+</zh-CN>
+<zh-TW>
+商店正式上線，新增看廣告得獎勵，玩法更順暢！
+
+• 內購商店上線 —— 安全購買金幣與裝扮
+• 觀看廣告得獎勵 —— 隨時領取額外金幣
+• 關卡資訊更清晰 —— 新增特殊規則專區
+• 優化返回與退出操作、加入遊戲內音效、金幣餘額更穩定
+</zh-TW>
+<ja-JP>
+ショップが正式オープン、広告報酬が登場、プレイがより快適に！
+
+• アプリ内ショップ開始 — ゴールドやコスメを安全に購入
+• 広告を見て報酬獲得 — いつでも追加ゴールドをゲット
+• ステージ情報を改善 — 特殊ルール専用セクションを新設
+• 戻る・終了操作の改善、ゲーム内サウンド、安定したゴールド残高
+</ja-JP>
+<ru-RU>
+Магазин открыт, появились награды за просмотр рекламы, игра стала плавнее!
+
+• Встроенный магазин запущен — безопасная покупка золота и косметики
+• Награды за рекламу — получайте дополнительное золото в любой момент
+• Понятнее информация об уровне — отдельный раздел особых правил
+• Удобнее кнопки «назад» и выхода, звук в игре и стабильный баланс золота
+</ru-RU>
+<es-ES>
+¡La tienda abre, llegan recompensas por ver anuncios y todo va más fluido!
+
+• Tienda integrada disponible: compra oro y cosméticos de forma segura
+• Mira anuncios para ganar recompensas: oro extra cuando quieras
+• Información de nivel más clara con una sección de reglas especiales
+• Controles de retroceso y salida mejorados, sonido en juego y saldo de oro fiable
+</es-ES>
+<pt-PT>
+A loja abre, chegam recompensas por ver anúncios e o jogo fica mais fluido!
+
+• Loja integrada disponível — compra ouro e cosméticos em segurança
+• Vê anúncios para ganhar recompensas — ouro extra quando quiseres
+• Informação de nível mais clara com uma secção de regras especiais
+• Controlos de voltar e sair melhorados, som no jogo e saldo de ouro fiável
+</pt-PT>
+<fr-FR>
+La boutique ouvre, des récompenses publicitaires arrivent et le jeu est plus fluide !
+
+• Boutique intégrée disponible — achetez de l'or et des cosmétiques en toute sécurité
+• Regardez des pubs pour gagner des récompenses — de l'or bonus à la demande
+• Infos de niveau plus claires avec une section de règles spéciales
+• Commandes retour et sortie améliorées, son en jeu et solde d'or fiable
+</fr-FR>
+<de-DE>
+Der Shop öffnet, Belohnungen fürs Werbeschauen kommen, und das Spiel läuft runder!
+
+• In-App-Shop verfügbar – kaufe Gold und Kosmetik sicher
+• Werbung ansehen und Belohnungen erhalten – Extra-Gold jederzeit
+• Übersichtlichere Level-Infos mit eigenem Bereich für Spezialregeln
+• Bessere Zurück- und Beenden-Steuerung, Sound im Spiel und stabiler Goldstand
+</de-DE>
+<th>
+ร้านค้าเปิดอย่างเป็นทางการ เพิ่มรางวัลจากการดูโฆษณา และเล่นลื่นไหลขึ้น!
+
+• ร้านค้าในแอปเปิดแล้ว — ซื้อทองและไอเทมแต่งตัวอย่างปลอดภัย
+• ดูโฆษณารับรางวัล — รับทองเพิ่มได้ทุกเมื่อ
+• ข้อมูลด่านชัดเจนขึ้น เพิ่มส่วนกฎพิเศษโดยเฉพาะ
+• ปรับปุ่มย้อนกลับและออกให้ดีขึ้น เพิ่มเสียงในเกม และยอดทองที่เสถียร
+</th>
+<ar>
+المتجر يفتح رسميًا، ومكافآت مشاهدة الإعلانات تصل، واللعب أصبح أكثر سلاسة!
+
+• متجر داخل التطبيق متاح الآن — اشترِ الذهب والأزياء بأمان
+• شاهد الإعلانات لتربح المكافآت — احصل على ذهب إضافي وقتما تشاء
+• معلومات أوضح للمرحلة مع قسم مخصص للقواعد الخاصة
+• تحكم أفضل في الرجوع والخروج، وصوت داخل اللعبة، ورصيد ذهب موثوق
+</ar>
+<it-IT>
+Il negozio apre, arrivano ricompense guardando le pubblicità e il gioco è più fluido!
+
+• Negozio in-app disponibile — acquista oro e cosmetici in sicurezza
+• Guarda le pubblicità per ottenere ricompense — oro extra quando vuoi
+• Info livello più chiare con una sezione dedicata alle regole speciali
+• Controlli di ritorno e uscita migliorati, audio in gioco e saldo oro affidabile
+</it-IT>
+<tr-TR>
+Mağaza açılıyor, reklam izleyip ödül kazanma geliyor ve oyun daha akıcı!
+
+• Uygulama içi mağaza açıldı — altın ve kozmetikleri güvenle satın al
+• Reklam izleyip ödül kazan — istediğin zaman ek altın
+• Daha net Aşama Bilgisi, özel kurallar için ayrı bölüm
+• Geliştirilmiş geri ve çıkış kontrolleri, oyun içi ses ve güvenilir altın bakiyesi
+</tr-TR>
+<id>
+Toko resmi dibuka, hadiah dari menonton iklan hadir, dan permainan terasa lebih mulus!
+
+• Toko dalam aplikasi tersedia — beli emas dan kosmetik dengan aman
+• Tonton iklan untuk dapat hadiah — emas ekstra kapan pun kamu mau
+• Info Level lebih jelas dengan bagian aturan khusus tersendiri
+• Kontrol kembali & keluar yang lebih mulus, suara dalam game, dan saldo emas yang andal
+</id>
+
+---
+Commit: 9dfe2c7988312daed209007f2e475f3b359c1195

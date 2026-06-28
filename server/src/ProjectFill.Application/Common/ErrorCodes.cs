@@ -30,6 +30,8 @@ public static class ErrorCodes
     public const string DuplicateOrder        = "DUPLICATE_ORDER";
     public const string InvalidProduct        = "INVALID_PRODUCT";
     public const string PurchaseLimitReached  = "PURCHASE_LIMIT_REACHED";
+    public const string IapVerificationFailed = "IAP_VERIFICATION_FAILED";
+    public const string IapVerifyPending      = "IAP_VERIFY_PENDING";
 
     // --- Stage ---
     public const string StageNotFound        = "STAGE_NOT_FOUND";

@@ -34,8 +34,9 @@ namespace Game.Services
             NetworkService.Instance.Post($"/api/events/weekly-mission/claim/{threshold}", "{}", (ok, result) =>
             {
                 if (!ok) { onError?.Invoke(result); return; }
-                var response = JsonUtility.FromJson<ClaimWeeklyMissionResponseJson>(result).ToContract();
-                if (response?.Currency != null)
+                var json = JsonUtility.FromJson<ClaimWeeklyMissionResponseJson>(result);
+                var response = json.ToContract();
+                if (json?.currency != null) // raw field is null when server omits currency; central guard skips empty 0/0
                     CurrencyApiService.Instance?.UpdateGold(response.Currency);
                 onSuccess?.Invoke(response);
             });

@@ -1992,9 +1992,16 @@ namespace Game.Editor
             var difficulty = TMP(panel, "DifficultyText", Center(0, 60, 600, 50), 18, UI_TEXT, "Normal", null, TextCategory.Normal);
             var types      = TMP(panel, "TypesText",      Center(0, 10, 600, 50), 18, UI_TEXT, "Signal Types: 4", null, TextCategory.Normal);
 
-            // Gimmick badge row: icon-only, long-press → ItemTooltipView. Inactive badges auto-collapse via HLG.
-            var gimmickRow = Child(panel, "GimmickRow");
-            Fixed(gimmickRow, new Vector2(0, -95), new Vector2(600, 110));
+            // "Special Rules" section: header + gimmick badge row. StageInfoPopupView hides the whole
+            // section when the stage has no gimmick, so an empty stage shows no orphan header.
+            var gimmickSection = Child(panel, "GimmickSection");
+            Fixed(gimmickSection, new Vector2(0, -100), new Vector2(620, 170));
+            TMP(gimmickSection, "SectionHeader", Center(0, 60, 600, 36), 22, UI_CTA, "Special Rules", GimmickSectionHeader, TextCategory.Header);
+
+            // Gimmick badge row: icon-only, long-press → full effect via ItemTooltipView (name + desc).
+            // Inactive badges auto-collapse via HLG.
+            var gimmickRow = Child(gimmickSection, "GimmickRow");
+            Fixed(gimmickRow, new Vector2(0, -30), new Vector2(600, 110));
             var hlg = Comp<HorizontalLayoutGroup>(gimmickRow);
             hlg.spacing = 16; hlg.childAlignment = TextAnchor.MiddleCenter;
             hlg.childControlWidth = false; hlg.childControlHeight = false;
@@ -2013,6 +2020,7 @@ namespace Game.Editor
 
             var so = new SerializedObject(root.GetComponent<StageInfoPopupView>());
             so.FindProperty("_stageTitle").objectReferenceValue       = title;
+            so.FindProperty("_gimmickSection").objectReferenceValue   = gimmickSection;
             so.FindProperty("_bestRecord").objectReferenceValue       = best;
             so.FindProperty("_difficultyLabel").objectReferenceValue  = difficulty;
             so.FindProperty("_typesLabel").objectReferenceValue       = types;
@@ -2889,9 +2897,9 @@ namespace Game.Editor
 
         /// <summary>
         /// Readability convention (MANDATORY for every TMP): AutoFontSize is ALWAYS on, min font
-        /// size is 32 (never smaller), and `category` drives the max so titles render large:
-        /// Header 32–72, Button 32–56, Normal 32–40. fontSize starts at max and shrinks to fit
-        /// down to 32. Call for hand-built TMP too (TMP_InputField is the only exception — it uses
+        /// size is 24 (never smaller), and `category` drives the max so titles render large:
+        /// Header 24–72, Button 24–56, Normal 24–40. fontSize starts at max and shrinks to fit
+        /// down to 24. Call for hand-built TMP too (TMP_InputField is the only exception — it uses
         /// a fixed min=max size inline to avoid caret/scroll glitches).
         /// </summary>
         static void ApplyAutoFontSize(TMP_Text tmp, TextCategory category)
@@ -2905,7 +2913,7 @@ namespace Game.Editor
                 default:                  max = 40f; break;
             }
             tmp.enableAutoSizing = true;
-            tmp.fontSizeMin = 32f;
+            tmp.fontSizeMin = 24f;
             tmp.fontSizeMax = max;
             tmp.fontSize    = max;
         }

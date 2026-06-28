@@ -71,6 +71,6 @@ raw response body
 - **Font Subsetting**: After adding/modifying keys in `client_string.csv` or `error_messages.csv`, you must run `tools/info_generator.bat` followed by `tools/subset_fonts.bat` to rebuild font subsets containing the new characters.
 
 ## Cross-refs
-- Gen output: `client/project-fill/Assets/Resources/Data/string/`
+- Gen output: `client/project-fill/Assets/Resources/data/string/`
 - Consumed by: `Game.Services.LocalizationService`
 - Depends on: `tools/subset_tool/config.json` (language list)

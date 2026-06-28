@@ -14,6 +14,12 @@
 # Keep Google Sign-In Java bridge (called via JNI reflection from C#)
 -keep class com.madalang.pixelpop.** { *; }
 
+# Keep Google Play Billing classes (Unity IAP binds them via JNI/AndroidJavaProxy).
+# PurchasesUpdatedListener has no static reference in app code, so release R8
+# strips it -> ClassNotFoundException at UnityPurchasing init -> store never created.
+-keep class com.android.billingclient.** { *; }
+-dontwarn com.android.billingclient.**
+
 # Suppress R8 warnings for Google Mobile Ads next-gen SDK classes
 -dontwarn com.google.android.libraries.ads.mobile.sdk.MobileAds
 -dontwarn com.google.android.libraries.ads.mobile.sdk.appopen.AppOpenAd

@@ -13,7 +13,7 @@ namespace Game.Core.UI
     [RequireComponent(typeof(TMP_Text))]
     public class LocalizedText : MonoBehaviour
     {
-        private const string EditorCsvPath = "Assets/Resources/Data/string/client_string.csv";
+        private const string EditorCsvPath = "Assets/Resources/data/string/client_string.csv";
 
         [SerializeField] private string _stringId;
 
