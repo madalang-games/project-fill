@@ -189,6 +189,7 @@ namespace Game.Editor
         public const string ToastPidCopied = "toast.pid_copied";
         public const string ToastBoosterNeedPurchase = "toast.booster_need_purchase";
         public const string ToastNoSolution = "toast.no_solution";
+        public const string ToastIapPurchaseFailed = "toast.iap_purchase_failed";
 
         // lobby
         public const string LobbyRankingStagesTitle = "lobby.ranking.stages_title";
