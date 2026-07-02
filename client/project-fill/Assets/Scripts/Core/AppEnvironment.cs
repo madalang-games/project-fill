@@ -9,7 +9,7 @@ namespace Game.Core
     public static class AppConfig
     {
         public const string DevGameServerUrl            = "http://localhost:20301"; // 개발 서버 URL
-        public const string ProdGameServerUrl           = "https://popback.madalang.com"; // TODO: 실제 프로덕션 서버 URL로 교체
+        public const string ProdGameServerUrl           = "https://popback.madalang.com"; // 프로덕션 게임 서버 URL
 
         // 약관/정책 웹 페이지 베이스 URL (게임 API 서버와 별개)
         public const string DevWebUrl                   = "http://localhost:20002"; // 개발 웹 URL

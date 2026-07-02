@@ -321,7 +321,7 @@ namespace Game.OutGame.Lobby
                         {
                             var msg = LocalizationService.Instance?.GetError(err);
                             if (string.IsNullOrEmpty(msg) || msg == err)
-                                msg = LocalizationService.Instance?.Get("toast.ad_cancelled");
+                                msg = LocalizationService.Instance?.Get("toast.iap_purchase_failed");
                             UIManager.Instance?.ShowToast(msg, ToastType.Warning);
                             if (err == "ALREADY_OWNED") RefreshUI();
                         }

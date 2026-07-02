@@ -1,0 +1,122 @@
+<en-US>
+Stability polish and clearer feedback for a smoother puzzle experience!
+
+• Purchase errors now show a clear message so you always know what happened
+• Fixed a daily attendance reward showing the wrong avatar
+• Smoother board and chip visuals for cleaner play
+• Various stability fixes from live QA
+</en-US>
+<ko-KR>
+더 매끄러운 퍼즐 경험을 위한 안정화와 명확한 안내!
+
+• 구매 실패 시 명확한 안내 메시지 표시 — 무슨 일인지 바로 확인
+• 출석 보상에 잘못된 아바타가 표시되던 문제 수정
+• 보드와 칩 연출 개선으로 더 깔끔한 플레이
+• 라이브 QA 기반 여러 안정성 개선
+</ko-KR>
+<zh-CN>
+优化稳定性并提供更清晰的提示，让解谜更顺畅！
+
+• 购买失败时显示清晰提示 —— 随时了解发生了什么
+• 修复签到奖励显示错误头像的问题
+• 优化棋盘与棋子表现，玩法更清爽
+• 基于线上 QA 的多项稳定性修复
+</zh-CN>
+<zh-TW>
+優化穩定性並提供更清晰的提示，讓解謎更順暢！
+
+• 購買失敗時顯示清晰提示 —— 隨時了解發生了什麼
+• 修復簽到獎勵顯示錯誤頭像的問題
+• 優化棋盤與棋子表現，玩法更清爽
+• 基於線上 QA 的多項穩定性修復
+</zh-TW>
+<ja-JP>
+より快適なパズル体験のための安定化と分かりやすい案内！
+
+• 購入失敗時に分かりやすいメッセージを表示 — 状況をすぐ確認
+• 出席報酬で誤ったアバターが表示される問題を修正
+• ボードとチップの演出を改善し、よりクリーンなプレイに
+• ライブQAによる各種の安定性改善
+</ja-JP>
+<ru-RU>
+Улучшение стабильности и понятные подсказки для более плавной игры!
+
+• При ошибке покупки теперь отображается понятное сообщение
+• Исправлен неверный аватар в награде за ежедневный вход
+• Более плавная графика поля и фишек
+• Различные исправления стабильности по итогам live-QA
+</ru-RU>
+<es-ES>
+¡Mejoras de estabilidad y avisos más claros para una experiencia más fluida!
+
+• Los errores de compra ahora muestran un mensaje claro
+• Corregido un avatar incorrecto en la recompensa de asistencia diaria
+• Gráficos del tablero y las fichas más fluidos
+• Varias correcciones de estabilidad tras el QA en vivo
+</es-ES>
+<pt-PT>
+Melhorias de estabilidade e avisos mais claros para uma experiência mais fluida!
+
+• Os erros de compra agora mostram uma mensagem clara
+• Corrigido um avatar incorreto na recompensa de presença diária
+• Gráficos do tabuleiro e das peças mais suaves
+• Várias correções de estabilidade a partir do QA em produção
+</pt-PT>
+<fr-FR>
+Améliorations de stabilité et messages plus clairs pour une expérience plus fluide !
+
+• Les erreurs d'achat affichent désormais un message clair
+• Correction d'un avatar erroné dans la récompense de connexion quotidienne
+• Rendu du plateau et des jetons plus fluide
+• Diverses corrections de stabilité issues du QA en production
+</fr-FR>
+<de-DE>
+Stabilitäts-Feinschliff und klarere Hinweise für ein flüssigeres Spielerlebnis!
+
+• Kauf-Fehler zeigen jetzt eine klare Meldung an
+• Falscher Avatar in der täglichen Anwesenheitsbelohnung behoben
+• Flüssigere Darstellung von Spielfeld und Chips
+• Verschiedene Stabilitätskorrekturen aus dem Live-QA
+</de-DE>
+<th>
+ปรับปรุงเสถียรภาพและข้อความแจ้งเตือนที่ชัดเจนขึ้นเพื่อการเล่นที่ลื่นไหลยิ่งขึ้น!
+
+• เมื่อซื้อไม่สำเร็จจะแสดงข้อความชัดเจน รู้ได้ทันทีว่าเกิดอะไรขึ้น
+• แก้ไขปัญหารางวัลเช็คอินแสดงอวาตาร์ผิด
+• ปรับการแสดงผลกระดานและชิปให้ลื่นไหลขึ้น
+• แก้ไขเสถียรภาพหลายจุดจากการ QA จริง
+</th>
+<ar>
+تحسينات في الاستقرار ورسائل أوضح لتجربة ألغاز أكثر سلاسة!
+
+• تظهر الآن رسالة واضحة عند فشل الشراء لتعرف ما حدث دائمًا
+• إصلاح ظهور صورة رمزية خاطئة في مكافأة الحضور اليومي
+• رسوم أكثر سلاسة للوحة والقطع
+• إصلاحات متنوعة للاستقرار من اختبار الجودة المباشر
+</ar>
+<it-IT>
+Rifiniture di stabilità e avvisi più chiari per un'esperienza più fluida!
+
+• Gli errori di acquisto ora mostrano un messaggio chiaro
+• Corretto un avatar errato nella ricompensa di accesso giornaliero
+• Grafica di tabellone e pedine più fluida
+• Varie correzioni di stabilità dal QA in produzione
+</it-IT>
+<tr-TR>
+Daha akıcı bir bulmaca deneyimi için kararlılık iyileştirmeleri ve daha net bildirimler!
+
+• Satın alma hataları artık net bir mesaj gösteriyor
+• Günlük giriş ödülünde yanlış avatar sorunu düzeltildi
+• Tahta ve pul görselleri daha akıcı
+• Canlı QA'dan gelen çeşitli kararlılık düzeltmeleri
+</tr-TR>
+<id>
+Penyempurnaan stabilitas dan notifikasi yang lebih jelas untuk permainan yang lebih mulus!
+
+• Kesalahan pembelian kini menampilkan pesan yang jelas
+• Memperbaiki avatar yang salah pada hadiah kehadiran harian
+• Tampilan papan dan chip lebih mulus
+• Berbagai perbaikan stabilitas dari QA langsung
+</id>
+
+commit: 67545c749db2b045ddcd7338791b1a54db5b1810

@@ -30,6 +30,7 @@ Contents here...
 ## Release History
 | Version | Release Date | Summary | Commit |
 |---------|--------------|---------|--------|
+| v1.0.3  | 2026-07-02   | Stability Polish & Clearer Purchase Feedback | `67545c7` |
 | v1.0.2  | 2026-06-29   | Store Launch, Rewarded Ads & Smoother Play | `9dfe2c7` |
 | v1.0.1  | 2026-06-19   | Weekly Missions, Shop/Lobby Revamp & Reward Clarity | `ea40894` |
 | v1.0.0  | 2026-06-12   | Initial MVP Release | `c22b90c` |
