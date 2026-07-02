@@ -38,8 +38,9 @@ public sealed class GooglePlayVerifier
 
         try
         {
-            var credential = GoogleCredential
-                .FromJson(_serviceAccountJson)
+            var credential = CredentialFactory
+                .FromJson<ServiceAccountCredential>(_serviceAccountJson)
+                .ToGoogleCredential()
                 .CreateScoped(AndroidPublisherService.Scope.Androidpublisher);
 
             using var service = new AndroidPublisherService(new BaseClientService.Initializer
