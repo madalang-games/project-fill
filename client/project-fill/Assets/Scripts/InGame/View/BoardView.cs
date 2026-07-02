@@ -346,6 +346,8 @@ namespace Game.InGame.View
             _inputBlocked = false;
             _softStuck    = false;
 
+            ClearFlightPool();  // pooled flyers hold the pre-rebuild SpriteSet/size — drop them
+
             EnsureChrome();   // build a responsive fallback if the authored canvas isn't wired
             WireButtons();    // once (guarded)
             if (_shuffleBtn != null) _shuffleBtnRt = (RectTransform)_shuffleBtn.transform;
@@ -704,7 +706,7 @@ namespace Game.InGame.View
             RefreshLane(from);  // real source drops the run immediately
             if (_board.Lanes[from].Kind == LaneKind.Blind) fromLv.AnimateTopReveal();
             yield return VanishAll(vanishers, srcPos, 0.16f);
-            for (int j = 0; j < count; j++) Destroy(vanishers[j].gameObject);
+            for (int j = 0; j < count; j++) ReturnFlightChip(vanishers[j]);
 
             // Dest teleport-in: each chip flashes in white above its slot, restores its real color,
             // then gravity-drops into place.
@@ -723,7 +725,7 @@ namespace Game.InGame.View
             bool completes = absorbed != null && absorbed.Count > 0;
             if (!completes)
             {
-                for (int j = 0; j < count; j++) Destroy(flyers[j].gameObject);
+                for (int j = 0; j < count; j++) ReturnFlightChip(flyers[j]);
                 RefreshLane(to);
                 UpdateHud();        // move count
                 UpdateBoosters();   // re-enable Undo (CanUndo) after a plain move
@@ -733,7 +735,7 @@ namespace Game.InGame.View
                 bool toAbsorbed = false;
                 foreach (var a in absorbed) if (a.lane == to) { toAbsorbed = true; break; }
 
-                for (int j = 0; j < count; j++) Destroy(flyers[j].gameObject);
+                for (int j = 0; j < count; j++) ReturnFlightChip(flyers[j]);
 
                 // If the player's chips landed in a lane that is NOT itself being absorbed, show
                 // them immediately so another lane's sweep doesn't visually swallow them (#4).
@@ -865,7 +867,7 @@ namespace Game.InGame.View
                 t += Time.deltaTime;
                 yield return null;
             }
-            foreach (var f in flyers) Destroy(f.gameObject);
+            foreach (var f in flyers) ReturnFlightChip(f);
 
             // Register = "signal locked": double shockwave + pixel data-bit shards + a light pulse that
             // propagates along the connector to the next node in the chain.
@@ -880,17 +882,59 @@ namespace Game.InGame.View
             yield return new WaitForSeconds(0.12f);
         }
 
+        // Flight chips are short-lived FX stand-ins spawned every move (vanishers, flyers, sweep
+        // chips). Each ChipView is a ~12-renderer build, so instantiating + destroying them per move
+        // caused GC spikes / render hitches mid-move. Pool + reuse instead. A pooled chip is reused
+        // only when its built size matches the request (a board resize discards stale-size chips).
+        private readonly Stack<ChipView> _flightPool = new();
+
         private ChipView SpawnFlightChip(Chip chip, Vector2 size, Vector3 worldPos)
         {
-            GameObject go = _chipPrefab != null
-                ? Instantiate(_chipPrefab, _flightLayer)
-                : new GameObject("FlyChip");
-            if (_chipPrefab == null) go.transform.SetParent(_flightLayer, false);
-            var fly = (go.GetComponent<ChipView>() ?? go.AddComponent<ChipView>()).Initialize(_sprites, size);
-            var rt = fly.transform;
-            rt.position  = worldPos;
+            ChipView fly = null;
+            while (_flightPool.Count > 0)
+            {
+                var c = _flightPool.Pop();
+                if (c == null) continue;                       // destroyed elsewhere
+                if (c.BuiltSize == size) { fly = c; break; }
+                Destroy(c.gameObject);                         // size changed → can't reuse
+            }
+
+            if (fly == null)
+            {
+                GameObject go = _chipPrefab != null
+                    ? Instantiate(_chipPrefab, _flightLayer)
+                    : new GameObject("FlyChip");
+                if (_chipPrefab == null) go.transform.SetParent(_flightLayer, false);
+                fly = go.GetComponent<ChipView>() ?? go.AddComponent<ChipView>();
+            }
+
+            fly.gameObject.SetActive(true);
+            fly.Initialize(_sprites, size);  // no-op once built
+            fly.transform.localScale = Vector3.one;
+            fly.transform.position   = worldPos;
             fly.SetChip(chip, true);
             return fly;
+        }
+
+        // Return a flight chip to the pool instead of destroying it. Clears the white-flash state so a
+        // reused chip starts clean.
+        private void ReturnFlightChip(ChipView fly)
+        {
+            if (fly == null) return;
+            fly.SetFlash(0f);
+            fly.gameObject.SetActive(false);
+            _flightPool.Push(fly);
+        }
+
+        // Drop the pool: pooled instances hold the old SpriteSet, so a skin/board rebuild must discard
+        // them (a reused chip would render the previous skin). Called on (re)Init.
+        private void ClearFlightPool()
+        {
+            while (_flightPool.Count > 0)
+            {
+                var c = _flightPool.Pop();
+                if (c != null) Destroy(c.gameObject);
+            }
         }
 
         // Upward-kicked motes: a small cone of dust flicked up off the slot on landing (BurstParticle's

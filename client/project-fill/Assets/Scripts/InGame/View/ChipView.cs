@@ -1,5 +1,4 @@
 using System.Collections;
-using TMPro;
 using UnityEngine;
 
 namespace Game.InGame.View
@@ -10,10 +9,7 @@ namespace Game.InGame.View
     {
         private SpriteRenderer _glow, _fill, _outline, _sheen, _finish, _back, _backCirc;
         private SpriteRenderer _overloadBadge, _badgeBack, _sweep; // Ch5 overload markers
-        private SpriteRenderer[] _pinsL;
-        private SpriteRenderer[] _pinsR;
         private SpriteRenderer _indexDot;
-        private TextMeshPro _label;
 
         private Chip _chip;
         private bool _revealed = true;
@@ -21,6 +17,11 @@ namespace Game.InGame.View
 
         private bool _built;
         private Vector2 _size;
+        private Vector2 _builtSize;
+
+        // Size the visuals were constructed at — flight-chip pooling reuses an instance only when the
+        // requested size matches, so a board resize can't leave a recycled flyer at the wrong scale.
+        public Vector2 BuiltSize => _builtSize;
 
         // Skin tokens (from SpriteSet/BoardTheme); defaults reproduce the original look.
         private Color _outlineColor = new(0.10f, 0.11f, 0.15f, 1f);
@@ -47,6 +48,7 @@ namespace Game.InGame.View
         private void Construct(SpriteSet s, Vector2 size)
         {
             _built = true;
+            _builtSize = size;
 
             _outlineColor = s.ChipOutlineColor;
             _fillAlpha    = s.ChipFillAlpha;
@@ -58,30 +60,6 @@ namespace Game.InGame.View
             _accent       = s.Accent;
 
             _glow = WorldUtil.CreateSprite(transform, "Glow", s.Glow, new Color(1, 1, 1, 0f), size + new Vector2(0.12f, 0.12f), sortingOrder: 7);
-
-            // Create 3 left pins and 3 right pins to look like IC chip packaging
-            _pinsL = new SpriteRenderer[3];
-            _pinsR = new SpriteRenderer[3];
-            
-            float pinW = size.x * 0.12f;
-            float pinH = size.y * 0.08f;
-            Color pinCol = new Color(0.75f, 0.77f, 0.82f); // silver/metallic
-            
-            for (int i = 0; i < 3; i++)
-            {
-                float py = -size.y * 0.25f + i * (size.y * 0.25f);
-                
-                var pinL = WorldUtil.CreateSprite(transform, $"Pin_L_{i}", s.Chip, pinCol, new Vector2(pinW, pinH), sortingOrder: 8);
-                pinL.transform.localPosition = new Vector3(-size.x * 0.5f - pinW * 0.3f, py, 0f);
-                _pinsL[i] = pinL;
-                
-                var pinR = WorldUtil.CreateSprite(transform, $"Pin_R_{i}", s.Chip, pinCol, new Vector2(pinW, pinH), sortingOrder: 8);
-                pinR.transform.localPosition = new Vector3(size.x * 0.5f + pinW * 0.3f, py, 0f);
-                _pinsR[i] = pinR;
-            }
-
-            // Casual token look: hide the IC side-pins (kept in the hierarchy for legacy sprite skins).
-            for (int i = 0; i < 3; i++) { _pinsL[i].gameObject.SetActive(false); _pinsR[i].gameObject.SetActive(false); }
 
             // Fill is inset slightly inside the outline so the solid rim fully frames the signal colour —
             // the body never pokes past the rounded corners (outline drawn at full `size`, sortingOrder 11).
@@ -98,11 +76,6 @@ namespace Game.InGame.View
             if (s.ChipFinishSprite == null) _finish.gameObject.SetActive(false);
 
             _outline = WorldUtil.CreateSprite(transform, "Outline", s.ChipOutline, Color.white, size, sortingOrder: 11);
-
-            _label = WorldUtil.CreateLabel(transform, "Glyph", "", 30f, size);
-            _label.fontStyle = FontStyles.Bold;
-            _label.sortingOrder = 14;
-            _label.gameObject.SetActive(false); // chip is color-only — no type glyph
 
             // Create index dot at top-left
             float dotSize = size.x * 0.08f;
@@ -158,8 +131,6 @@ namespace Game.InGame.View
                 // colors still tint it.)
                 _fill.color    = new Color(col.r, col.g, col.b, _fillAlpha);
                 _outline.color = _outlineColor;
-                _label.text    = _chip.Type.ToLabel();
-                _label.color   = Color.Lerp(col, Color.black, 0.72f);
                 _indexDot.gameObject.SetActive(true);
                 _indexDot.color = Color.Lerp(col, Color.white, 0.5f);
 
@@ -174,18 +145,10 @@ namespace Game.InGame.View
                 if (_finish != null) _finish.gameObject.SetActive(false);
                 _fill.color    = new Color(0.09f, 0.11f, 0.14f);
                 _outline.color = new Color(0.25f, 0.45f, 0.52f);
-                _label.text    = "";
                 _indexDot.gameObject.SetActive(false);
                 _badgeBack.gameObject.SetActive(false);
                 _overloadBadge.gameObject.SetActive(false);
                 _sweep.gameObject.SetActive(false);
-
-                Color pinCol = new Color(0.38f, 0.40f, 0.45f);
-                for (int i = 0; i < 3; i++)
-                {
-                    _pinsL[i].color = pinCol;
-                    _pinsR[i].color = pinCol;
-                }
             }
         }
 
@@ -204,7 +167,6 @@ namespace Game.InGame.View
             var fc = Color.Lerp(col, Color.white, a); fc.a = _fillAlpha;
             _fill.color    = fc;
             _outline.color = Color.Lerp(_outlineColor, Color.white, a);
-            _label.color   = Color.Lerp(Color.Lerp(col, Color.black, 0.72f), Color.white, a);
             if (_glow != null) _glow.color = new Color(1f, 1f, 1f, Mathf.Lerp(0.18f, 0.95f, a));
         }
 
@@ -257,13 +219,6 @@ namespace Game.InGame.View
                 _glow.color = new Color(col.r, col.g, col.b, Mathf.Lerp(0.7f, 1f, pulse));
                 float s = Mathf.Lerp(1.08f, 1.14f, pulse) + _punch * 0.12f; // pop on select, settle to pulse
                 transform.localScale = new Vector3(s, s, 1f);
-                
-                Color selectPinCol = Color.Lerp(col, Color.white, 0.4f);
-                for (int i = 0; i < 3; i++)
-                {
-                    _pinsL[i].color = selectPinCol;
-                    _pinsR[i].color = selectPinCol;
-                }
             }
             else if (_revealed && _chip.Overload)
             {

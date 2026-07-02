@@ -18,7 +18,7 @@
 ## Rules
 - Non-punitive: cycle never resets; only the consecutive streak resets when a day is missed.
 - Cosmetic milestone rewards are pull-based via `cosmetic_condition_id` (`day_30`,`day_100`); never inline cosmetic into reward_item.
-- Avatar rewards travel as `AVATAR` reward_item rows (e.g. Day7 first cycle → avatar 3).
+- Avatar rewards travel as `AVATAR` reward_item rows (e.g. Day7 first cycle → avatar 6). Never grant a default-unlocked avatar (`unlock_type=common`/`free`, ids 1–5) — the player already owns it, making the reward a no-op.
 
 ## Cross-refs
 - Depends on: `shared/datas/reward/reward_group.csv`
